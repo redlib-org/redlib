@@ -769,7 +769,7 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 			if let Some(default) = crate::config::get_setting(&format!("LIBREDDIT_DEFAULT_{}", name.to_uppercase())) {
 				Cookie::new(name, default)
 			} else {
-				Cookie::named(name)
+				Cookie::from(name)
 			}
 		})
 		.value()

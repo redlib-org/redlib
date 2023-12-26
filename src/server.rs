@@ -138,7 +138,7 @@ impl RequestExt for Request<Body> {
 				.to_str()
 				.unwrap_or_default()
 				.split("; ")
-				.map(|cookie| Cookie::parse(cookie).unwrap_or_else(|_| Cookie::named("")))
+				.map(|cookie| Cookie::parse(cookie).unwrap_or_else(|_| Cookie::from("")))
 				.collect()
 		})
 	}
@@ -155,7 +155,7 @@ impl ResponseExt for Response<Body> {
 				.to_str()
 				.unwrap_or_default()
 				.split("; ")
-				.map(|cookie| Cookie::parse(cookie).unwrap_or_else(|_| Cookie::named("")))
+				.map(|cookie| Cookie::parse(cookie).unwrap_or_else(|_| Cookie::from("")))
 				.collect()
 		})
 	}
@@ -167,7 +167,7 @@ impl ResponseExt for Response<Body> {
 	}
 
 	fn remove_cookie(&mut self, name: String) {
-		let mut cookie = Cookie::named(name);
+		let mut cookie = Cookie::from(name);
 		cookie.set_path("/");
 		cookie.set_max_age(Duration::seconds(1));
 		if let Ok(val) = header::HeaderValue::from_str(&cookie.to_string()) {

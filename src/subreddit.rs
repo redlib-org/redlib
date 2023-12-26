@@ -177,11 +177,11 @@ pub async fn add_quarantine_exception(req: Request<Body>) -> Result<Response<Bod
 	let redir = param(&format!("?{}", req.uri().query().unwrap_or_default()), "redir").ok_or("Invalid URL")?;
 	let mut response = redirect(redir);
 	response.insert_cookie(
-		Cookie::build(&format!("allow_quaran_{}", subreddit.to_lowercase()), "true")
+		Cookie::build((&format!("allow_quaran_{}", subreddit.to_lowercase()), "true"))
 			.path("/")
 			.http_only(true)
 			.expires(cookie::Expiration::Session)
-			.finish(),
+			.into(),
 	);
 	Ok(response)
 }
@@ -289,22 +289,22 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 		response.remove_cookie("subscriptions".to_string());
 	} else {
 		response.insert_cookie(
-			Cookie::build("subscriptions", sub_list.join("+"))
+			Cookie::build(("subscriptions", sub_list.join("+")))
 				.path("/")
 				.http_only(true)
 				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.finish(),
+				.into(),
 		);
 	}
 	if filters.is_empty() {
 		response.remove_cookie("filters".to_string());
 	} else {
 		response.insert_cookie(
-			Cookie::build("filters", filters.join("+"))
+			Cookie::build(("filters", filters.join("+")))
 				.path("/")
 				.http_only(true)
 				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.finish(),
+				.into(),
 		);
 	}
 
