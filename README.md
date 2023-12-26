@@ -42,7 +42,7 @@ Both files are part of the [libreddit-instances](https://github.com/libreddit/li
 
 # About
 
-Find Redlib on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [Docker](https://hub.docker.com/r/libreddit/libreddit), :octocat: [GitHub](https://github.com/libreddit/libreddit), and 🦊 [GitLab](https://gitlab.com/libreddit/libreddit).
+Find Redlib on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/libreddit/libreddit), and 🦊 [GitLab](https://gitlab.com/libreddit/libreddit).
 
 ## Built with
 
@@ -147,21 +147,21 @@ cargo install libreddit
 
 ## 2) Docker
 
-Deploy the [Docker image](https://hub.docker.com/r/libreddit/libreddit) of Redlib:
+Deploy the [Docker image](https://quay.io/repository/redlib/redlib) of Redlib:
 ```
-docker pull libreddit/libreddit
-docker run -d --name libreddit -p 8080:8080 libreddit/libreddit
+docker pull quay.io/redlib/redlib
+docker run -d --name libreddit -p 8080:8080 redlib
 ```
 
 Deploy using a different port (in this case, port 80):
 ```
-docker pull libreddit/libreddit
-docker run -d --name libreddit -p 80:8080 libreddit/libreddit
+docker pull quay.io/redlib/redlib
+docker run -d --name libreddit -p 80:8080 redlib
 ```
 
-To deploy on `arm64` platforms, simply replace `libreddit/libreddit` in the commands above with `libreddit/libreddit:arm`.
+To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:arm`.
 
-To deploy on `armv7` platforms, simply replace `libreddit/libreddit` in the commands above with `libreddit/libreddit:armv7`.
+To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:armv7`.
 
 ## 3) AUR
 
@@ -187,15 +187,15 @@ make install
 
 ## 5) GitHub Releases
 
-If you're on Linux and none of these methods work for you, you can grab a Linux binary from [the newest release](https://github.com/libreddit/libreddit/releases/latest).
+If you're on Linux and none of these methods work for you, you can grab a Linux binary from [the newest release](https://github.com/redlib-org/redlib/releases/latest).
 
 ## 6) Replit/Heroku/Glitch
 
 > **Warning**
 > These are free hosting options, but they are *not* private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
-<a href="https://repl.it/github/libreddit/libreddit"><img src="https://repl.it/badge/github/libreddit/libreddit" alt="Run on Repl.it" height="32" /></a>
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/libreddit/libreddit)
+<a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
 [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button-v2.svg)](https://glitch.com/edit/#!/remix/libreddit)
 
 ---
@@ -205,7 +205,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 Once installed, deploy Redlib to `0.0.0.0:8080` by running:
 
 ```
-libreddit
+redlib
 ```
 
 ## Instance settings
@@ -243,7 +243,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 
-You can also configure Redlib with a configuration file. An example `libreddit.toml` can be found below:
+You can also configure Redlib with a configuration file. An example `redlib.toml` can be found below:
 
 ```toml
 REDLIB_DEFAULT_WIDE = "on"
@@ -253,11 +253,11 @@ REDLIB_DEFAULT_USE_HLS = "on"
 ### Examples
 
 ```bash
-REDLIB_DEFAULT_SHOW_NSFW=on libreddit
+REDLIB_DEFAULT_SHOW_NSFW=on redlib
 ```
 
 ```bash
-REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark libreddit -r
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
 ```
 
 ## Proxying using NGINX
@@ -271,17 +271,17 @@ REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark libreddit -r
 
 ## systemd
 
-You can use the systemd service available in `contrib/libreddit.service`
-(install it on `/etc/systemd/system/libreddit.service`).
+You can use the systemd service available in `contrib/redlib.service`
+(install it on `/etc/systemd/system/redlib.service`).
 
 That service can be optionally configured in terms of environment variables by
-creating a file in `/etc/libreddit.conf`. Use the `contrib/libreddit.conf` as a
+creating a file in `/etc/redlib.conf`. Use the `contrib/redlib.conf` as a
 template. You can also add the `REDLIB_DEFAULT__{X}` settings explained
 above.
 
 When "Proxying using NGINX" where the proxy is on the same machine, you should
 guarantee nginx waits for this service to start. Edit
-`/etc/systemd/system/libreddit.service.d/reverse-proxy.conf`:
+`/etc/systemd/system/redlib.service.d/reverse-proxy.conf`:
 
 ```conf
 [Unit]
@@ -290,16 +290,16 @@ Before=nginx.service
 
 ## launchd
 
-If you are on macOS, you can use the launchd service available in `contrib/libreddit.plist`.
+If you are on macOS, you can use the launchd service available in `contrib/redlib.plist`.
 
-Install it with `cp contrib/libreddit.plist ~/Library/LaunchAgents/`.
+Install it with `cp contrib/redlib.plist ~/Library/LaunchAgents/`.
 
-Load and start it with `launchctl load ~/Library/LaunchAgents/libreddit.plist`.
+Load and start it with `launchctl load ~/Library/LaunchAgents/redlib.plist`.
 
 ## Building
 
 ```
-git clone https://github.com/libreddit/libreddit
-cd libreddit
+git clone https://github.com/redlib-org/redlib
+cd redlib
 cargo run
 ```
