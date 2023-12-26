@@ -9,13 +9,14 @@ use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
-use std::{io, result::Result};
+use std::{io, result::Result, sync::atomic::Ordering::SeqCst};
 use tokio::sync::RwLock;
 
+use crate::config;
 use crate::dbg_msg;
+use crate::instance_info::INSTANCE_INFO;
 use crate::oauth::{token_daemon, Oauth};
 use crate::server::RequestExt;
-use crate::{config, dbg_msg};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 
