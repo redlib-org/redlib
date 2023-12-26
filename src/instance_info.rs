@@ -21,7 +21,7 @@ pub(crate) static INSTANCE_INFO: Lazy<InstanceInfo> = Lazy::new(InstanceInfo::ne
 pub async fn instance_info(req: Request<Body>) -> Result<Response<Body>, String> {
 	// This will retrieve the extension given, or create a new string - which will
 	// simply become the last option, an HTML page.
-	let extension = req.param("extension").unwrap_or(String::new());
+	let extension = req.param("extension").unwrap_or_default();
 	let response = match extension.as_str() {
 		"yaml" | "yml" => info_yaml(),
 		"txt" => info_txt(),

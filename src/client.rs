@@ -49,14 +49,14 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 	let status = res.status().as_u16();
 
 	match status {
-		429 => return Err("Too many requests.".to_string()),
+		429 => Err("Too many requests.".to_string()),
 
 		// If Reddit responds with a 2xx, then the path is already canonical.
-		200..=299 => return Ok(Some(path)),
+		200..=299 => Ok(Some(path)),
 
 		// If Reddit responds with anything other than 3xx (except for the 2xx as
 		// above), return a None.
-		300..=399 => return Ok(None),
+		300..=399 => Ok(None),
 
 		_ => Ok(
 			res

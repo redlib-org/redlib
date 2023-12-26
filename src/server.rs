@@ -353,14 +353,6 @@ fn determine_compressor(accept_encoding: String) -> Option<CompressionType> {
 
 	impl PartialOrd for CompressorCandidate {
 		fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-			// Guard against NAN, both on our end and on the other.
-			if self.q.is_nan() || other.q.is_nan() {
-				return None;
-			};
-
-			// f64 and CompressionType are ordered, except in the case
-			// where the f64 is NAN (which we checked against), so we
-			// can safely return a Some here.
 			Some(self.cmp(other))
 		}
 	}

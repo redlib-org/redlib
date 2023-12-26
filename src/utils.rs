@@ -604,23 +604,23 @@ impl Preferences {
 		}
 		Self {
 			available_themes: themes,
-			theme: setting(&req, "theme"),
-			front_page: setting(&req, "front_page"),
-			layout: setting(&req, "layout"),
-			wide: setting(&req, "wide"),
-			show_nsfw: setting(&req, "show_nsfw"),
-			blur_nsfw: setting(&req, "blur_nsfw"),
-			use_hls: setting(&req, "use_hls"),
-			hide_hls_notification: setting(&req, "hide_hls_notification"),
-			autoplay_videos: setting(&req, "autoplay_videos"),
-			fixed_navbar: setting_or_default(&req, "fixed_navbar", "on".to_string()),
+			theme: setting(req, "theme"),
+			front_page: setting(req, "front_page"),
+			layout: setting(req, "layout"),
+			wide: setting(req, "wide"),
+			show_nsfw: setting(req, "show_nsfw"),
+			blur_nsfw: setting(req, "blur_nsfw"),
+			use_hls: setting(req, "use_hls"),
+			hide_hls_notification: setting(req, "hide_hls_notification"),
+			autoplay_videos: setting(req, "autoplay_videos"),
+			fixed_navbar: setting_or_default(req, "fixed_navbar", "on".to_string()),
 			disable_visit_reddit_confirmation: setting(req, "disable_visit_reddit_confirmation"),
-			comment_sort: setting(&req, "comment_sort"),
-			post_sort: setting(&req, "post_sort"),
-			subscriptions: setting(&req, "subscriptions").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
-			filters: setting(&req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
-			hide_awards: setting(&req, "hide_awards"),
-			hide_score: setting(&req, "hide_score"),
+			comment_sort: setting(req, "comment_sort"),
+			post_sort: setting(req, "post_sort"),
+			subscriptions: setting(req, "subscriptions").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
+			filters: setting(req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
+			hide_awards: setting(req, "hide_awards"),
+			hide_score: setting(req, "hide_score"),
 		}
 	}
 }
@@ -1074,9 +1074,7 @@ mod tests {
 	#[test]
 	fn rewrite_urls_keeps_intentional_backslashes() {
 		assert_eq!(
-			rewrite_urls(
-				"printf \"\\npolkit.addRule(function(action, subject)"
-			),
+			rewrite_urls("printf \"\\npolkit.addRule(function(action, subject)"),
 			"printf \"\\npolkit.addRule(function(action, subject)"
 		);
 	}
