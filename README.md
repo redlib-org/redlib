@@ -224,24 +224,20 @@ Assign a default value for each instance-specific setting by passing environment
 
 Assign a default value for each user-modifiable setting by passing environment variables to Libreddit in the format `LIBREDDIT_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
-| Name                                | Possible values                                                                                                                    | Default value |
-|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight"]` | `system`      |
-| `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
-| `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
-| `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
-| `POST_SORT`                         | `["hot", "new", "top", "rising", "controversial"]`                                                                                 | `hot`         |
-| `COMMENT_SORT`                      | `["confidence", "top", "new", "controversial", "old"]`                                                                             | `confidence`  |
-| `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
-| `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
-| `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
-| `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
-| `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
-| `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      | 
-| `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
-| `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
-| `DISABLE_STATS_COLLECTION`          |  Any string to disable                                                                                                             | _(none)_      |
-| `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
+| Name                    | Possible values                                                                                     | Default value |
+|-------------------------|-----------------------------------------------------------------------------------------------------|---------------|
+| `THEME`                 | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight"]` | `system`      |
+| `FRONT_PAGE`            | `["default", "popular", "all"]`                                                                     | `default`     |
+| `LAYOUT`                | `["card", "clean", "compact"]`                                                                      | `card`        |
+| `WIDE`                  | `["on", "off"]`                                                                                     | `off`         |
+| `POST_SORT`             | `["hot", "new", "top", "rising", "controversial"]`                                                  | `hot`         |
+| `COMMENT_SORT`          | `["confidence", "top", "new", "controversial", "old"]`                                              | `confidence`  |
+| `SHOW_NSFW`             | `["on", "off"]`                                                                                     | `off`         |
+| `BLUR_NSFW`             | `["on", "off"]`                                                                                     | `off`         |
+| `USE_HLS`               | `["on", "off"]`                                                                                     | `off`         |
+| `HIDE_HLS_NOTIFICATION` | `["on", "off"]`                                                                                     | `off`         |
+| `AUTOPLAY_VIDEOS`       | `["on", "off"]`                                                                                     | `off`         |
+| `FIXED_NAVBAR`          | `["on", "off"]`                                                                                     | `on`          |
 
 You can also configure Libreddit with a configuration file. An example `libreddit.toml` can be found below:
 

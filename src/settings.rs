@@ -19,7 +19,7 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 14] = [
+const PREFS: [&str; 13] = [
 	"theme",
 	"front_page",
 	"layout",
@@ -31,6 +31,7 @@ const PREFS: [&str; 14] = [
 	"use_hls",
 	"hide_hls_notification",
 	"autoplay_videos",
+	"fixed_navbar",
 	"hide_awards",
 	"hide_score",
 	"disable_visit_reddit_confirmation",
