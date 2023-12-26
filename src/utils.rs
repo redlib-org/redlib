@@ -780,20 +780,20 @@ pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>,
 	}
 }
 
-static REGEX_URL_WWW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://www\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_OLD: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://old\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_NP: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://np\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_PLAIN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
-static REGEX_URL_VIDEOS_HLS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
-static REGEX_URL_IMAGES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://i\.redd\.it/(.*)").unwrap());
-static REGEX_URL_THUMBS_A: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_THUMBS_B: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_EMOJI: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://emoji\.redditmedia\.com/(.*)/(.*)").unwrap());
-static REGEX_URL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_EXTERNAL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://external\-preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_STYLES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://styles\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_STATIC_MEDIA: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://www\.redditstatic\.com/(.*)").unwrap());
+static REGEX_URL_WWW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://www\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_OLD: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_NP: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_PLAIN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
+static REGEX_URL_VIDEOS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
+static REGEX_URL_VIDEOS_HLS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
+static REGEX_URL_IMAGES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
+static REGEX_URL_THUMBS_A: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_THUMBS_B: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_EMOJI: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://emoji\.redditmedia\.com/(.*)/(.*)").unwrap());
+static REGEX_URL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://preview\.redd\.it/(.*)").unwrap());
+static REGEX_URL_EXTERNAL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
+static REGEX_URL_STYLES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_STATIC_MEDIA: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
 
 // Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
@@ -853,7 +853,7 @@ pub fn format_url(url: &str) -> String {
 }
 
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https://external-preview\.redd\.it(.*)[^?]").unwrap());
+static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://external-preview\.redd\.it(.*)[^?]").unwrap());
 
 // Rewrite Reddit links to Libreddit in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
