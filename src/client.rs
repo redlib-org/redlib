@@ -137,7 +137,7 @@ fn reddit_head(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, S
 /// in its response.
 fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
 	// Increment reddit request count. This will include head requests.
-	if config::get_setting("LIBREDDIT_DISABLE_STATS_COLLECTION").is_none() {
+	if config::get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_none() {
 		INSTANCE_INFO.reddit_requests.fetch_add(1, SeqCst);
 	}
 	// Build Reddit URL from path.

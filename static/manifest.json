@@ -1,6 +1,6 @@
 {
-	"name": "Libreddit",
-	"short_name": "Libreddit",
+	"name": "Redlib",
+	"short_name": "Redlib",
 	"display": "standalone",
 	"background_color": "#1f1f1f",
 	"description": "An alternative private front-end to Reddit",

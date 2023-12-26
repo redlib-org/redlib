@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>libreddit</string>
+    <string>redlib</string>
 
     <key>Program</key>
-    <string>libreddit</string>
+    <string>redlib</string>
 
     <key>KeepAlive</key>
     <true/>

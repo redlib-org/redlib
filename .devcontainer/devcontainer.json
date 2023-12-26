@@ -6,7 +6,7 @@
     },
     "portsAttributes": {
         "8080": {
-            "label": "libreddit",
+            "label": "redlib",
             "onAutoForward": "notify"
         }
     },

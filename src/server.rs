@@ -235,7 +235,7 @@ impl Server {
 					match router.recognize(&format!("/{}{}", req.method().as_str(), path)) {
 						// If a route was configured for this path
 						Ok(found) => {
-							if config::get_setting("LIBREDDIT_DISABLE_STATS_COLLECTION").is_none() {
+							if config::get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_none() {
 								// Add to total_requests count
 								INSTANCE_INFO.total_requests.fetch_add(1, SeqCst);
 							}

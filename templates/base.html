@@ -4,14 +4,14 @@
 <html lang="en">
 	<head>
 		{% block head %}
-		<title>{% block title %}Libreddit{% endblock %}</title>
+		<title>{% block title %}Redlib{% endblock %}</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<meta name="description" content="View on Libreddit, an alternative private front-end to Reddit.">
+		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<!-- General PWA -->
 		<meta name="theme-color" content="#1F1F1F">
 		<!-- iOS Application -->
-		<meta name="apple-mobile-web-app-title" content="Libreddit">
+		<meta name="apple-mobile-web-app-title" content="Redlib">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="default">
 		<!-- Android -->
@@ -19,7 +19,7 @@
 		<!-- iOS Logo -->
 		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
 		<!-- OpenSearch description file -->
-		<link rel="search" type="application/opensearchdescription+xml" title="Search Libreddit" href="/opensearch.xml">
+		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
 		<!-- PWA Manifest -->
 		<link rel="manifest" type="application/json" href="/manifest.json">
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
@@ -35,7 +35,7 @@
 		<nav class="
 			{% if prefs.fixed_navbar == "on" %} fixed_navbar{% endif %}">
 			<div id="logo">
-				<a id="libreddit" href="/"><span id="lib">lib</span><span id="reddit">reddit.</span></a>
+				<a id="redlib" href="/"><span id="lib">red</span><span id="reddit">lib.</span></a>
 				{% block subscriptions %}{% endblock %}
 			</div>
 			{% block search %}{% endblock %}
@@ -76,7 +76,7 @@
 					<a href="/info" title="View instance information">ⓘ View instance info</a>
 				</div>
 				<div class="footer-button">
-					<a href="https://github.com/libreddit/libreddit" title="View code on GitHub">&lt;&gt; Code</a>
+					<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a>
 				</div>
 			</footer>
 		{% endblock %}

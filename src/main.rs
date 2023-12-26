@@ -118,7 +118,7 @@ async fn main() {
 	// Initialize logger
 	pretty_env_logger::init();
 
-	let matches = Command::new("Libreddit")
+	let matches = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
 		.arg(
@@ -165,7 +165,7 @@ async fn main() {
 
 	let listener = [address, ":", port].concat();
 
-	println!("Starting Libreddit...");
+	println!("Starting Redlib...");
 
 	// Begin constructing a server
 	let mut app = server::Server::new();
@@ -204,7 +204,7 @@ async fn main() {
 		.get(|_| resource(include_str!("../static/manifest.json"), "application/json", false).boxed());
 	app.at("/robots.txt").get(|_| {
 		resource(
-			if match config::get_setting("LIBREDDIT_ROBOTS_DISABLE_INDEXING") {
+			if match config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
 				Some(val) => val == "on",
 				None => false,
 			} {
@@ -229,7 +229,7 @@ async fn main() {
 		.at("/hls.min.js")
 		.get(|_| resource(include_str!("../static/hls.min.js"), "text/javascript", false).boxed());
 
-	// Proxy media through Libreddit
+	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
 	app.at("/img/*path").get(|r| proxy(r, "https://i.redd.it/{path}").boxed());
@@ -370,7 +370,7 @@ async fn main() {
 	// Default service in case no routes match
 	app.at("/*").get(|req| error(req, "Nothing here".to_string()).boxed());
 
-	println!("Running Libreddit v{} on {}!", env!("CARGO_PKG_VERSION"), listener);
+	println!("Running Redlib v{} on {}!", env!("CARGO_PKG_VERSION"), listener);
 
 	let server = app.listen(listener);
 

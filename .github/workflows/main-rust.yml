@@ -36,19 +36,19 @@ jobs:
         run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Calculate SHA512 checksum
-        run: sha512sum target/x86_64-unknown-linux-gnu/release/libreddit > libreddit.sha512
+        run: sha512sum target/x86_64-unknown-linux-gnu/release/redlib > redlib.sha512
 
       - name: Calculate SHA256 checksum
-        run: sha256sum target/x86_64-unknown-linux-gnu/release/libreddit > libreddit.sha256
+        run: sha256sum target/x86_64-unknown-linux-gnu/release/redlib > redlib.sha256
 
       - uses: actions/upload-artifact@v3
         name: Upload a Build Artifact
         with:
-          name: libreddit
+          name: redlib
           path: |
-            target/x86_64-unknown-linux-gnu/release/libreddit
-            libreddit.sha512
-            libreddit.sha256
+            target/x86_64-unknown-linux-gnu/release/redlib
+            redlib.sha512
+            redlib.sha256
         
       - name: Versions
         id: version
@@ -68,9 +68,9 @@ jobs:
           name: ${{ steps.version.outputs.VERSION }} - ${{ github.event.head_commit.message }}
           draft: true
           files: |
-            target/x86_64-unknown-linux-gnu/release/libreddit
-            libreddit.sha512
-            libreddit.sha256
+            target/x86_64-unknown-linux-gnu/release/redlib
+            redlib.sha512
+            redlib.sha256
           body: |
             - ${{ github.event.head_commit.message }} ${{ github.sha }}
           generate_release_notes: true

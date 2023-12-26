@@ -1,5 +1,5 @@
 {
-  "name": "Libreddit",
+  "name": "Redlib",
   "description": "Private front-end for Reddit",
   "buildpacks": [
     {
@@ -11,61 +11,61 @@
   ],
   "stack": "container",
   "env": {
-    "LIBREDDIT_DEFAULT_THEME": {
+    "REDLIB_DEFAULT_THEME": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_FRONT_PAGE": {
+    "REDLIB_DEFAULT_FRONT_PAGE": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_LAYOUT": {
+    "REDLIB_DEFAULT_LAYOUT": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_WIDE": {
+    "REDLIB_DEFAULT_WIDE": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_COMMENT_SORT": {
+    "REDLIB_DEFAULT_COMMENT_SORT": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_POST_SORT": {
+    "REDLIB_DEFAULT_POST_SORT": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_SHOW_NSFW": {
+    "REDLIB_DEFAULT_SHOW_NSFW": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_BLUR_NSFW": {
+    "REDLIB_DEFAULT_BLUR_NSFW": {
       "required": false
     },
-    "LIBREDDIT_USE_HLS": {
+    "REDLIB_USE_HLS": {
       "required": false
     },
-    "LIBREDDIT_HIDE_HLS_NOTIFICATION": {
+    "REDLIB_HIDE_HLS_NOTIFICATION": {
       "required": false
     },
-    "LIBREDDIT_SFW_ONLY": {
+    "REDLIB_SFW_ONLY": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_HIDE_AWARDS": {
+    "REDLIB_DEFAULT_HIDE_AWARDS": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_HIDE_SCORE": {
+    "REDLIB_DEFAULT_HIDE_SCORE": {
       "required": false
     },
-    "LIBREDDIT_BANNER": {
+    "REDLIB_BANNER": {
       "required": false
     },
-    "LIBREDDIT_ROBOTS_DISABLE_INDEXING":  {
+    "REDLIB_ROBOTS_DISABLE_INDEXING":  {
         "required": false
     },
-    "LIBREDDIT_DEFAULT_SUBSCRIPTIONS": {
+    "REDLIB_DEFAULT_SUBSCRIPTIONS": {
       "required": false
     },
-    "LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION": {
+    "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION": {
       "required": false
     },
-    "LIBREDDIT_PUSHSHIFT_FRONTEND": {
+    "REDLIB_PUSHSHIFT_FRONTEND": {
       "required": false
     },
-    "LIBREDDIT_DISABLE_STATS_COLLECTION": {
+    "REDLIB_DISABLE_STATS_COLLECTION": {
       "required": false
     }
   }

@@ -171,7 +171,7 @@ fn build_comment(
 	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{}{}\">view removed comment</a></p></div>",
-			get_setting("LIBREDDIT_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 			post_link,
 			id
 		)
@@ -218,7 +218,7 @@ fn build_comment(
 	let is_filtered = filters.contains(&["u_", author.name.as_str()].concat());
 
 	// Many subreddits have a default comment posted about the sub's rules etc.
-	// Many libreddit users do not wish to see this kind of comment by default.
+	// Many Redlib users do not wish to see this kind of comment by default.
 	// Reddit does not tell us which users are "bots", so a good heuristic is to
 	// collapse stickied moderator comments.
 	let is_moderator_comment = data["distinguished"].as_str().unwrap_or_default() == "moderator";

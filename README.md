@@ -1,16 +1,15 @@
-# Libreddit
+# Redlib
 
 > An alternative private front-end to Reddit
 
 # ⚠️ Why do I get TOO MANY REQUESTS errors? ⚠️
-## As of July 12th, 2023, Libreddit is currently not operational as Reddit's API changes, that were designed to kill third-party apps and content scrapers who don't pay [large fees](https://www.theverge.com/2023/5/31/23743993/reddit-apollo-client-api-cost), went into effect. [Read the full announcement here.](https://github.com/libreddit/libreddit/issues/840)
-## One of the project maintainers is working towards keeping this project alive to some extent: https://github.com/libreddit/libreddit/issues/836
+#### As of July 12th, 2023, Redlib is currently not operational as Reddit's API changes, that were designed to kill third-party apps and content scrapers who don't pay [large fees](https://www.theverge.com/2023/5/31/23743993/reddit-apollo-client-api-cost), went into effect. [Read the full announcement here.](https://github.com/libreddit/libreddit/issues/840)
 
 ![screenshot](https://i.ibb.co/QYbqTQt/libreddit-rust.png)
 
 ---
 
-**10-second pitch:** Libreddit is a portmanteau of "libre" (meaning freedom) and "Reddit". It is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://libreddit.spike.codes/r/unpopularopinion) without being [tracked](#reddit).
+**10-second pitch:** Redlib is a portmanteau of "libre" (meaning freedom) and "Reddit". It is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://libreddit.spike.codes/r/unpopularopinion) without being [tracked](#reddit).
 
 - 🚀 Fast: written in Rust for blazing-fast speeds and memory safety
 - ☁️ Light: no JavaScript, no ads, no tracking, no bloat
@@ -19,7 +18,7 @@
 
 ---
 
-I appreciate any donations! Your support allows me to continue developing Libreddit.
+I appreciate any donations! Your support allows me to continue developing Redlib.
 
 <a href="https://www.buymeacoffee.com/spikecodes" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px" ></a>
 <a href="https://liberapay.com/spike/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg" style="height: 40px"></a>
@@ -33,7 +32,7 @@ I appreciate any donations! Your support allows me to continue developing Libred
 
 # Instances
 
-🔗 **Want to automatically redirect Reddit links to Libreddit? Use [LibRedirect](https://github.com/libredirect/libredirect) or [Privacy Redirect](https://github.com/SimonBrazell/privacy-redirect)!**
+🔗 **Want to automatically redirect Reddit links to Redlib? Use [LibRedirect](https://github.com/libredirect/libredirect) or [Privacy Redirect](https://github.com/SimonBrazell/privacy-redirect)!**
 
 [Follow this link](https://github.com/libreddit/libreddit-instances/blob/master/instances.md) for an up-to-date table of instances in Markdown format. This list is also available as [a machine-readable JSON](https://github.com/libreddit/libreddit-instances/blob/master/instances.json).
 
@@ -43,7 +42,7 @@ Both files are part of the [libreddit-instances](https://github.com/libreddit/li
 
 # About
 
-Find Libreddit on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [Docker](https://hub.docker.com/r/libreddit/libreddit), :octocat: [GitHub](https://github.com/libreddit/libreddit), and 🦊 [GitLab](https://gitlab.com/libreddit/libreddit).
+Find Redlib on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [Docker](https://hub.docker.com/r/libreddit/libreddit), :octocat: [GitHub](https://github.com/libreddit/libreddit), and 🦊 [GitLab](https://gitlab.com/libreddit/libreddit).
 
 ## Built with
 
@@ -53,31 +52,31 @@ Find Libreddit on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [D
 - [Rustls](https://github.com/ctz/rustls) - TLS library
 
 ## Info
-Libreddit hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Libreddit was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
+Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
 
-Libreddit currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/libreddit/libreddit/issues).
+Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/libreddit/libreddit/issues).
 
 ## How does it compare to Teddit?
 
-Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Libreddit into an even more polished product.
+Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Redlib into an even more polished product.
 
 If you are looking to compare, the biggest differences I have noticed are:
-- Libreddit is themed around Reddit's redesign whereas Teddit appears to stick much closer to Reddit's old design. This may suit some users better as design is always subjective.
-- Libreddit is written in [Rust](https://www.rust-lang.org) for speed and memory safety. It uses [Hyper](https://hyper.rs), a speedy and lightweight HTTP server/client implementation.
+- Redlib is themed around Reddit's redesign whereas Teddit appears to stick much closer to Reddit's old design. This may suit some users better as design is always subjective.
+- Redlib is written in [Rust](https://www.rust-lang.org) for speed and memory safety. It uses [Hyper](https://hyper.rs), a speedy and lightweight HTTP server/client implementation.
 
 ---
 
 # Comparison
 
-This section outlines how Libreddit compares to Reddit.
+This section outlines how Redlib compares to Reddit.
 
 ## Speed
 
 Lasted tested Nov 11, 2022.
 
-Results from Google PageSpeed Insights ([Libreddit Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Flibreddit.spike.codes%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
+Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Flibreddit.spike.codes%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
-|                        | Libreddit   | Reddit    |
+|                        | Redlib   | Reddit    |
 |------------------------|-------------|-----------|
 | Requests               | 60          | 83        |
 | Speed Index            | 2.0s        | 10.4s     |
@@ -114,15 +113,15 @@ Results from Google PageSpeed Insights ([Libreddit Report](https://pagespeed.web
 - Third-Party Cookies
 - Third-Party Site
 
-### Libreddit
+### Redlib
 
-For transparency, I hope to describe all the ways Libreddit handles user privacy.
+For transparency, I hope to describe all the ways Redlib handles user privacy.
 
 #### Server
 
-* **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Libreddit logs nothing. When debugging (running from source without `--release`), Libreddit logs post IDs fetched to aid with troubleshooting.
+* **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
 
-* **Cookies:** Libreddit uses optional cookies to store any configured settings in [the settings menu](https://libreddit.spike.codes/settings). These are not cross-site cookies and the cookies hold no personal data.
+* **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://libreddit.spike.codes/settings). These are not cross-site cookies and the cookies hold no personal data.
 
 #### Official instance (libreddit.spike.codes)
 
@@ -148,7 +147,7 @@ cargo install libreddit
 
 ## 2) Docker
 
-Deploy the [Docker image](https://hub.docker.com/r/libreddit/libreddit) of Libreddit:
+Deploy the [Docker image](https://hub.docker.com/r/libreddit/libreddit) of Redlib:
 ```
 docker pull libreddit/libreddit
 docker run -d --name libreddit -p 8080:8080 libreddit/libreddit
@@ -166,14 +165,14 @@ To deploy on `armv7` platforms, simply replace `libreddit/libreddit` in the comm
 
 ## 3) AUR
 
-For ArchLinux users, Libreddit is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
+For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
 
 ```
 yay -S libreddit-git
 ```
 ## 4) NetBSD/pkgsrc
 
-For NetBSD users, Libreddit is available from the official repositories.
+For NetBSD users, Redlib is available from the official repositories.
 
 ```
 pkgin install libreddit
@@ -203,7 +202,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 
 # Deployment
 
-Once installed, deploy Libreddit to `0.0.0.0:8080` by running:
+Once installed, deploy Redlib to `0.0.0.0:8080` by running:
 
 ```
 libreddit
@@ -211,7 +210,7 @@ libreddit
 
 ## Instance settings
 
-Assign a default value for each instance-specific setting by passing environment variables to Libreddit in the format `LIBREDDIT_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
+Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
 | Name                      | Possible values | Default value    | Description                                                                                               |
 |---------------------------|-----------------|------------------|-----------------------------------------------------------------------------------------------------------|
@@ -222,7 +221,7 @@ Assign a default value for each instance-specific setting by passing environment
 
 ## Default User Settings
 
-Assign a default value for each user-modifiable setting by passing environment variables to Libreddit in the format `LIBREDDIT_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
+Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
 | Name                                | Possible values                                                                                                                    | Default value |
 |-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|---------------|
@@ -244,27 +243,27 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 
-You can also configure Libreddit with a configuration file. An example `libreddit.toml` can be found below:
+You can also configure Redlib with a configuration file. An example `libreddit.toml` can be found below:
 
 ```toml
-LIBREDDIT_DEFAULT_WIDE = "on"
-LIBREDDIT_DEFAULT_USE_HLS = "on"
+REDLIB_DEFAULT_WIDE = "on"
+REDLIB_DEFAULT_USE_HLS = "on"
 ```
 
 ### Examples
 
 ```bash
-LIBREDDIT_DEFAULT_SHOW_NSFW=on libreddit
+REDLIB_DEFAULT_SHOW_NSFW=on libreddit
 ```
 
 ```bash
-LIBREDDIT_DEFAULT_WIDE=on LIBREDDIT_DEFAULT_THEME=dark libreddit -r
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark libreddit -r
 ```
 
 ## Proxying using NGINX
 
 > **Note**
-> If you're [proxying Libreddit through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
+> If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
 > ```nginx
 > proxy_http_version 1.1;
 > ```
@@ -277,7 +276,7 @@ You can use the systemd service available in `contrib/libreddit.service`
 
 That service can be optionally configured in terms of environment variables by
 creating a file in `/etc/libreddit.conf`. Use the `contrib/libreddit.conf` as a
-template. You can also add the `LIBREDDIT_DEFAULT__{X}` settings explained
+template. You can also add the `REDLIB_DEFAULT__{X}` settings explained
 above.
 
 When "Proxying using NGINX" where the proxy is on the same machine, you should

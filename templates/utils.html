@@ -16,7 +16,7 @@
 
 {% macro search(root, search) -%}
 <form action="{% if root != "/r/" && !root.is_empty() %}{{ root }}{% endif %}/search" id="searchbox">
-	<input id="search" type="text" name="q" placeholder="Search" title="Search libreddit" value="{{ search }}">
+	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="{{ search }}">
 	{% if root != "/r/" && !root.is_empty() %}
 	<div id="inside">
 		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
@@ -305,7 +305,7 @@
 {% macro visit_reddit_confirmation(url) -%}
 <div class="popup" id="popup">
 	<div class="popup-inner">
-		<h1>You are about to leave Libreddit</h1>
+		<h1>You are about to leave Redlib</h1>
 		<p>Do you want to continue?</p>
 		<p id="reddit_url">https://www.reddit.com{{ url }}</p>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">

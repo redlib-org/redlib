@@ -673,7 +673,7 @@ pub async fn parse_post(post: &serde_json::Value) -> Post {
 	let body = if val(post, "removed_by_category") == "moderator" {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{}\">view removed post</a></p></div>",
-			get_setting("LIBREDDIT_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 			permalink
 		)
 	} else {
@@ -766,7 +766,7 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		.cookie(name)
 		.unwrap_or_else(|| {
 			// If there is no cookie for this setting, try receiving a default from the config
-			if let Some(default) = crate::config::get_setting(&format!("LIBREDDIT_DEFAULT_{}", name.to_uppercase())) {
+			if let Some(default) = crate::config::get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
 				Cookie::new(name, default)
 			} else {
 				Cookie::from(name)
@@ -874,17 +874,17 @@ pub fn format_url(url: &str) -> String {
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://external-preview\.redd\.it(.*)[^?]").unwrap());
 
-// Rewrite Reddit links to Libreddit in body of text
+// Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
 	let text1 =
-		// Rewrite Reddit links to Libreddit
+		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
 			.to_string()
 			// Remove (html-encoded) "\" from URLs.
 			.replace("%5C", "")
 			.replace("\\_", "_");
 
-	// Rewrite external media previews to Libreddit
+	// Rewrite external media previews to Redlib
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
 		REDDIT_PREVIEW_REGEX
 			.replace_all(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
@@ -987,7 +987,7 @@ pub async fn error(req: Request<Body>, msg: impl ToString) -> Result<Response<Bo
 	Ok(Response::builder().status(404).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-/// Returns true if the config/env variable `LIBREDDIT_SFW_ONLY` carries the
+/// Returns true if the config/env variable `REDLIB_SFW_ONLY` carries the
 /// value `on`.
 ///
 /// If this variable is set as such, the instance will operate in SFW-only
@@ -995,7 +995,7 @@ pub async fn error(req: Request<Body>, msg: impl ToString) -> Result<Response<Bo
 /// subreddits or posts or userpages for users Reddit has deemed NSFW will
 /// be denied.
 pub fn sfw_only() -> bool {
-	match crate::config::get_setting("LIBREDDIT_SFW_ONLY") {
+	match crate::config::get_setting("REDLIB_SFW_ONLY") {
 		Some(val) => val == "on",
 		None => false,
 	}

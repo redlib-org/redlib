@@ -809,42 +809,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libreddit"
-version = "0.30.1"
-dependencies = [
- "askama",
- "base64",
- "brotli",
- "build_html",
- "cached",
- "clap",
- "cookie",
- "dotenvy",
- "fastrand 2.0.1",
- "futures-lite",
- "hyper",
- "hyper-rustls",
- "libflate",
- "lipsum",
- "log",
- "once_cell",
- "percent-encoding",
- "pretty_env_logger",
- "regex",
- "route-recognizer",
- "rust-embed",
- "sealed_test",
- "serde",
- "serde_json",
- "serde_yaml",
- "time",
- "tokio",
- "toml",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "linux-raw-sys"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1091,6 +1055,42 @@ name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
+
+[[package]]
+name = "redlib"
+version = "0.30.1"
+dependencies = [
+ "askama",
+ "base64",
+ "brotli",
+ "build_html",
+ "cached",
+ "clap",
+ "cookie",
+ "dotenvy",
+ "fastrand 2.0.1",
+ "futures-lite",
+ "hyper",
+ "hyper-rustls",
+ "libflate",
+ "lipsum",
+ "log",
+ "once_cell",
+ "percent-encoding",
+ "pretty_env_logger",
+ "regex",
+ "route-recognizer",
+ "rust-embed",
+ "sealed_test",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "time",
+ "tokio",
+ "toml",
+ "url",
+ "uuid",
+]
 
 [[package]]
 name = "redox_syscall"

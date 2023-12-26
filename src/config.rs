@@ -20,61 +20,61 @@ pub(crate) const DEFAULT_PUSHSHIFT_FRONTEND: &str = "www.unddit.com";
 /// instance_info::InstanceInfo.to_string(), README.md and app.json.
 #[derive(Default, Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
-	#[serde(rename = "LIBREDDIT_SFW_ONLY")]
+	#[serde(rename = "REDLIB_SFW_ONLY")]
 	pub(crate) sfw_only: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_THEME")]
+	#[serde(rename = "REDLIB_DEFAULT_THEME")]
 	pub(crate) default_theme: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_FRONT_PAGE")]
+	#[serde(rename = "REDLIB_DEFAULT_FRONT_PAGE")]
 	pub(crate) default_front_page: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_LAYOUT")]
+	#[serde(rename = "REDLIB_DEFAULT_LAYOUT")]
 	pub(crate) default_layout: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_WIDE")]
+	#[serde(rename = "REDLIB_DEFAULT_WIDE")]
 	pub(crate) default_wide: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_COMMENT_SORT")]
+	#[serde(rename = "REDLIB_DEFAULT_COMMENT_SORT")]
 	pub(crate) default_comment_sort: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_POST_SORT")]
+	#[serde(rename = "REDLIB_DEFAULT_POST_SORT")]
 	pub(crate) default_post_sort: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_SHOW_NSFW")]
+	#[serde(rename = "REDLIB_DEFAULT_SHOW_NSFW")]
 	pub(crate) default_show_nsfw: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_BLUR_NSFW")]
+	#[serde(rename = "REDLIB_DEFAULT_BLUR_NSFW")]
 	pub(crate) default_blur_nsfw: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_USE_HLS")]
+	#[serde(rename = "REDLIB_DEFAULT_USE_HLS")]
 	pub(crate) default_use_hls: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_HIDE_HLS_NOTIFICATION")]
+	#[serde(rename = "REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION")]
 	pub(crate) default_hide_hls_notification: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_HIDE_AWARDS")]
+	#[serde(rename = "REDLIB_DEFAULT_HIDE_AWARDS")]
 	pub(crate) default_hide_awards: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_HIDE_SCORE")]
+	#[serde(rename = "REDLIB_DEFAULT_HIDE_SCORE")]
 	pub(crate) default_hide_score: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_SUBSCRIPTIONS")]
+	#[serde(rename = "REDLIB_DEFAULT_SUBSCRIPTIONS")]
 	pub(crate) default_subscriptions: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
+	#[serde(rename = "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
 	pub(crate) default_disable_visit_reddit_confirmation: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_BANNER")]
+	#[serde(rename = "REDLIB_BANNER")]
 	pub(crate) banner: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_ROBOTS_DISABLE_INDEXING")]
+	#[serde(rename = "REDLIB_ROBOTS_DISABLE_INDEXING")]
 	pub(crate) robots_disable_indexing: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_DISABLE_STATS_COLLECTION")]
+	#[serde(rename = "REDLIB_DISABLE_STATS_COLLECTION")]
 	pub(crate) disable_stats_collection: Option<String>,
 
-	#[serde(rename = "LIBREDDIT_PUSHSHIFT_FRONTEND")]
+	#[serde(rename = "REDLIB_PUSHSHIFT_FRONTEND")]
 	pub(crate) pushshift: Option<String>,
 }
 
@@ -83,59 +83,59 @@ impl Config {
 	/// In the case that there are no environment variables set and there is no
 	/// config file, this function returns a Config that contains all None values.
 	pub fn load() -> Self {
-		// Read from libreddit.toml config file. If for any reason, it fails, the
+		// Read from redlib.toml config file. If for any reason, it fails, the
 		// default `Config` is used (all None values)
-		let config: Config = toml::from_str(&read_to_string("libreddit.toml").unwrap_or_default()).unwrap_or_default();
+		let config: Config = toml::from_str(&read_to_string("redlib.toml").unwrap_or_default()).unwrap_or_default();
 		// This function defines the order of preference - first check for
-		// environment variables with "LIBREDDIT", then check the config, then if
+		// environment variables with "REDLIB", then check the config, then if
 		// both are `None`, return a `None` via the `map_or_else` function
 		let parse = |key: &str| -> Option<String> { var(key).ok().map_or_else(|| get_setting_from_config(key, &config), Some) };
 
 		Self {
-			sfw_only: parse("LIBREDDIT_SFW_ONLY"),
-			default_theme: parse("LIBREDDIT_DEFAULT_THEME"),
-			default_front_page: parse("LIBREDDIT_DEFAULT_FRONT_PAGE"),
-			default_layout: parse("LIBREDDIT_DEFAULT_LAYOUT"),
-			default_post_sort: parse("LIBREDDIT_DEFAULT_POST_SORT"),
-			default_wide: parse("LIBREDDIT_DEFAULT_WIDE"),
-			default_comment_sort: parse("LIBREDDIT_DEFAULT_COMMENT_SORT"),
-			default_show_nsfw: parse("LIBREDDIT_DEFAULT_SHOW_NSFW"),
-			default_blur_nsfw: parse("LIBREDDIT_DEFAULT_BLUR_NSFW"),
-			default_use_hls: parse("LIBREDDIT_DEFAULT_USE_HLS"),
-			default_hide_hls_notification: parse("LIBREDDIT_DEFAULT_HIDE_HLS"),
-			default_hide_awards: parse("LIBREDDIT_DEFAULT_HIDE_AWARDS"),
-			default_hide_score: parse("LIBREDDIT_DEFAULT_HIDE_SCORE"),
-			default_subscriptions: parse("LIBREDDIT_DEFAULT_SUBSCRIPTIONS"),
-			default_disable_visit_reddit_confirmation: parse("LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
-			banner: parse("LIBREDDIT_BANNER"),
-			robots_disable_indexing: parse("LIBREDDIT_ROBOTS_DISABLE_INDEXING"),
-			disable_stats_collection: parse("LIBREDDIT_DISABLE_STATS_COLLECTION"),
-			pushshift: parse("LIBREDDIT_PUSHSHIFT_FRONTEND"),
+			sfw_only: parse("REDLIB_SFW_ONLY"),
+			default_theme: parse("REDLIB_DEFAULT_THEME"),
+			default_front_page: parse("REDLIB_DEFAULT_FRONT_PAGE"),
+			default_layout: parse("REDLIB_DEFAULT_LAYOUT"),
+			default_post_sort: parse("REDLIB_DEFAULT_POST_SORT"),
+			default_wide: parse("REDLIB_DEFAULT_WIDE"),
+			default_comment_sort: parse("REDLIB_DEFAULT_COMMENT_SORT"),
+			default_show_nsfw: parse("REDLIB_DEFAULT_SHOW_NSFW"),
+			default_blur_nsfw: parse("REDLIB_DEFAULT_BLUR_NSFW"),
+			default_use_hls: parse("REDLIB_DEFAULT_USE_HLS"),
+			default_hide_hls_notification: parse("REDLIB_DEFAULT_HIDE_HLS"),
+			default_hide_awards: parse("REDLIB_DEFAULT_HIDE_AWARDS"),
+			default_hide_score: parse("REDLIB_DEFAULT_HIDE_SCORE"),
+			default_subscriptions: parse("REDLIB_DEFAULT_SUBSCRIPTIONS"),
+			default_disable_visit_reddit_confirmation: parse("REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
+			banner: parse("REDLIB_BANNER"),
+			robots_disable_indexing: parse("REDLIB_ROBOTS_DISABLE_INDEXING"),
+			disable_stats_collection: parse("REDLIB_DISABLE_STATS_COLLECTION"),
+			pushshift: parse("REDLIB_PUSHSHIFT_FRONTEND"),
 		}
 	}
 }
 
 fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 	match name {
-		"LIBREDDIT_SFW_ONLY" => config.sfw_only.clone(),
-		"LIBREDDIT_DEFAULT_THEME" => config.default_theme.clone(),
-		"LIBREDDIT_DEFAULT_FRONT_PAGE" => config.default_front_page.clone(),
-		"LIBREDDIT_DEFAULT_LAYOUT" => config.default_layout.clone(),
-		"LIBREDDIT_DEFAULT_COMMENT_SORT" => config.default_comment_sort.clone(),
-		"LIBREDDIT_DEFAULT_POST_SORT" => config.default_post_sort.clone(),
-		"LIBREDDIT_DEFAULT_SHOW_NSFW" => config.default_show_nsfw.clone(),
-		"LIBREDDIT_DEFAULT_BLUR_NSFW" => config.default_blur_nsfw.clone(),
-		"LIBREDDIT_DEFAULT_USE_HLS" => config.default_use_hls.clone(),
-		"LIBREDDIT_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
-		"LIBREDDIT_DEFAULT_WIDE" => config.default_wide.clone(),
-		"LIBREDDIT_DEFAULT_HIDE_AWARDS" => config.default_hide_awards.clone(),
-		"LIBREDDIT_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
-		"LIBREDDIT_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
-		"LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
-		"LIBREDDIT_BANNER" => config.banner.clone(),
-		"LIBREDDIT_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
-		"LIBREDDIT_DISABLE_STATS_COLLECTION" => config.disable_stats_collection.clone(),
-		"LIBREDDIT_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
+		"REDLIB_SFW_ONLY" => config.sfw_only.clone(),
+		"REDLIB_DEFAULT_THEME" => config.default_theme.clone(),
+		"REDLIB_DEFAULT_FRONT_PAGE" => config.default_front_page.clone(),
+		"REDLIB_DEFAULT_LAYOUT" => config.default_layout.clone(),
+		"REDLIB_DEFAULT_COMMENT_SORT" => config.default_comment_sort.clone(),
+		"REDLIB_DEFAULT_POST_SORT" => config.default_post_sort.clone(),
+		"REDLIB_DEFAULT_SHOW_NSFW" => config.default_show_nsfw.clone(),
+		"REDLIB_DEFAULT_BLUR_NSFW" => config.default_blur_nsfw.clone(),
+		"REDLIB_DEFAULT_USE_HLS" => config.default_use_hls.clone(),
+		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
+		"REDLIB_DEFAULT_WIDE" => config.default_wide.clone(),
+		"REDLIB_DEFAULT_HIDE_AWARDS" => config.default_hide_awards.clone(),
+		"REDLIB_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
+		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
+		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
+		"REDLIB_BANNER" => config.banner.clone(),
+		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
+		"REDLIB_DISABLE_STATS_COLLECTION" => config.disable_stats_collection.clone(),
+		"REDLIB_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
 		_ => None,
 	}
 }
@@ -156,7 +156,7 @@ fn test_deserialize() {
 }
 
 #[test]
-#[sealed_test(env = [("LIBREDDIT_SFW_ONLY", "on")])]
+#[sealed_test(env = [("REDLIB_SFW_ONLY", "on")])]
 fn test_env_var() {
 	assert!(crate::utils::sfw_only())
 }
@@ -164,41 +164,41 @@ fn test_env_var() {
 #[test]
 #[sealed_test]
 fn test_config() {
-	let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
-	write("libreddit.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("LIBREDDIT_DEFAULT_COMMENT_SORT"), Some("best".into()));
+	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
 }
 
 #[test]
-#[sealed_test(env = [("LIBREDDIT_DEFAULT_COMMENT_SORT", "top")])]
+#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
 fn test_env_config_precedence() {
-	let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
-	write("libreddit.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("LIBREDDIT_DEFAULT_COMMENT_SORT"), Some("top".into()))
+	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
 }
 
 #[test]
-#[sealed_test(env = [("LIBREDDIT_DEFAULT_COMMENT_SORT", "top")])]
+#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
 fn test_alt_env_config_precedence() {
-	let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
-	write("libreddit.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("LIBREDDIT_DEFAULT_COMMENT_SORT"), Some("top".into()))
+	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
 }
 #[test]
-#[sealed_test(env = [("LIBREDDIT_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
+#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
 fn test_default_subscriptions() {
-	assert_eq!(get_setting("LIBREDDIT_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
+	assert_eq!(get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
 }
 
 #[test]
 fn test_stats_collection_empty() {
-	assert_eq!(get_setting("LIBREDDIT_DISABLE_STATS_COLLECTION"), None);
+	assert_eq!(get_setting("REDLIB_DISABLE_STATS_COLLECTION"), None);
 }
 
 #[test]
 #[sealed_test]
 fn test_stats_collection_true() {
-	let config_to_write = r#"LIBREDDIT_DISABLE_STATS_COLLECTION = "1""#;
-	write("libreddit.toml", config_to_write).unwrap();
-	assert!(get_setting("LIBREDDIT_DISABLE_STATS_COLLECTION").is_some());
+	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "1""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
 }

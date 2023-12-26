@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This scripts generates the CREDITS file in the repository root, which
-# contains a list of all contributors ot the Libreddit project.
+# contains a list of all contributors ot the Redlib project.
 #
 # We use git-log to surface the names and emails of all authors and committers,
 # and grep will filter any automated commits due to GitHub.
