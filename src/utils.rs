@@ -573,6 +573,7 @@ pub struct Preferences {
 	pub use_hls: String,
 	pub autoplay_videos: String,
 	pub fixed_navbar: String,
+	pub disable_visit_reddit_confirmation: String,
 	pub comment_sort: String,
 	pub post_sort: String,
 	pub subscriptions: Vec<String>,
@@ -608,6 +609,7 @@ impl Preferences {
 			hide_hls_notification: setting(&req, "hide_hls_notification"),
 			autoplay_videos: setting(&req, "autoplay_videos"),
 			fixed_navbar: setting_or_default(&req, "fixed_navbar", "on".to_string()),
+			disable_visit_reddit_confirmation: setting(req, "disable_visit_reddit_confirmation"),
 			comment_sort: setting(&req, "comment_sort"),
 			post_sort: setting(&req, "post_sort"),
 			subscriptions: setting(&req, "subscriptions").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
@@ -864,7 +866,7 @@ pub fn format_url(url: &str) -> String {
 	}
 }
 
-static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|)(reddit\.com|redd\.it)/"#).unwrap());
+static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://external-preview\.redd\.it(.*)[^?]").unwrap());
 
 // Rewrite Reddit links to Libreddit in body of text
@@ -875,7 +877,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			.to_string()
 			// Remove (html-encoded) "\" from URLs.
 			.replace("%5C", "")
-			.replace('\\', "");
+			.replace("\\_", "_");
 
 	// Rewrite external media previews to Libreddit
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
@@ -1049,13 +1051,29 @@ mod tests {
 	}
 
 	#[test]
-	fn rewrite_urls_removes_backslashes() {
-		let comment_body_html =
-			r#"<a href=\"https://www.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://www.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"#;
+	fn rewrite_urls_removes_backslashes_and_rewrites_url() {
 		assert_eq!(
-			rewrite_urls(comment_body_html),
-			r#"<a href="https://www.reddit.com/r/linux_gaming/comments/x/just_a_test/">https://www.reddit.com/r/linux_gaming/comments/x/just_a_test/</a>"#
-		)
+			rewrite_urls(
+				"<a href=\"https://new.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://new.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"
+			),
+			"<a href=\"/r/linux_gaming/comments/x/just_a_test/\">https://new.reddit.com/r/linux_gaming/comments/x/just_a_test/</a>"
+		);
+		assert_eq!(
+			rewrite_urls(
+				"e.g. &lt;a href=\"https://www.reddit.com/r/linux%5C_gaming/comments/ql9j15/anyone%5C_else%5C_confused%5C_with%5C_linus%5C_linux%5C_issues/\"&gt;https://www.reddit.com/r/linux\\_gaming/comments/ql9j15/anyone\\_else\\_confused\\_with\\_linus\\_linux\\_issues/&lt;/a&gt;"
+			),
+			"e.g. &lt;a href=\"/r/linux_gaming/comments/ql9j15/anyone_else_confused_with_linus_linux_issues/\"&gt;https://www.reddit.com/r/linux_gaming/comments/ql9j15/anyone_else_confused_with_linus_linux_issues/&lt;/a&gt;"
+		);
+	}
+
+	#[test]
+	fn rewrite_urls_keeps_intentional_backslashes() {
+		assert_eq!(
+			rewrite_urls(
+				"printf \"\\npolkit.addRule(function(action, subject)"
+			),
+			"printf \"\\npolkit.addRule(function(action, subject)"
+		);
 	}
 
 	#[test]

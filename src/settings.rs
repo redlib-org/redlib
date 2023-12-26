@@ -19,7 +19,7 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 13] = [
+const PREFS: [&str; 15] = [
 	"theme",
 	"front_page",
 	"layout",
