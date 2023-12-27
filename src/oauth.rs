@@ -212,7 +212,7 @@ impl Device {
 // Waiting on fastrand 2.0.0 for the `choose` function
 // https://github.com/smol-rs/fastrand/pull/59/
 fn choose<T: Copy>(list: &[T]) -> T {
-	*fastrand::choose_multiple(list.into_iter(), 1)[0]
+	*fastrand::choose_multiple(list.iter(), 1)[0]
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
