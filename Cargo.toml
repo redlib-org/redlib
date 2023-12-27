@@ -4,13 +4,19 @@ description = " Alternative private front-end to Reddit"
 license = "AGPL-3.0"
 repository = "https://github.com/redlib-org/redlib"
 version = "0.30.2"
-authors = ["Matthew Esposito <matt+cargo@matthew.science>"]
+authors = [
+    "Matthew Esposito <matt+cargo@matthew.science>",
+    "spikecodes <19519553+spikecodes@users.noreply.github.com>",
+]
 edition = "2021"
 
 [dependencies]
 askama = { version = "0.11.1", default-features = false }
 cached = { version = "0.46.1", features = ["async"] }
-clap = { version = "4.4.11", default-features = false, features = ["std", "env"] }
+clap = { version = "4.4.11", default-features = false, features = [
+    "std",
+    "env",
+] }
 regex = "1.10.2"
 serde = { version = "1.0.193", features = ["derive"] }
 cookie = "0.18.0"
