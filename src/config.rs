@@ -21,60 +21,79 @@ pub(crate) const DEFAULT_PUSHSHIFT_FRONTEND: &str = "www.unddit.com";
 #[derive(Default, Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
 	#[serde(rename = "REDLIB_SFW_ONLY")]
+	#[serde(alias = "LIBREDDIT_SFW_ONLY")]
 	pub(crate) sfw_only: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_THEME")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_THEME")]
 	pub(crate) default_theme: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_FRONT_PAGE")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_FRONT_PAGE")]
 	pub(crate) default_front_page: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_LAYOUT")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_LAYOUT")]
 	pub(crate) default_layout: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_WIDE")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_WIDE")]
 	pub(crate) default_wide: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_COMMENT_SORT")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_COMMENT_SORT")]
 	pub(crate) default_comment_sort: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_POST_SORT")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_POST_SORT")]
 	pub(crate) default_post_sort: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_SHOW_NSFW")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_SHOW_NSFW")]
 	pub(crate) default_show_nsfw: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_BLUR_NSFW")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_BLUR_NSFW")]
 	pub(crate) default_blur_nsfw: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_USE_HLS")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_USE_HLS")]
 	pub(crate) default_use_hls: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_HLS_NOTIFICATION")]
 	pub(crate) default_hide_hls_notification: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_HIDE_AWARDS")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_AWARDS")]
 	pub(crate) default_hide_awards: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_HIDE_SCORE")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_SCORE")]
 	pub(crate) default_hide_score: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_SUBSCRIPTIONS")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_SUBSCRIPTIONS")]
 	pub(crate) default_subscriptions: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
 	pub(crate) default_disable_visit_reddit_confirmation: Option<String>,
 
 	#[serde(rename = "REDLIB_BANNER")]
+	#[serde(alias = "LIBREDDIT_BANNER")]
 	pub(crate) banner: Option<String>,
 
 	#[serde(rename = "REDLIB_ROBOTS_DISABLE_INDEXING")]
+	#[serde(alias = "LIBREDDIT_ROBOTS_DISABLE_INDEXING")]
 	pub(crate) robots_disable_indexing: Option<String>,
 
 	#[serde(rename = "REDLIB_DISABLE_STATS_COLLECTION")]
+	#[serde(alias = "LIBREDDIT_DISABLE_STATS_COLLECTION")]
 	pub(crate) disable_stats_collection: Option<String>,
 
 	#[serde(rename = "REDLIB_PUSHSHIFT_FRONTEND")]
+	#[serde(alias = "LIBREDDIT_PUSHSHIFT_FRONTEND")]
 	pub(crate) pushshift: Option<String>,
 }
 
@@ -83,19 +102,22 @@ impl Config {
 	/// In the case that there are no environment variables set and there is no
 	/// config file, this function returns a Config that contains all None values.
 	pub fn load() -> Self {
-		// Read from redlib.toml config file. If for any reason, it fails, the
-		// default `Config` is used (all None values)
-		let config: Config = toml::from_str(&read_to_string("redlib.toml").unwrap_or_default()).unwrap_or_default();
-		// This function defines the order of preference - first check for
-		// environment variables with "REDLIB", then check the config, then if
-		// both are `None`, return a `None` via the `map_or_else` function
-		let parse = |key: &str| -> Option<String> {
-			var(key).ok().map_or_else(
-				|| var(key.replace("REDLIB_", "LIBREDDIT_")).ok().map_or_else(|| get_setting_from_config(key, &config), Some),
-				Some,
-			)
+		let load_config = |name: &str| {
+			let new_file = read_to_string(name);
+			new_file.ok().and_then(|new_file| toml::from_str::<Config>(&new_file).ok())
 		};
 
+		let config = load_config("redlib.toml").or(load_config("libreddit.toml")).unwrap_or_default();
+
+		// This function defines the order of preference - first check for
+		// environment variables with "REDLIB", then check the legacy LIBREDDIT
+		// option, then check the config, then if all are `None`, return a `None`
+		let parse = |key: &str| -> Option<String> {
+			// Return the first non-`None` value
+			// If all are `None`, return `None`
+			let legacy_key = key.replace("REDLIB_", "LIBREDDIT_");
+			var(key).ok().or(var(legacy_key).ok()).or(get_setting_from_config(key, &config))
+		};
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),
 			default_theme: parse("REDLIB_DEFAULT_THEME"),
@@ -171,6 +193,14 @@ fn test_env_var() {
 fn test_config() {
 	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
 	write("redlib.toml", config_to_write).unwrap();
+	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
+}
+
+#[test]
+#[sealed_test]
+fn test_config_legacy() {
+	let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
+	write("libreddit.toml", config_to_write).unwrap();
 	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
 }
 
