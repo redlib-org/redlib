@@ -33,7 +33,7 @@ jobs:
           version: latest
 
       - name: Login to Quay.io
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -49,7 +49,7 @@ jobs:
           readme_file: 'README.md'
 
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./${{ matrix.config.dockerfile }}
