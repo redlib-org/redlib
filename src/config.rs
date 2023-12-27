@@ -89,7 +89,12 @@ impl Config {
 		// This function defines the order of preference - first check for
 		// environment variables with "REDLIB", then check the config, then if
 		// both are `None`, return a `None` via the `map_or_else` function
-		let parse = |key: &str| -> Option<String> { var(key).ok().map_or_else(|| get_setting_from_config(key, &config), Some) };
+		let parse = |key: &str| -> Option<String> {
+			var(key).ok().map_or_else(
+				|| var(key.replace("REDLIB_", "LIBREDDIT_")).ok().map_or_else(|| get_setting_from_config(key, &config), Some),
+				Some,
+			)
+		};
 
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),
@@ -167,6 +172,12 @@ fn test_config() {
 	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
 	write("redlib.toml", config_to_write).unwrap();
 	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
+}
+
+#[test]
+#[sealed_test(env = [("LIBREDDIT_SFW_ONLY", "on")])]
+fn test_env_var_legacy() {
+	assert!(crate::utils::sfw_only())
 }
 
 #[test]
