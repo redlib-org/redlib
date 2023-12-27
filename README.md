@@ -150,13 +150,13 @@ cargo install libreddit
 Deploy the [Docker image](https://quay.io/repository/redlib/redlib) of Redlib:
 ```
 docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 8080:8080 redlib
+docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib
 ```
 
 Deploy using a different port (in this case, port 80):
 ```
 docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 80:8080 redlib
+docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib
 ```
 
 To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:arm`.
