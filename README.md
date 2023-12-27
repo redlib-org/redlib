@@ -9,7 +9,7 @@
 
 ---
 
-**10-second pitch:** Redlib is a portmanteau of "libre" (meaning freedom) and "Reddit". It is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://libreddit.spike.codes/r/unpopularopinion) without being [tracked](#reddit).
+**10-second pitch:** Redlib is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://libreddit.spike.codes/r/unpopularopinion) without being [tracked](#reddit).
 
 - 🚀 Fast: written in Rust for blazing-fast speeds and memory safety
 - ☁️ Light: no JavaScript, no ads, no tracking, no bloat
@@ -42,14 +42,14 @@ Both files are part of the [libreddit-instances](https://github.com/libreddit/li
 
 # About
 
-Find Redlib on 💬 [Matrix](https://matrix.to/#/#libreddit:kde.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/libreddit/libreddit), and 🦊 [GitLab](https://gitlab.com/libreddit/libreddit).
+Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/redlib-org/redlib), and 🦊 [GitLab](https://gitlab.com/redlib/redlib).
 
 ## Built with
 
 - [Rust](https://www.rust-lang.org/) - Programming language
 - [Hyper](https://github.com/hyperium/hyper) - HTTP server and client
 - [Askama](https://github.com/djc/askama) - Templating engine
-- [Rustls](https://github.com/ctz/rustls) - TLS library
+- [Rustls](https://github.com/rustls/rustls) - TLS library
 
 ## Info
 Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
@@ -150,13 +150,13 @@ cargo install libreddit
 Deploy the [Docker image](https://quay.io/repository/redlib/redlib) of Redlib:
 ```
 docker pull quay.io/redlib/redlib
-docker run -d --name libreddit -p 8080:8080 redlib
+docker run -d --name redlib -p 8080:8080 redlib
 ```
 
 Deploy using a different port (in this case, port 80):
 ```
 docker pull quay.io/redlib/redlib
-docker run -d --name libreddit -p 80:8080 redlib
+docker run -d --name redlib -p 80:8080 redlib
 ```
 
 To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:arm`.
