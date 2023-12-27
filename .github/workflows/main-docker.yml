@@ -55,6 +55,6 @@ jobs:
           file: ./${{ matrix.config.dockerfile }}
           platforms: ${{ matrix.config.platform }}
           push: true
-          tags: redlib/redlib:${{ matrix.config.tag }}
+          tags: quay.io/redlib/redlib:${{ matrix.config.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
