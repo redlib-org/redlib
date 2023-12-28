@@ -104,7 +104,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 		return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 	}
 
-	let path = format!("/r/{}/{}.json?{}&raw_json=1", sub_name.clone(), sort, req.uri().query().unwrap_or_default());
+	let path = format!("/r/{sub_name}/{sort}.json?{}&raw_json=1&geo_filter=GLOBAL", req.uri().query().unwrap_or_default());
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);
