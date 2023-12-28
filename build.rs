@@ -7,6 +7,7 @@ use std::os::unix::process::ExitStatusExt;
 use std::os::windows::process::ExitStatusExt;
 
 fn main() {
+	println!("cargo:rerun-if-changed=src/");
 	let output = String::from_utf8(
 		Command::new("git")
 			.args(["rev-parse", "HEAD"])
