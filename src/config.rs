@@ -7,11 +7,11 @@ use std::{env::var, fs::read_to_string};
 //
 // This is the local static that is initialized at runtime (technically at
 // first request) and contains the instance settings.
-pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load);
+pub static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 
 // This serves as the frontend for the Pushshift API - on removed comments, this URL will
 // be the base of a link, to display removed content (on another site).
-pub(crate) const DEFAULT_PUSHSHIFT_FRONTEND: &str = "www.unddit.com";
+pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "www.unddit.com";
 
 /// Stores the configuration parsed from the environment variables and the
 /// config file. `Config::Default()` contains None for each setting.
@@ -104,7 +104,7 @@ impl Config {
 	pub fn load() -> Self {
 		let load_config = |name: &str| {
 			let new_file = read_to_string(name);
-			new_file.ok().and_then(|new_file| toml::from_str::<Config>(&new_file).ok())
+			new_file.ok().and_then(|new_file| toml::from_str::<Self>(&new_file).ok())
 		};
 
 		let config = load_config("redlib.toml").or(load_config("libreddit.toml")).unwrap_or_default();
@@ -168,7 +168,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 }
 
 /// Retrieves setting from environment variable or config file.
-pub(crate) fn get_setting(name: &str) -> Option<String> {
+pub fn get_setting(name: &str) -> Option<String> {
 	get_setting_from_config(name, &CONFIG)
 }
 

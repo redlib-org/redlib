@@ -15,7 +15,7 @@ use time::OffsetDateTime;
 // This is the local static that is intialized at runtime (technically at
 // the first request to the info endpoint) and contains the data
 // retrieved from the info endpoint.
-pub(crate) static INSTANCE_INFO: Lazy<InstanceInfo> = Lazy::new(InstanceInfo::new);
+pub static INSTANCE_INFO: Lazy<InstanceInfo> = Lazy::new(InstanceInfo::new);
 
 /// Handles instance info endpoint
 pub async fn instance_info(req: Request<Body>) -> Result<Response<Body>, String> {
@@ -84,7 +84,7 @@ fn info_html(req: Request<Body>) -> Result<Response<Body>, Error> {
 	Response::builder().status(200).header("content-type", "text/html; charset=utf8").body(Body::from(message))
 }
 #[derive(Serialize, Deserialize, Default)]
-pub(crate) struct InstanceInfo {
+pub struct InstanceInfo {
 	package_name: String,
 	crate_version: String,
 	git_commit: String,

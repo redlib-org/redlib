@@ -7,6 +7,7 @@ mod config;
 mod duplicates;
 mod instance_info;
 mod oauth;
+mod oauth_resources;
 mod post;
 mod search;
 mod settings;

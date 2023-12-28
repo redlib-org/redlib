@@ -20,12 +20,12 @@ use crate::server::RequestExt;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 
-pub(crate) static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
+pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
 	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
 	client::Client::builder().build(https)
 });
 
-pub(crate) static OAUTH_CLIENT: Lazy<RwLock<Oauth>> = Lazy::new(|| {
+pub static OAUTH_CLIENT: Lazy<RwLock<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());
 	tokio::spawn(token_daemon());
 	RwLock::new(client)
@@ -332,7 +332,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	}
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_localization_popular() {
 	let val = json("/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL".to_string(), false).await.unwrap();
 	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());

@@ -47,11 +47,11 @@ impl CompressionType {
 	/// Returns a `CompressionType` given a content coding
 	/// in [RFC 7231](https://datatracker.ietf.org/doc/html/rfc7231#section-5.3.4)
 	/// format.
-	fn parse(s: &str) -> Option<CompressionType> {
+	fn parse(s: &str) -> Option<Self> {
 		let c = match s {
 			// Compressors we support.
-			"gzip" => CompressionType::Gzip,
-			"br" => CompressionType::Brotli,
+			"gzip" => Self::Gzip,
+			"br" => Self::Brotli,
 
 			// The wildcard means that we can choose whatever
 			// compression we prefer. In this case, use the
@@ -69,8 +69,8 @@ impl CompressionType {
 impl ToString for CompressionType {
 	fn to_string(&self) -> String {
 		match self {
-			CompressionType::Gzip => "gzip".to_string(),
-			CompressionType::Brotli => "br".to_string(),
+			Self::Gzip => "gzip".to_string(),
+			Self::Brotli => "br".to_string(),
 			_ => String::new(),
 		}
 	}
@@ -195,7 +195,7 @@ impl Route<'_> {
 
 impl Server {
 	pub fn new() -> Self {
-		Server {
+		Self {
 			default_headers: HeaderMap::new(),
 			router: Router::new(),
 		}
