@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Requirements
+# - curl
+# - rg
+# - jq
+
 # Fetch iOS app versions
 ios_version_list=$(curl -s "https://ipaarchive.com/app/usa/1064216828" | rg "(20\d{2}\.\d+.\d+) / (\d+)" --only-matching -r "Version \$1/Build \$2" | sort | uniq)
 
