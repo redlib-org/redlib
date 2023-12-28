@@ -13,24 +13,24 @@ static REDDIT_IOS_OAUTH_CLIENT_ID: &str = "LNDo9k1o8UAEUw";
 static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
 
 // Various Android user agents - build numbers from valid APK variants
-pub(crate) static ANDROID_USER_AGENT: [&str; 3] = [
+pub static ANDROID_USER_AGENT: [&str; 3] = [
 	"Reddit/Version 2023.21.0/Build 956283/Android 13",
 	"Reddit/Version 2023.21.0/Build 968223/Android 10",
 	"Reddit/Version 2023.21.0/Build 946732/Android 12",
 ];
 
 // Various iOS user agents - iOS versions.
-pub(crate) static IOS_USER_AGENT: [&str; 3] = [
+pub static IOS_USER_AGENT: [&str; 3] = [
 	"Reddit/Version 2023.22.0/Build 613580/iOS Version 17.0 (Build 21A5248V)",
 	"Reddit/Version 2023.22.0/Build 613580/iOS Version 16.0 (Build 20A5328h)",
 	"Reddit/Version 2023.22.0/Build 613580/iOS Version 16.5",
 ];
 // Various iOS device codes. iPhone 11 displays as `iPhone12,1`
 // I just changed the number a few times for some plausible values
-pub(crate) static IOS_DEVICES: [&str; 5] = ["iPhone8,1", "iPhone11,1", "iPhone12,1", "iPhone13,1", "iPhone14,1"];
+pub static IOS_DEVICES: [&str; 5] = ["iPhone8,1", "iPhone11,1", "iPhone12,1", "iPhone13,1", "iPhone14,1"];
 
 #[derive(Debug, Clone, Default)]
-pub(crate) struct Oauth {
+pub struct Oauth {
 	// Currently unused, may be necessary if we decide to support GQL in the future
 	pub(crate) headers_map: HashMap<String, String>,
 	pub(crate) token: String,
@@ -40,7 +40,7 @@ pub(crate) struct Oauth {
 
 impl Oauth {
 	pub(crate) async fn new() -> Self {
-		let mut oauth = Oauth::default();
+		let mut oauth = Self::default();
 		oauth.login().await;
 		oauth
 	}
@@ -49,7 +49,7 @@ impl Oauth {
 		let device = Device::random();
 		let headers = device.headers.clone();
 		// For now, just insert headers - no token request
-		Oauth {
+		Self {
 			headers_map: headers,
 			token: String::new(),
 			expires_in: 0,
@@ -123,7 +123,7 @@ impl Oauth {
 	}
 }
 
-pub(crate) async fn token_daemon() {
+pub async fn token_daemon() {
 	// Monitor for refreshing token
 	loop {
 		// Get expiry time - be sure to not hold the read lock
@@ -140,8 +140,7 @@ pub(crate) async fn token_daemon() {
 
 		// Refresh token - in its own scope
 		{
-			let mut client = OAUTH_CLIENT.write().await;
-			client.refresh().await;
+			OAUTH_CLIENT.write().await.refresh().await;
 		}
 	}
 }
@@ -168,7 +167,7 @@ impl Device {
 
 		info!("Spoofing Android client with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_ANDROID_OAUTH_CLIENT_ID}\"");
 
-		Device {
+		Self {
 			oauth_id: REDDIT_ANDROID_OAUTH_CLIENT_ID.to_string(),
 			headers,
 		}
@@ -194,7 +193,7 @@ impl Device {
 
 		info!("Spoofing iOS client {ios_device} with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_IOS_OAUTH_CLIENT_ID}\"");
 
-		Device {
+		Self {
 			oauth_id: REDDIT_IOS_OAUTH_CLIENT_ID.to_string(),
 			headers,
 		}
@@ -202,9 +201,9 @@ impl Device {
 	// Randomly choose a device
 	fn random() -> Self {
 		if fastrand::bool() {
-			Device::android()
+			Self::android()
 		} else {
-			Device::ios()
+			Self::ios()
 		}
 	}
 }
