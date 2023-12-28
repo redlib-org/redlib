@@ -85,6 +85,7 @@ fn info_html(req: Request<Body>) -> Result<Response<Body>, Error> {
 }
 #[derive(Serialize, Deserialize, Default)]
 pub(crate) struct InstanceInfo {
+	package_name: String,
 	crate_version: String,
 	git_commit: String,
 	deploy_date: String,
@@ -98,6 +99,7 @@ pub(crate) struct InstanceInfo {
 impl InstanceInfo {
 	pub fn new() -> Self {
 		Self {
+			package_name: env!("CARGO_PKG_NAME").to_string(),
 			crate_version: env!("CARGO_PKG_VERSION").to_string(),
 			git_commit: env!("GIT_HASH").to_string(),
 			deploy_date: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()).to_string(),
@@ -122,6 +124,7 @@ impl InstanceInfo {
 		}
 		container.add_table(
 			Table::from([
+				["Package name", &self.package_name],
 				["Crate version", &self.crate_version],
 				["Git commit", &self.git_commit],
 				["Deploy date", &self.deploy_date],
@@ -161,7 +164,8 @@ impl InstanceInfo {
 		match string_type {
 			StringType::Raw => {
 				format!(
-					"Crate version: {}\n
+					"Package name: {}\n
+				Crate version: {}\n
                 Git commit: {}\n
                 Deploy date: {}\n
                 Deploy timestamp: {}\n
@@ -186,6 +190,7 @@ impl InstanceInfo {
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
                     Default subscriptions: {:?}\n",
+					self.package_name,
 					self.crate_version,
 					self.git_commit,
 					self.deploy_date,
