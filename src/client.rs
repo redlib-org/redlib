@@ -54,8 +54,14 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 		// If Reddit responds with a 2xx, then the path is already canonical.
 		200..=299 => Ok(Some(path)),
 
-		// If Reddit responds with anything other than 3xx (except for the 2xx as
-		// above), return a None.
+		// If Reddit responds with a 301, then the path is redirected.
+		301 => match res.headers().get(header::LOCATION) {
+			Some(val) => Ok(Some(val.to_str().unwrap().to_string())),
+			None => Ok(None),
+		},
+
+		// If Reddit responds with anything other than 3xx (except for the 2xx and 301
+		// as above), return a None.
 		300..=399 => Ok(None),
 
 		_ => Ok(
@@ -336,4 +342,11 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 async fn test_localization_popular() {
 	let val = json("/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL".to_string(), false).await.unwrap();
 	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+async fn test_obfuscated_share_link() {
+	let share_link = "/r/rust/s/kPgq8WNHRK".into();
+	let canonical_link = "https://www.reddit.com/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc?share_id=N0wD38nOLSUMMNnWpDRO3&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1".into();
+	assert_eq!(canonical_path(share_link).await, Ok(Some(canonical_link)));
 }
