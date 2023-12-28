@@ -332,7 +332,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	}
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_localization_popular() {
 	let val = json("/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL".to_string(), false).await.unwrap();
 	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());

@@ -1,6 +1,9 @@
 use std::{collections::HashMap, time::Duration};
 
-use crate::client::{CLIENT, OAUTH_CLIENT};
+use crate::{
+	client::{CLIENT, OAUTH_CLIENT},
+	oauth_resources::{ANDROID_APP_VERSION_LIST, IOS_APP_VERSION_LIST, IOS_OS_VERSION_LIST},
+};
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
 use log::info;
@@ -12,26 +15,10 @@ static REDDIT_IOS_OAUTH_CLIENT_ID: &str = "LNDo9k1o8UAEUw";
 
 static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
 
-// Various Android user agents - build numbers from valid APK variants
-pub static ANDROID_USER_AGENT: [&str; 3] = [
-	"Reddit/Version 2023.21.0/Build 956283/Android 13",
-	"Reddit/Version 2023.21.0/Build 968223/Android 10",
-	"Reddit/Version 2023.21.0/Build 946732/Android 12",
-];
-
-// Various iOS user agents - iOS versions.
-pub static IOS_USER_AGENT: [&str; 3] = [
-	"Reddit/Version 2023.22.0/Build 613580/iOS Version 17.0 (Build 21A5248V)",
-	"Reddit/Version 2023.22.0/Build 613580/iOS Version 16.0 (Build 20A5328h)",
-	"Reddit/Version 2023.22.0/Build 613580/iOS Version 16.5",
-];
-// Various iOS device codes. iPhone 11 displays as `iPhone12,1`
-// I just changed the number a few times for some plausible values
-pub static IOS_DEVICES: [&str; 5] = ["iPhone8,1", "iPhone11,1", "iPhone12,1", "iPhone13,1", "iPhone14,1"];
-
+// Spoofed client for Android and iOS devices
 #[derive(Debug, Clone, Default)]
 pub struct Oauth {
-	// Currently unused, may be necessary if we decide to support GQL in the future
+	pub(crate) initial_headers: HashMap<String, String>,
 	pub(crate) headers_map: HashMap<String, String>,
 	pub(crate) token: String,
 	expires_in: u64,
@@ -47,10 +34,12 @@ impl Oauth {
 	pub(crate) fn default() -> Self {
 		// Generate a random device to spoof
 		let device = Device::random();
-		let headers = device.headers.clone();
+		let headers_map = device.headers.clone();
+		let initial_headers = device.initial_headers.clone();
 		// For now, just insert headers - no token request
 		Self {
-			headers_map: headers,
+			headers_map,
+			initial_headers,
 			token: String::new(),
 			expires_in: 0,
 			device,
@@ -62,16 +51,8 @@ impl Oauth {
 		let mut builder = Request::builder().method(Method::POST).uri(&url);
 
 		// Add headers from spoofed client
-		for (key, value) in self.headers_map.iter() {
-			// Skip Authorization header - won't be present in `Device` struct
-			// and will only be there in subsequent token refreshes.
-			// Sending a bearer auth token when requesting one is a bad idea
-			// Normally, you'd want to send it along to authenticate a refreshed token,
-			// but neither Android nor iOS does this - it just requests a new token.
-			// We try to match behavior as closely as possible.
-			if key != "Authorization" {
-				builder = builder.header(key, value);
-			}
+		for (key, value) in self.initial_headers.iter() {
+			builder = builder.header(key, value);
 		}
 		// Set up HTTP Basic Auth - basically just the const OAuth ID's with no password,
 		// Base64-encoded. https://en.wikipedia.org/wiki/Basic_access_authentication
@@ -82,7 +63,7 @@ impl Oauth {
 
 		// Set JSON body. I couldn't tell you what this means. But that's what the client sends
 		let json = json!({
-				"scopes": ["*","email","pii"]
+				"scopes": ["*","email"]
 		});
 		let body = Body::from(json.to_string());
 
@@ -100,6 +81,11 @@ impl Oauth {
 			self.headers_map.insert("x-reddit-loid".to_owned(), header.to_str().ok()?.to_string());
 		}
 
+		// Same with x-reddit-session
+		if let Some(header) = resp.headers().get("x-reddit-session") {
+			self.headers_map.insert("x-reddit-session".to_owned(), header.to_str().ok()?.to_string());
+		}
+
 		// Serialize response
 		let body_bytes = hyper::body::to_bytes(resp.into_body()).await.ok()?;
 		let json: serde_json::Value = serde_json::from_slice(&body_bytes).ok()?;
@@ -109,7 +95,7 @@ impl Oauth {
 		self.expires_in = json.get("expires_in")?.as_u64()?;
 		self.headers_map.insert("Authorization".to_owned(), format!("Bearer {}", self.token));
 
-		info!("✅ Success - Retrieved token \"{}...\", expires in {}", &self.token[..32], self.expires_in);
+		info!("[✅] Success - Retrieved token \"{}...\", expires in {}", &self.token[..32], self.expires_in);
 
 		Some(())
 	}
@@ -132,11 +118,11 @@ pub async fn token_daemon() {
 		// sleep for the expiry time minus 2 minutes
 		let duration = Duration::from_secs(expires_in - 120);
 
-		info!("Waiting for {duration:?} seconds before refreshing OAuth token...");
+		info!("[⏳] Waiting for {duration:?} seconds before refreshing OAuth token...");
 
 		tokio::time::sleep(duration).await;
 
-		info!("[{duration:?} ELAPSED] Refreshing OAuth token...");
+		info!("[⌛] {duration:?} Elapsed! Refreshing OAuth token...");
 
 		// Refresh token - in its own scope
 		{
@@ -147,6 +133,7 @@ pub async fn token_daemon() {
 #[derive(Debug, Clone, Default)]
 struct Device {
 	oauth_id: String,
+	initial_headers: HashMap<String, String>,
 	headers: HashMap<String, String>,
 }
 
@@ -155,8 +142,11 @@ impl Device {
 		// Generate uuid
 		let uuid = uuid::Uuid::new_v4().to_string();
 
-		// Select random user agent from ANDROID_USER_AGENT
-		let android_user_agent = choose(&ANDROID_USER_AGENT).to_string();
+		// Generate random user-agent
+		let android_app_version = choose(ANDROID_APP_VERSION_LIST).to_string();
+		let android_version = fastrand::u8(9..=14);
+
+		let android_user_agent = format!("Reddit/{android_app_version}/Android {android_version}");
 
 		// Android device headers
 		let headers = HashMap::from([
@@ -165,36 +155,47 @@ impl Device {
 			("User-Agent".into(), android_user_agent),
 		]);
 
-		info!("Spoofing Android client with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_ANDROID_OAUTH_CLIENT_ID}\"");
+		info!("[🔄] Spoofing Android client with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_ANDROID_OAUTH_CLIENT_ID}\"");
 
 		Self {
 			oauth_id: REDDIT_ANDROID_OAUTH_CLIENT_ID.to_string(),
-			headers,
+			headers: headers.clone(),
+			initial_headers: headers,
 		}
 	}
 	fn ios() -> Self {
 		// Generate uuid
 		let uuid = uuid::Uuid::new_v4().to_string();
 
-		// Select random user agent from IOS_USER_AGENT
-		let ios_user_agent = choose(&IOS_USER_AGENT).to_string();
+		// Generate random user-agent
+		let ios_app_version = choose(IOS_APP_VERSION_LIST).to_string();
+		let ios_os_version = choose(IOS_OS_VERSION_LIST).to_string();
+		let ios_user_agent = format!("Reddit/{ios_app_version}/iOS {ios_os_version}");
 
-		// Select random iOS device from IOS_DEVICES
-		let ios_device = choose(&IOS_DEVICES).to_string();
+		// Generate random device
+		let ios_device_num = fastrand::u8(8..=15).to_string();
+		let ios_device = format!("iPhone{ios_device_num},1").to_string();
 
-		// iOS device headers
+		let initial_headers = HashMap::from([
+			("X-Reddit-DPR".into(), "2".into()),
+			("User-Agent".into(), ios_user_agent.clone()),
+			("Device-Name".into(), ios_device.clone()),
+		]);
 		let headers = HashMap::from([
 			("X-Reddit-DPR".into(), "2".into()),
 			("Device-Name".into(), ios_device.clone()),
-			("X-Reddit-Device-Id".into(), uuid.clone()),
 			("User-Agent".into(), ios_user_agent),
 			("Client-Vendor-Id".into(), uuid.clone()),
+			("x-dev-ad-id".into(), "00000000-0000-0000-0000-000000000000".into()),
+			("Reddit-User_Id".into(), "anonymous_browsing_mode".into()),
+			("x-reddit-device-id".into(), uuid.clone()),
 		]);
 
-		info!("Spoofing iOS client {ios_device} with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_IOS_OAUTH_CLIENT_ID}\"");
+		info!("[🔄] Spoofing iOS client {ios_device} with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_IOS_OAUTH_CLIENT_ID}\"");
 
 		Self {
 			oauth_id: REDDIT_IOS_OAUTH_CLIENT_ID.to_string(),
+			initial_headers,
 			headers,
 		}
 	}
@@ -208,18 +209,30 @@ impl Device {
 	}
 }
 
-// Waiting on fastrand 2.0.0 for the `choose` function
-// https://github.com/smol-rs/fastrand/pull/59/
 fn choose<T: Copy>(list: &[T]) -> T {
 	*fastrand::choose_multiple(list.iter(), 1)[0]
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_oauth_client() {
 	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_oauth_client_refresh() {
 	OAUTH_CLIENT.write().await.refresh().await.unwrap();
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+async fn test_oauth_token_exists() {
+	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+async fn test_oauth_headers_len() {
+	assert!(OAUTH_CLIENT.read().await.headers_map.len() >= 3);
+}
+
+#[test]
+fn test_creating_device() {
+	Device::random();
 }
