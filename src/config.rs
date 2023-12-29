@@ -243,3 +243,28 @@ fn test_stats_collection_true() {
 	write("redlib.toml", config_to_write).unwrap();
 	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
 }
+
+#[test]
+#[sealed_test]
+fn test_stats_collection_false() {
+	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "0""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
+}
+
+#[test]
+#[sealed_test]
+fn test_stats_collection_env_var() {
+	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "1""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
+}
+
+#[test]
+#[sealed_test]
+fn test_pushshift() {
+	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://api.pushshift.io""#;
+	write("redlib.toml", config_to_write).unwrap();
+	assert!(get_setting("REDLIB_PUSHSHIFT_FRONTEND").is_some());
+	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://api.pushshift.io".into()));
+}
