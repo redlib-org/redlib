@@ -444,7 +444,7 @@ async fn subreddit(sub: &str, quarantined: bool) -> Result<Subreddit, String> {
 	})
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_fetching_subreddit() {
 	let subreddit = subreddit("rust", false).await;
 	assert!(subreddit.is_ok());

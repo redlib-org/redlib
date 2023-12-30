@@ -213,21 +213,21 @@ fn choose<T: Copy>(list: &[T]) -> T {
 	*fastrand::choose_multiple(list.iter(), 1)[0]
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_oauth_client() {
 	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_oauth_client_refresh() {
 	OAUTH_CLIENT.write().await.refresh().await.unwrap();
 }
-#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_oauth_token_exists() {
 	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_oauth_headers_len() {
 	assert!(OAUTH_CLIENT.read().await.headers_map.len() >= 3);
 }
