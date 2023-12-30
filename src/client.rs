@@ -17,6 +17,7 @@ use crate::dbg_msg;
 use crate::instance_info::INSTANCE_INFO;
 use crate::oauth::{token_daemon, Oauth};
 use crate::server::RequestExt;
+use crate::utils::format_url;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 
@@ -56,7 +57,16 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 
 		// If Reddit responds with a 301, then the path is redirected.
 		301 => match res.headers().get(header::LOCATION) {
-			Some(val) => Ok(Some(val.to_str().unwrap().to_string())),
+			Some(val) => {
+				let original = val.to_str().unwrap();
+				// The reason why we now have to format_url, is because the new OAuth
+				// endpoints seem to return full paths, instead of relative paths.
+				// So we need to strip the .json suffix from the original path, and
+				// also remove all Reddit domain parts with format_url.
+				// Otherwise, it will literally redirect to Reddit.com.
+				let uri = format_url(original.strip_suffix(".json").unwrap_or(original));
+				Ok(Some(uri))
+			}
 			None => Ok(None),
 		},
 
@@ -347,6 +357,13 @@ async fn test_localization_popular() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_obfuscated_share_link() {
 	let share_link = "/r/rust/s/kPgq8WNHRK".into();
-	let canonical_link = "https://www.reddit.com/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc?share_id=N0wD38nOLSUMMNnWpDRO3&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1".into();
+	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc?share_id=N0wD38nOLSUMMNnWpDRO3&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1".into();
 	assert_eq!(canonical_path(share_link).await, Ok(Some(canonical_link)));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+async fn test_share_link_strip_json() {
+	let link = "/17krzvz".into();
+	let canonical_link = "/r/nfl/comments/17krzvz/rapoport_sources_former_no_2_overall_pick/".into();
+	assert_eq!(canonical_path(link).await, Ok(Some(canonical_link)));
 }
