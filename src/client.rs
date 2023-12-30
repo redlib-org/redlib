@@ -59,12 +59,18 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 		301 => match res.headers().get(header::LOCATION) {
 			Some(val) => {
 				let original = val.to_str().unwrap();
+				// We need to strip the .json suffix from the original path.
+				// In addition, we want to remove share parameters.
+				// Cut it off here instead of letting it propagate all the way
+				// to main.rs
+				let stripped_uri = original.strip_suffix(".json").unwrap_or(original).split('?').next().unwrap_or_default();
+
 				// The reason why we now have to format_url, is because the new OAuth
 				// endpoints seem to return full paths, instead of relative paths.
 				// So we need to strip the .json suffix from the original path, and
 				// also remove all Reddit domain parts with format_url.
 				// Otherwise, it will literally redirect to Reddit.com.
-				let uri = format_url(original.strip_suffix(".json").unwrap_or(original));
+				let uri = format_url(stripped_uri);
 				Ok(Some(uri))
 			}
 			None => Ok(None),
@@ -357,7 +363,8 @@ async fn test_localization_popular() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn test_obfuscated_share_link() {
 	let share_link = "/r/rust/s/kPgq8WNHRK".into();
-	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc?share_id=N0wD38nOLSUMMNnWpDRO3&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1".into();
+	// Correct link without share parameters
+	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc".into();
 	assert_eq!(canonical_path(share_link).await, Ok(Some(canonical_link)));
 }
 
