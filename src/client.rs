@@ -9,12 +9,10 @@ use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
-use std::{io, result::Result, sync::atomic::Ordering::SeqCst};
+use std::{io, result::Result};
 use tokio::sync::RwLock;
 
-use crate::config;
 use crate::dbg_msg;
-use crate::instance_info::INSTANCE_INFO;
 use crate::oauth::{token_daemon, Oauth};
 use crate::server::RequestExt;
 use crate::utils::format_url;
@@ -158,10 +156,6 @@ fn reddit_head(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, S
 /// will recurse on the URL that Reddit provides in the Location HTTP header
 /// in its response.
 fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
-	// Increment reddit request count. This will include head requests.
-	if config::get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_none() {
-		INSTANCE_INFO.reddit_requests.fetch_add(1, SeqCst);
-	}
 	// Build Reddit URL from path.
 	let url = format!("{}{}", REDDIT_URL_BASE, path);
 

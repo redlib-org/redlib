@@ -65,8 +65,5 @@
     "REDLIB_PUSHSHIFT_FRONTEND": {
       "required": false
     },
-    "REDLIB_DISABLE_STATS_COLLECTION": {
-      "required": false
-    }
   }
 }

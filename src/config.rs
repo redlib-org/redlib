@@ -88,10 +88,6 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_ROBOTS_DISABLE_INDEXING")]
 	pub(crate) robots_disable_indexing: Option<String>,
 
-	#[serde(rename = "REDLIB_DISABLE_STATS_COLLECTION")]
-	#[serde(alias = "LIBREDDIT_DISABLE_STATS_COLLECTION")]
-	pub(crate) disable_stats_collection: Option<String>,
-
 	#[serde(rename = "REDLIB_PUSHSHIFT_FRONTEND")]
 	#[serde(alias = "LIBREDDIT_PUSHSHIFT_FRONTEND")]
 	pub(crate) pushshift: Option<String>,
@@ -136,7 +132,6 @@ impl Config {
 			default_disable_visit_reddit_confirmation: parse("REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
 			banner: parse("REDLIB_BANNER"),
 			robots_disable_indexing: parse("REDLIB_ROBOTS_DISABLE_INDEXING"),
-			disable_stats_collection: parse("REDLIB_DISABLE_STATS_COLLECTION"),
 			pushshift: parse("REDLIB_PUSHSHIFT_FRONTEND"),
 		}
 	}
@@ -161,7 +156,6 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
 		"REDLIB_BANNER" => config.banner.clone(),
 		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
-		"REDLIB_DISABLE_STATS_COLLECTION" => config.disable_stats_collection.clone(),
 		"REDLIB_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
 		_ => None,
 	}
@@ -229,35 +223,6 @@ fn test_alt_env_config_precedence() {
 #[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
 fn test_default_subscriptions() {
 	assert_eq!(get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
-}
-
-#[test]
-fn test_stats_collection_empty() {
-	assert_eq!(get_setting("REDLIB_DISABLE_STATS_COLLECTION"), None);
-}
-
-#[test]
-#[sealed_test]
-fn test_stats_collection_true() {
-	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "1""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
-}
-
-#[test]
-#[sealed_test]
-fn test_stats_collection_false() {
-	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "0""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
-}
-
-#[test]
-#[sealed_test]
-fn test_stats_collection_env_var() {
-	let config_to_write = r#"REDLIB_DISABLE_STATS_COLLECTION = "1""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert!(get_setting("REDLIB_DISABLE_STATS_COLLECTION").is_some());
 }
 
 #[test]

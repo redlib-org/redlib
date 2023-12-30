@@ -239,7 +239,6 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      | 
 | `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
 | `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
-| `DISABLE_STATS_COLLECTION`          |  Any string to disable                                                                                                             | _(none)_      |
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 
