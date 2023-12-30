@@ -105,7 +105,12 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 		return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 	}
 
-	let path = format!("/r/{sub_name}/{sort}.json?{}&raw_json=1&geo_filter=GLOBAL", req.uri().query().unwrap_or_default());
+	let mut params = String::from("&raw_json=1");
+	if sub_name == "popular" {
+		params.push_str("&geo_filter=GLOBAL");
+	}
+
+	let path = format!("/r/{sub_name}/{sort}.json?{}{params}", req.uri().query().unwrap_or_default());
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);
