@@ -24,7 +24,7 @@ echo "// Please do not edit manually" >> "$filename"
 echo "// Filled in with real app versions" >> "$filename"
 
 # Open the array in the source file
-echo "pub static IOS_APP_VERSION_LIST: &[&str; $ios_app_count] = &[" >> "$filename"
+echo "pub static _IOS_APP_VERSION_LIST: &[&str; $ios_app_count] = &[" >> "$filename"
 
 num=0
 
@@ -89,7 +89,7 @@ ios_count=$(echo "$table" | wc -l)
 echo -e "Fetching \e[34m$ios_count iOS versions...\e[0m"
 
 # Append to the source file
-echo "pub static IOS_OS_VERSION_LIST: &[&str; $ios_count] = &[" >> "$filename"
+echo "pub static _IOS_OS_VERSION_LIST: &[&str; $ios_count] = &[" >> "$filename"
 
 num=0
 

@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use crate::{
 	client::{CLIENT, OAUTH_CLIENT},
-	oauth_resources::{ANDROID_APP_VERSION_LIST, IOS_APP_VERSION_LIST, IOS_OS_VERSION_LIST},
+	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
@@ -11,11 +11,10 @@ use log::info;
 use serde_json::json;
 
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
-static REDDIT_IOS_OAUTH_CLIENT_ID: &str = "LNDo9k1o8UAEUw";
 
 static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
 
-// Spoofed client for Android and iOS devices
+// Spoofed client for Android devices
 #[derive(Debug, Clone, Default)]
 pub struct Oauth {
 	pub(crate) initial_headers: HashMap<String, String>,
@@ -32,8 +31,8 @@ impl Oauth {
 		oauth
 	}
 	pub(crate) fn default() -> Self {
-		// Generate a random device to spoof
-		let device = Device::random();
+		// Generate a device to spoof
+		let device = Device::new();
 		let headers_map = device.headers.clone();
 		let initial_headers = device.initial_headers.clone();
 		// For now, just insert headers - no token request
@@ -163,49 +162,9 @@ impl Device {
 			initial_headers: headers,
 		}
 	}
-	fn ios() -> Self {
-		// Generate uuid
-		let uuid = uuid::Uuid::new_v4().to_string();
-
-		// Generate random user-agent
-		let ios_app_version = choose(IOS_APP_VERSION_LIST).to_string();
-		let ios_os_version = choose(IOS_OS_VERSION_LIST).to_string();
-		let ios_user_agent = format!("Reddit/{ios_app_version}/iOS {ios_os_version}");
-
-		// Generate random device
-		let ios_device_num = fastrand::u8(8..=15).to_string();
-		let ios_device = format!("iPhone{ios_device_num},1").to_string();
-
-		let initial_headers = HashMap::from([
-			("X-Reddit-DPR".into(), "2".into()),
-			("User-Agent".into(), ios_user_agent.clone()),
-			("Device-Name".into(), ios_device.clone()),
-		]);
-		let headers = HashMap::from([
-			("X-Reddit-DPR".into(), "2".into()),
-			("Device-Name".into(), ios_device.clone()),
-			("User-Agent".into(), ios_user_agent),
-			("Client-Vendor-Id".into(), uuid.clone()),
-			("x-dev-ad-id".into(), "00000000-0000-0000-0000-000000000000".into()),
-			("Reddit-User_Id".into(), "anonymous_browsing_mode".into()),
-			("x-reddit-device-id".into(), uuid.clone()),
-		]);
-
-		info!("[🔄] Spoofing iOS client {ios_device} with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_IOS_OAUTH_CLIENT_ID}\"");
-
-		Self {
-			oauth_id: REDDIT_IOS_OAUTH_CLIENT_ID.to_string(),
-			initial_headers,
-			headers,
-		}
-	}
-	// Randomly choose a device
-	fn random() -> Self {
-		if fastrand::bool() {
-			Self::android()
-		} else {
-			Self::ios()
-		}
+	fn new() -> Self {
+		// See https://github.com/redlib-org/redlib/issues/8
+		Self::android()
 	}
 }
 
@@ -234,5 +193,5 @@ async fn test_oauth_headers_len() {
 
 #[test]
 fn test_creating_device() {
-	Device::random();
+	Device::new();
 }
