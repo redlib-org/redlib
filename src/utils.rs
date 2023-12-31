@@ -1109,14 +1109,14 @@ mod tests {
 	}
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_fetching_subreddit_quarantined() {
 	let subreddit = Post::fetch("/r/drugs", true).await;
 	assert!(subreddit.is_ok());
 	assert!(!subreddit.unwrap().0.is_empty());
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_fetching_nsfw_subreddit() {
 	let subreddit = Post::fetch("/r/randnsfw", false).await;
 	assert!(subreddit.is_ok());

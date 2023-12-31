@@ -348,13 +348,13 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	}
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_localization_popular() {
 	let val = json("/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL".to_string(), false).await.unwrap();
 	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_obfuscated_share_link() {
 	let share_link = "/r/rust/s/kPgq8WNHRK".into();
 	// Correct link without share parameters
@@ -362,7 +362,7 @@ async fn test_obfuscated_share_link() {
 	assert_eq!(canonical_path(share_link).await, Ok(Some(canonical_link)));
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_share_link_strip_json() {
 	let link = "/17krzvz".into();
 	let canonical_link = "/r/nfl/comments/17krzvz/rapoport_sources_former_no_2_overall_pick/".into();
