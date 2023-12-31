@@ -28,8 +28,11 @@ jobs:
         with:
           toolchain: stable
       
-      - name: Run cargo nextest run
+      - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
+
+      - name: Run cargo nextest
+        run: cargo nextest run
 
   format:
     name: cargo fmt --all -- --check
