@@ -1,5 +1,9 @@
 name: Pull Request
 
+env:
+  CARGO_TERM_COLOR: always
+  NEXTEST_RETRIES: 10
+
 on:
   push:
     branches:
@@ -24,8 +28,8 @@ jobs:
         with:
           toolchain: stable
       
-      - name: Run cargo test
-        run: cargo test
+      - name: Run cargo nextest run
+        uses: taiki-e/install-action@nextest
 
   format:
     name: cargo fmt --all -- --check
