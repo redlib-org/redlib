@@ -159,9 +159,9 @@ docker pull quay.io/redlib/redlib
 docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib
 ```
 
-To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:arm`.
+To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-arm`.
 
-To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:armv7`.
+To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-armv7`.
 
 ## 3) AUR
 
