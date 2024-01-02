@@ -9,7 +9,7 @@
 set -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../" || exit 1
-git --no-pager log --pretty='%an <%ae>%n%cn <%ce>' master \
+git --no-pager log --pretty='%an <%ae>%n%cn <%ce>' main \
     | sort -t'<' -u -k1,1 -k2,2 \
     | grep -Fv -- 'GitHub <noreply@github.com>' \
     > CREDITS
