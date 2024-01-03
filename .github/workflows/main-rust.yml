@@ -34,6 +34,16 @@ jobs:
       - name: Build
         run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-gnu
 
+      - name: Versions
+        id: version
+        run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
+        
+      # Publishing actions
+
+      - name: Publish to crates.io
+        if: github.event_name == 'release'
+        run: cargo publish --no-verify --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
       - name: Calculate SHA512 checksum
         run: sha512sum target/x86_64-unknown-linux-gnu/release/redlib > redlib.sha512
 
@@ -49,15 +59,6 @@ jobs:
             redlib.sha512
             redlib.sha256
         
-      - name: Versions
-        id: version
-        run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
-        
-      # Publishing actions
-
-      - name: Publish to crates.io
-        if: github.event_name == 'release'
-        run: cargo publish --no-verify --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
