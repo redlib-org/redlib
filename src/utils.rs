@@ -871,18 +871,23 @@ pub fn format_url(url: &str) -> String {
 	}
 }
 
+// These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview)\.redd\.it(.*)[^?]").unwrap());
+static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
 
 // Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
 	let text1 =
 		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
-			.to_string()
-			// Remove (html-encoded) "\" from URLs.
-			.replace("%5C", "")
-			.replace("\\_", "_");
+			.to_string();
+	let text1 = REDDIT_EMOJI_REGEX
+		.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
+		.to_string()
+		// Remove (html-encoded) "\" from URLs.
+		.replace("%5C", "")
+		.replace("\\_", "_");
 
 	// Rewrite external media previews to Redlib
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
@@ -1100,6 +1105,10 @@ mod tests {
 			"/hls/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"
 		);
 		assert_eq!(format_url("https://www.redditstatic.com/gold/awards/icon/icon.png"), "/static/gold/awards/icon/icon.png");
+		assert_eq!(
+			format_url("https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif"),
+			"/static/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif"
+		);
 
 		assert_eq!(format_url(""), "");
 		assert_eq!(format_url("self"), "");
@@ -1107,6 +1116,13 @@ mod tests {
 		assert_eq!(format_url("nsfw"), "");
 		assert_eq!(format_url("spoiler"), "");
 	}
+}
+
+#[test]
+fn test_rewriting_emoji() {
+	let input = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
+	let output = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="/static/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
+	assert_eq!(rewrite_urls(input), output);
 }
 
 #[tokio::test(flavor = "multi_thread")]
