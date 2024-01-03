@@ -1,0 +1,1 @@
+document.querySelector('#commentQueryForms').scrollIntoView();

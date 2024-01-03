@@ -31,6 +31,9 @@
 	<meta property="og:video:type" content="video/mp4">
 	{% else %}
 	<meta property="og:type" content="website">
+	{% if single_thread %}
+	<script src="/highlighted.js" defer></script>
+	{% endif %}
 	{% endif %}
 {% endblock %}
 
