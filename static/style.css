@@ -26,8 +26,6 @@
 	--popup-goback-background: var(--popup-red);
 	--popup-goback-text: #222;
 	--popup-border: 1px solid var(--popup-red);
-
-	--footer-height: 30px;
 }
 
 @font-face {
@@ -119,7 +117,6 @@ body {
 
 body.fixed_navbar {
 	padding-top: 60px;
-	padding-bottom: var(--footer-height);
 	min-height: calc(100vh - 60px);
 	position: relative;
 }
@@ -317,7 +314,6 @@ body > footer {
 	align-items: center;
 	width: 100%;
 	background: var(--post);
-	position: absolute;
 	bottom: 0;
 }
 
