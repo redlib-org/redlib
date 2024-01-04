@@ -311,6 +311,7 @@ pub struct Post {
 	pub gallery: Vec<GalleryMedia>,
 	pub awards: Awards,
 	pub nsfw: bool,
+	pub ws_url: String,
 }
 
 impl Post {
@@ -413,6 +414,7 @@ impl Post {
 				gallery,
 				awards,
 				nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
+				ws_url: val(post, "websocket_url"),
 			});
 		}
 
@@ -739,6 +741,7 @@ pub async fn parse_post(post: &serde_json::Value) -> Post {
 		gallery,
 		awards,
 		nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
+		ws_url: val(post, "websocket_url"),
 	}
 }
 
@@ -1137,4 +1140,13 @@ async fn test_fetching_nsfw_subreddit() {
 	let subreddit = Post::fetch("/r/randnsfw", false).await;
 	assert!(subreddit.is_ok());
 	assert!(!subreddit.unwrap().0.is_empty());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_fetching_ws() {
+	let subreddit = Post::fetch("/r/popular", false).await;
+	assert!(subreddit.is_ok());
+	for post in subreddit.unwrap().0 {
+		assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
+	}
 }
