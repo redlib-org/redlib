@@ -114,16 +114,17 @@ pre, form, fieldset, table, th, td, select, input {
 
 body {
 	background: var(--background);
-	font-size: 15px;
-}
-
-body.card, body.fixed_navbar {
 	padding-bottom: var(--footer-height);
-	min-height: calc(100vh - 60px);
+	font-size: 15px;
 	position: relative;
 }
 
+body.card {
+	min-height: calc(100vh - 30px);
+}
+
 body.fixed_navbar {
+	min-height: calc(100vh - 90px);
 	padding-top: 60px;
 }
 
