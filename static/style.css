@@ -26,6 +26,8 @@
 	--popup-goback-background: var(--popup-red);
 	--popup-goback-text: #222;
 	--popup-border: 1px solid var(--popup-red);
+
+	--footer-height: 30px;
 }
 
 @font-face {
@@ -112,13 +114,18 @@ pre, form, fieldset, table, th, td, select, input {
 
 body {
 	background: var(--background);
+	padding-bottom: var(--footer-height);
 	font-size: 15px;
+	position: relative;
+}
+
+body.card {
+	min-height: calc(100vh - 30px);
 }
 
 body.fixed_navbar {
+	min-height: calc(100vh - 90px);
 	padding-top: 60px;
-	min-height: calc(100vh - 60px);
-	position: relative;
 }
 
 nav {
@@ -314,6 +321,7 @@ body > footer {
 	align-items: center;
 	width: 100%;
 	background: var(--post);
+	position: absolute;
 	bottom: 0;
 }
 
