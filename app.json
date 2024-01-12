@@ -64,6 +64,6 @@
     },
     "REDLIB_PUSHSHIFT_FRONTEND": {
       "required": false
-    },
+    }
   }
 }
