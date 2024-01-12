@@ -1,32 +1,17 @@
 # Redlib
 
-> An alternative private front-end to Reddit
-
-# ⚠️ Why do I get TOO MANY REQUESTS errors? ⚠️
-#### As of July 12th, 2023, Redlib is currently not operational as Reddit's API changes, that were designed to kill third-party apps and content scrapers who don't pay [large fees](https://www.theverge.com/2023/5/31/23743993/reddit-apollo-client-api-cost), went into effect. [Read the full announcement here.](https://github.com/libreddit/libreddit/issues/840)
+> An alternative private front-end to Reddit, with its origins in Libreddit.
 
 ![screenshot](https://i.ibb.co/QYbqTQt/libreddit-rust.png)
 
 ---
 
-**10-second pitch:** Redlib is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://libreddit.spike.codes/r/unpopularopinion) without being [tracked](#reddit).
+**10-second pitch:** Redlib is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://redlib.matthew.science/r/unpopularopinion) without being [tracked](#reddit).
 
 - 🚀 Fast: written in Rust for blazing-fast speeds and memory safety
 - ☁️ Light: no JavaScript, no ads, no tracking, no bloat
 - 🕵 Private: all requests are proxied through the server, including media
 - 🔒 Secure: strong [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) prevents browser requests to Reddit
-
----
-
-I appreciate any donations! Your support allows me to continue developing Redlib.
-
-<a href="https://www.buymeacoffee.com/spikecodes" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px" ></a>
-<a href="https://liberapay.com/spike/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg" style="height: 40px"></a>
-
-
-**Bitcoin:** `bc1qwyxjnafpu3gypcpgs025cw9wa7ryudtecmwa6y`
-
-**Monero:** `45FJrEuFPtG2o7QZz2Nps77TbHD4sPqxViwbdyV9A6ktfHiWs47UngG5zXPcLoDXAc8taeuBgeNjfeprwgeXYXhN3C9tVSR`
 
 ---
 
@@ -36,7 +21,7 @@ I appreciate any donations! Your support allows me to continue developing Redlib
 
 [Follow this link](https://github.com/redlib-org/redlib-instances/blob/main/instances.md) for an up-to-date table of instances in Markdown format. This list is also available as [a machine-readable JSON](https://github.com/redlib-org/redlib-instances/blob/main/instances.json).
 
-Both files are part of the [libreddit-instances](https://github.com/redlib-org/redlib-instances) repository. To contribute your [self-hosted instance](#deployment) to the list, see the [libreddit-instances README](https://github.com/redlib-org/redlib-instances/blob/main/README.md).
+Both files are part of the [redlib-instances](https://github.com/redlib-org/redlib-instances) repository. To contribute your [self-hosted instance](#deployment) to the list, see the [redlib-instances README](https://github.com/redlib-org/redlib-instances/blob/main/README.md).
 
 ---
 
@@ -54,7 +39,7 @@ Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay
 ## Info
 Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
 
-Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/libreddit/libreddit/issues).
+Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
 
 ## How does it compare to Teddit?
 
@@ -72,14 +57,14 @@ This section outlines how Redlib compares to Reddit.
 
 ## Speed
 
-Lasted tested Nov 11, 2022.
+Lasted tested Jan 12, 2024.
 
-Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Flibreddit.spike.codes%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
+Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
 |                        | Redlib   | Reddit    |
 |------------------------|-------------|-----------|
-| Requests               | 60          | 83        |
-| Speed Index            | 2.0s        | 10.4s     |
+| Speed Index            | 0.6s        | 1.9s      |
+| Performance Score      | *100%*      | *64%*     |
 | Time to Interactive    | **2.8s**    | **12.4s** |
 
 ## Privacy
@@ -121,11 +106,11 @@ For transparency, I hope to describe all the ways Redlib handles user privacy.
 
 * **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
 
-* **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://libreddit.spike.codes/settings). These are not cross-site cookies and the cookies hold no personal data.
+* **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
 
-#### Official instance (libreddit.spike.codes)
+#### Official instance (redlib.matthew.science)
 
-The official instance is hosted at https://libreddit.spike.codes.
+The official instance is hosted at https://redlib.matthew.science.
 
 * **Server:** The official instance runs a production binary, and thus logs nothing.
 
@@ -137,13 +122,13 @@ The official instance is hosted at https://libreddit.spike.codes.
 
 # Installation
 
-## 1) Cargo
+<!-- ## 1) Cargo
 
 Make sure Rust stable is installed along with `cargo`, Rust's package manager.
 
 ```
 cargo install libreddit
-```
+``` -->
 
 ## 2) Docker
 
@@ -163,7 +148,7 @@ To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the co
 
 To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-armv7`.
 
-## 3) AUR
+<!-- ## 3) AUR
 
 For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
 
@@ -183,7 +168,7 @@ Or, if you prefer to build from source
 ```
 cd /usr/pkgsrc/libreddit
 make install
-```
+``` -->
 
 ## 5) GitHub Releases
 
@@ -196,7 +181,6 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
-[![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button-v2.svg)](https://glitch.com/edit/#!/remix/libreddit)
 
 ---
 
