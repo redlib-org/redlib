@@ -174,6 +174,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "boot-time"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce2b094c3b8fd302af9393806bb8af1b83a5a948ca7a91e87a92ea32167157f6"
+dependencies = [
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "brotli"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1062,6 +1072,7 @@ version = "0.31.0"
 dependencies = [
  "askama",
  "base64",
+ "boot-time",
  "brotli",
  "build_html",
  "cached",

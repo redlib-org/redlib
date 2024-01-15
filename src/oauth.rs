@@ -10,6 +10,10 @@ use log::info;
 
 use serde_json::json;
 
+use boot_time; /*"This library reimplements std::time::Instant to use suspend-aware monotonic time if target system supports it.
+Otherwise it uses monotonic time or reexports std::time::Instant."
+See #22. Will be obsoleted when https://github.com/tokio-rs/tokio/issues/3185 is resolved. */
+
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
 
 static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
