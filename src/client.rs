@@ -56,7 +56,7 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 		// If Reddit responds with a 301, then the path is redirected.
 		301 => match res.headers().get(header::LOCATION) {
 			Some(val) => {
-				let Some(original) = val.to_str().ok() else {
+				let Ok(original) = val.to_str() else {
 					return Err("Unable to decode Location header.".to_string());
 				};
 				// We need to strip the .json suffix from the original path.
