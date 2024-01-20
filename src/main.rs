@@ -1,6 +1,42 @@
 // Global specifiers
 #![forbid(unsafe_code)]
-#![allow(clippy::cmp_owned)]
+#![deny(
+	anonymous_parameters,
+	clippy::all,
+	illegal_floating_point_literal_pattern,
+	late_bound_lifetime_arguments,
+	path_statements,
+	patterns_in_fns_without_body,
+	rust_2018_idioms,
+	trivial_numeric_casts,
+	unused_extern_crates
+)]
+#![warn(
+	clippy::dbg_macro,
+	clippy::decimal_literal_representation,
+	clippy::get_unwrap,
+	clippy::nursery,
+	clippy::pedantic,
+	clippy::todo,
+	clippy::unimplemented,
+	clippy::use_debug,
+	clippy::all,
+	unused_qualifications,
+	variant_size_differences
+)]
+#![allow(
+	clippy::cmp_owned,
+	clippy::unused_async,
+	clippy::option_if_let_else,
+	clippy::items_after_statements,
+	clippy::cast_possible_truncation,
+	clippy::cast_possible_wrap,
+	clippy::cast_precision_loss,
+	clippy::struct_field_names,
+	clippy::struct_excessive_bools,
+	clippy::useless_let_if_seq,
+	clippy::collection_is_never_read
+)]
 
 // Reference local files
 mod config;
@@ -193,7 +229,7 @@ async fn main() {
 	};
 
 	if let Some(expire_time) = hsts {
-		if let Ok(val) = HeaderValue::from_str(&format!("max-age={}", expire_time)) {
+		if let Ok(val) = HeaderValue::from_str(&format!("max-age={expire_time}")) {
 			app.default_headers.insert("Strict-Transport-Security", val);
 		}
 	}
@@ -249,11 +285,11 @@ async fn main() {
 	// Browse user profile
 	app
 		.at("/u/:name")
-		.get(|r| async move { Ok(redirect(format!("/user/{}", r.param("name").unwrap_or_default()))) }.boxed());
+		.get(|r| async move { Ok(redirect(&format!("/user/{}", r.param("name").unwrap_or_default()))) }.boxed());
 	app.at("/u/:name/comments/:id/:title").get(|r| post::item(r).boxed());
 	app.at("/u/:name/comments/:id/:title/:comment_id").get(|r| post::item(r).boxed());
 
-	app.at("/user/[deleted]").get(|req| error(req, "User has deleted their account".to_string()).boxed());
+	app.at("/user/[deleted]").get(|req| error(req, "User has deleted their account").boxed());
 	app.at("/user/:name").get(|r| user::profile(r).boxed());
 	app.at("/user/:name/:listing").get(|r| user::profile(r).boxed());
 	app.at("/user/:name/comments/:id").get(|r| post::item(r).boxed());
@@ -273,7 +309,7 @@ async fn main() {
 
 	app
 		.at("/r/u_:name")
-		.get(|r| async move { Ok(redirect(format!("/user/{}", r.param("name").unwrap_or_default()))) }.boxed());
+		.get(|r| async move { Ok(redirect(&format!("/user/{}", r.param("name").unwrap_or_default()))) }.boxed());
 
 	app.at("/r/:sub/subscribe").post(|r| subreddit::subscriptions_filters(r).boxed());
 	app.at("/r/:sub/unsubscribe").post(|r| subreddit::subscriptions_filters(r).boxed());
@@ -298,10 +334,10 @@ async fn main() {
 
 	app
 		.at("/r/:sub/w")
-		.get(|r| async move { Ok(redirect(format!("/r/{}/wiki", r.param("sub").unwrap_or_default()))) }.boxed());
+		.get(|r| async move { Ok(redirect(&format!("/r/{}/wiki", r.param("sub").unwrap_or_default()))) }.boxed());
 	app
 		.at("/r/:sub/w/*page")
-		.get(|r| async move { Ok(redirect(format!("/r/{}/wiki/{}", r.param("sub").unwrap_or_default(), r.param("wiki").unwrap_or_default()))) }.boxed());
+		.get(|r| async move { Ok(redirect(&format!("/r/{}/wiki/{}", r.param("sub").unwrap_or_default(), r.param("wiki").unwrap_or_default()))) }.boxed());
 	app.at("/r/:sub/wiki").get(|r| subreddit::wiki(r).boxed());
 	app.at("/r/:sub/wiki/*page").get(|r| subreddit::wiki(r).boxed());
 
@@ -313,10 +349,10 @@ async fn main() {
 	app.at("/").get(|r| subreddit::community(r).boxed());
 
 	// View Reddit wiki
-	app.at("/w").get(|_| async { Ok(redirect("/wiki".to_string())) }.boxed());
+	app.at("/w").get(|_| async { Ok(redirect("/wiki")) }.boxed());
 	app
 		.at("/w/*page")
-		.get(|r| async move { Ok(redirect(format!("/wiki/{}", r.param("page").unwrap_or_default()))) }.boxed());
+		.get(|r| async move { Ok(redirect(&format!("/wiki/{}", r.param("page").unwrap_or_default()))) }.boxed());
 	app.at("/wiki").get(|r| subreddit::wiki(r).boxed());
 	app.at("/wiki/*page").get(|r| subreddit::wiki(r).boxed());
 
@@ -324,7 +360,7 @@ async fn main() {
 	app.at("/search").get(|r| search::find(r).boxed());
 
 	// Handle about pages
-	app.at("/about").get(|req| error(req, "About pages aren't added yet".to_string()).boxed());
+	app.at("/about").get(|req| error(req, "About pages aren't added yet").boxed());
 
 	// Instance info page
 	app.at("/info").get(|r| instance_info::instance_info(r).boxed());
@@ -337,14 +373,14 @@ async fn main() {
 			let sub = req.param("sub").unwrap_or_default();
 			match req.param("id").as_deref() {
 				// Share link
-				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/r/{}/s/{}", sub, id)).await {
-					Ok(Some(path)) => Ok(redirect(path)),
+				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/r/{sub}/s/{id}")).await {
+					Ok(Some(path)) => Ok(redirect(&path)),
 					Ok(None) => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
-					Err(e) => error(req, e).await,
+					Err(e) => error(req, &e).await,
 				},
 
 				// Error message for unknown pages
-				_ => error(req, "Nothing here".to_string()).await,
+				_ => error(req, "Nothing here").await,
 			}
 		})
 	});
@@ -356,29 +392,29 @@ async fn main() {
 				Some("best" | "hot" | "new" | "top" | "rising" | "controversial") => subreddit::community(req).await,
 
 				// Short link for post
-				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/{}", id)).await {
+				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/{id}")).await {
 					Ok(path_opt) => match path_opt {
-						Some(path) => Ok(redirect(path)),
+						Some(path) => Ok(redirect(&path)),
 						None => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
 					},
-					Err(e) => error(req, e).await,
+					Err(e) => error(req, &e).await,
 				},
 
 				// Error message for unknown pages
-				_ => error(req, "Nothing here".to_string()).await,
+				_ => error(req, "Nothing here").await,
 			}
 		})
 	});
 
 	// Default service in case no routes match
-	app.at("/*").get(|req| error(req, "Nothing here".to_string()).boxed());
+	app.at("/*").get(|req| error(req, "Nothing here").boxed());
 
-	println!("Running Redlib v{} on {}!", env!("CARGO_PKG_VERSION"), listener);
+	println!("Running Redlib v{} on {listener}!", env!("CARGO_PKG_VERSION"));
 
-	let server = app.listen(listener);
+	let server = app.listen(&listener);
 
 	// Run this server for... forever!
 	if let Err(e) = server.await {
-		eprintln!("Server error: {}", e);
+		eprintln!("Server error: {e}");
 	}
 }

@@ -27,7 +27,7 @@ struct PostTemplate {
 	comment_query: String,
 }
 
-static COMMENT_SEARCH_CAPTURE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"\?q=(.*)&type=comment"#).unwrap());
+static COMMENT_SEARCH_CAPTURE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
 
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
@@ -52,7 +52,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// Log the post ID being fetched in debug mode
 	#[cfg(debug_assertions)]
-	dbg!(req.param("id").unwrap_or_default());
+	req.param("id").unwrap_or_default();
 
 	let single_thread = req.param("comment_id").is_some();
 	let highlighted_comment = &req.param("comment_id").unwrap_or_default();
@@ -83,7 +83,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			};
 
 			// Use the Post and Comment structs to generate a website to show users
-			template(PostTemplate {
+			Ok(template(&PostTemplate {
 				comments,
 				post,
 				url_without_query: url.clone().trim_end_matches(&format!("?q={query}&type=comment")).to_string(),
@@ -92,15 +92,15 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				single_thread,
 				url: req_url,
 				comment_query: query,
-			})
+			}))
 		}
 		// If the Reddit API returns an error, exit and send error page to user
 		Err(msg) => {
 			if msg == "quarantined" || msg == "gated" {
 				let sub = req.param("sub").unwrap_or_default();
-				quarantine(req, sub, msg)
+				Ok(quarantine(&req, sub, &msg))
 			} else {
-				error(req, msg).await
+				error(req, &msg).await
 			}
 		}
 	}
@@ -139,19 +139,19 @@ fn query_comments(
 	let comments = json["data"]["children"].as_array().map_or(Vec::new(), std::borrow::ToOwned::to_owned);
 	let mut results = Vec::new();
 
-	comments.into_iter().for_each(|comment| {
+	for comment in comments {
 		let data = &comment["data"];
 
 		// If this comment contains replies, handle those too
 		if data["replies"].is_object() {
-			results.append(&mut query_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, query, req))
+			results.append(&mut query_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, query, req));
 		}
 
 		let c = build_comment(&comment, data, Vec::new(), post_link, post_author, highlighted_comment, filters, req);
 		if c.body.to_lowercase().contains(&query.to_lowercase()) {
 			results.push(c);
 		}
-	});
+	}
 
 	results
 }
@@ -170,10 +170,8 @@ fn build_comment(
 
 	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
 		format!(
-			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{}{}\">view removed comment</a></p></div>",
-			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
-			post_link,
-			id
+			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
 		rewrite_urls(&val(comment, "body_html"))

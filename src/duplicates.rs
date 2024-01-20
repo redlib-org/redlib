@@ -12,14 +12,14 @@ use std::borrow::ToOwned;
 use std::collections::HashSet;
 use std::vec::Vec;
 
-/// DuplicatesParams contains the parameters in the URL.
+/// `DuplicatesParams` contains the parameters in the URL.
 struct DuplicatesParams {
 	before: String,
 	after: String,
 	sort: String,
 }
 
-/// DuplicatesTemplate defines an Askama template for rendering duplicate
+/// `DuplicatesTemplate` defines an Askama template for rendering duplicate
 /// posts.
 #[derive(Template)]
 #[template(path = "duplicates.html")]
@@ -59,7 +59,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// Log the request in debugging mode
 	#[cfg(debug_assertions)]
-	dbg!(req.param("id").unwrap_or_default());
+	req.param("id").unwrap_or_default();
 
 	// Send the GET, and await JSON.
 	match json(path, quarantined).await {
@@ -189,7 +189,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 						Err(msg) => {
 							// Abort entirely if we couldn't get the previous
 							// batch.
-							return error(req, msg).await;
+							return error(req, &msg).await;
 						}
 					}
 				} else {
@@ -197,7 +197,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				}
 			}
 
-			template(DuplicatesTemplate {
+			Ok(template(&DuplicatesTemplate {
 				params: DuplicatesParams { before, after, sort },
 				post,
 				duplicates,
@@ -205,28 +205,28 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				url: req_url,
 				num_posts_filtered,
 				all_posts_filtered,
-			})
+			}))
 		}
 
 		// Process error.
 		Err(msg) => {
 			if msg == "quarantined" || msg == "gated" {
 				let sub = req.param("sub").unwrap_or_default();
-				quarantine(req, sub, msg)
+				Ok(quarantine(&req, sub, &msg))
 			} else {
-				error(req, msg).await
+				error(req, &msg).await
 			}
 		}
 	}
 }
 
 // DUPLICATES
-async fn parse_duplicates(json: &serde_json::Value, filters: &HashSet<String>) -> (Vec<Post>, u64, bool) {
+async fn parse_duplicates(json: &Value, filters: &HashSet<String>) -> (Vec<Post>, u64, bool) {
 	let post_duplicates: &Vec<Value> = &json["data"]["children"].as_array().map_or(Vec::new(), ToOwned::to_owned);
 	let mut duplicates: Vec<Post> = Vec::new();
 
 	// Process each post and place them in the Vec<Post>.
-	for val in post_duplicates.iter() {
+	for val in post_duplicates {
 		let post: Post = parse_post(val).await;
 		duplicates.push(post);
 	}

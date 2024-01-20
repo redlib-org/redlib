@@ -46,11 +46,11 @@ impl Oauth {
 	}
 	async fn login(&mut self) -> Option<()> {
 		// Construct URL for OAuth token
-		let url = format!("{}/api/access_token", AUTH_ENDPOINT);
+		let url = format!("{AUTH_ENDPOINT}/api/access_token");
 		let mut builder = Request::builder().method(Method::POST).uri(&url);
 
 		// Add headers from spoofed client
-		for (key, value) in self.initial_headers.iter() {
+		for (key, value) in &self.initial_headers {
 			builder = builder.header(key, value);
 		}
 		// Set up HTTP Basic Auth - basically just the const OAuth ID's with no password,
@@ -70,7 +70,7 @@ impl Oauth {
 		let request = builder.body(body).unwrap();
 
 		// Send request
-		let client: client::Client<_, hyper::Body> = CLIENT.clone();
+		let client: client::Client<_, Body> = CLIENT.clone();
 		let resp = client.request(request).await.ok()?;
 
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.

@@ -17,7 +17,7 @@ pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "www.unddit.com";
 /// config file. `Config::Default()` contains None for each setting.
 /// When adding more config settings, add it to `Config::load`,
 /// `get_setting_from_config`, both below, as well as
-/// instance_info::InstanceInfo.to_string(), README.md and app.json.
+/// `instance_info::InstanceInfo.to_string`(), README.md and app.json.
 #[derive(Default, Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
 	#[serde(rename = "REDLIB_SFW_ONLY")]
@@ -103,7 +103,7 @@ impl Config {
 			new_file.ok().and_then(|new_file| toml::from_str::<Self>(&new_file).ok())
 		};
 
-		let config = load_config("redlib.toml").or(load_config("libreddit.toml")).unwrap_or_default();
+		let config = load_config("redlib.toml").or_else(|| load_config("libreddit.toml")).unwrap_or_default();
 
 		// This function defines the order of preference - first check for
 		// environment variables with "REDLIB", then check the legacy LIBREDDIT
@@ -112,7 +112,7 @@ impl Config {
 			// Return the first non-`None` value
 			// If all are `None`, return `None`
 			let legacy_key = key.replace("REDLIB_", "LIBREDDIT_");
-			var(key).ok().or(var(legacy_key).ok()).or(get_setting_from_config(key, &config))
+			var(key).ok().or_else(|| var(legacy_key).ok()).or_else(|| get_setting_from_config(key, &config))
 		};
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),

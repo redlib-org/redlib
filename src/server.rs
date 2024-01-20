@@ -70,7 +70,7 @@ impl ToString for CompressionType {
 		match self {
 			Self::Gzip => "gzip".to_string(),
 			Self::Brotli => "br".to_string(),
-			_ => String::new(),
+			Self::Passthrough => String::new(),
 		}
 	}
 }
@@ -104,13 +104,13 @@ pub trait RequestExt {
 	fn params(&self) -> Params;
 	fn param(&self, name: &str) -> Option<String>;
 	fn set_params(&mut self, params: Params) -> Option<Params>;
-	fn cookies(&self) -> Vec<Cookie>;
-	fn cookie(&self, name: &str) -> Option<Cookie>;
+	fn cookies(&self) -> Vec<Cookie<'_>>;
+	fn cookie(&self, name: &str) -> Option<Cookie<'_>>;
 }
 
 pub trait ResponseExt {
-	fn cookies(&self) -> Vec<Cookie>;
-	fn insert_cookie(&mut self, cookie: Cookie);
+	fn cookies(&self) -> Vec<Cookie<'_>>;
+	fn insert_cookie(&mut self, cookie: Cookie<'_>);
 	fn remove_cookie(&mut self, name: String);
 }
 
@@ -131,7 +131,7 @@ impl RequestExt for Request<Body> {
 		self.extensions_mut().insert(params)
 	}
 
-	fn cookies(&self) -> Vec<Cookie> {
+	fn cookies(&self) -> Vec<Cookie<'_>> {
 		self.headers().get("Cookie").map_or(Vec::new(), |header| {
 			header
 				.to_str()
@@ -142,13 +142,13 @@ impl RequestExt for Request<Body> {
 		})
 	}
 
-	fn cookie(&self, name: &str) -> Option<Cookie> {
+	fn cookie(&self, name: &str) -> Option<Cookie<'_>> {
 		self.cookies().into_iter().find(|c| c.name() == name)
 	}
 }
 
 impl ResponseExt for Response<Body> {
-	fn cookies(&self) -> Vec<Cookie> {
+	fn cookies(&self) -> Vec<Cookie<'_>> {
 		self.headers().get("Cookie").map_or(Vec::new(), |header| {
 			header
 				.to_str()
@@ -159,7 +159,7 @@ impl ResponseExt for Response<Body> {
 		})
 	}
 
-	fn insert_cookie(&mut self, cookie: Cookie) {
+	fn insert_cookie(&mut self, cookie: Cookie<'_>) {
 		if let Ok(val) = header::HeaderValue::from_str(&cookie.to_string()) {
 			self.headers_mut().append("Set-Cookie", val);
 		}
@@ -176,19 +176,19 @@ impl ResponseExt for Response<Body> {
 }
 
 impl Route<'_> {
-	fn method(&mut self, method: Method, dest: fn(Request<Body>) -> BoxResponse) -> &mut Self {
+	fn method(&mut self, method: &Method, dest: fn(Request<Body>) -> BoxResponse) -> &mut Self {
 		self.router.add(&format!("/{}{}", method.as_str(), self.path), dest);
 		self
 	}
 
 	/// Add an endpoint for `GET` requests
 	pub fn get(&mut self, dest: fn(Request<Body>) -> BoxResponse) -> &mut Self {
-		self.method(Method::GET, dest)
+		self.method(&Method::GET, dest)
 	}
 
 	/// Add an endpoint for `POST` requests
 	pub fn post(&mut self, dest: fn(Request<Body>) -> BoxResponse) -> &mut Self {
-		self.method(Method::POST, dest)
+		self.method(&Method::POST, dest)
 	}
 }
 
@@ -200,14 +200,14 @@ impl Server {
 		}
 	}
 
-	pub fn at(&mut self, path: &str) -> Route {
+	pub fn at(&mut self, path: &str) -> Route<'_> {
 		Route {
 			path: path.to_owned(),
 			router: &mut self.router,
 		}
 	}
 
-	pub fn listen(self, addr: String) -> Boxed<Result<(), hyper::Error>> {
+	pub fn listen(self, addr: &str) -> Boxed<Result<(), hyper::Error>> {
 		let make_svc = make_service_fn(move |_conn| {
 			// For correct borrowing, these values need to be borrowed
 			let router = self.router.clone();
@@ -260,7 +260,7 @@ impl Server {
 		});
 
 		// Build SocketAddr from provided address
-		let address = &addr.parse().unwrap_or_else(|_| panic!("Cannot parse {} as address (example format: 0.0.0.0:8080)", addr));
+		let address = &addr.parse().unwrap_or_else(|_| panic!("Cannot parse {addr} as address (example format: 0.0.0.0:8080)"));
 
 		// Bind server to address specified above. Gracefully shut down if CTRL+C is pressed
 		let server = HyperServer::bind(address).serve(make_svc).with_graceful_shutdown(async {
@@ -376,7 +376,7 @@ fn determine_compressor(accept_encoding: String) -> Option<CompressionType> {
 
 		// The compressor and q-value (if the latter is defined)
 		// will be delimited by semicolons.
-		let mut spl: Split<char> = val.split(';');
+		let mut spl: Split<'_, char> = val.split(';');
 
 		// Get the compressor. For example, in
 		//   gzip;q=0.8
@@ -438,10 +438,10 @@ fn determine_compressor(accept_encoding: String) -> Option<CompressionType> {
 		};
 	}
 
-	if cur_candidate.q != f64::NEG_INFINITY {
-		Some(cur_candidate.alg)
-	} else {
+	if cur_candidate.q == f64::NEG_INFINITY {
 		None
+	} else {
+		Some(cur_candidate.alg)
 	}
 }
 
@@ -453,16 +453,16 @@ fn determine_compressor(accept_encoding: String) -> Option<CompressionType> {
 /// conditions are met:
 ///
 /// 1. the HTTP client requests a compression encoding in the Content-Encoding
-///    header (hence the need for the req_headers);
+///    header (hence the need for the `req_headers`);
 ///
 /// 2. the content encoding corresponds to a compression algorithm we support;
 ///
 /// 3. the Media type in the Content-Type response header is text with any
 ///    subtype (e.g. text/plain) or application/json.
 ///
-/// compress_response returns Ok on successful compression, or if not all three
+/// `compress_response` returns Ok on successful compression, or if not all three
 /// conditions above are met. It returns Err if there was a problem decoding
-/// any header in either req_headers or res, but res will remain intact.
+/// any header in either `req_headers` or res, but res will remain intact.
 ///
 /// This function logs errors to stderr, but only in debug mode. No information
 /// is logged in release builds.
@@ -601,7 +601,7 @@ fn compress_body(compressor: CompressionType, body_bytes: Vec<u8>) -> Result<Vec
 
 		// This arm is for any requested compressor for which we don't yet
 		// have an implementation.
-		_ => {
+		CompressionType::Passthrough => {
 			let msg = "unsupported compressor".to_string();
 			return Err(msg);
 		}
@@ -677,7 +677,7 @@ mod tests {
 
 			// Perform the compression.
 			if let Err(e) = block_on(compress_response(&req_headers, &mut res)) {
-				panic!("compress_response(&req_headers, &mut res) => Err(\"{}\")", e);
+				panic!("compress_response(&req_headers, &mut res) => Err(\"{e}\")");
 			};
 
 			// If the content was compressed, we expect the Content-Encoding
@@ -699,7 +699,7 @@ mod tests {
 			// the Response is the same as what with which we start.
 			let body_vec = match block_on(body::to_bytes(res.body_mut())) {
 				Ok(b) => b.to_vec(),
-				Err(e) => panic!("{}", e),
+				Err(e) => panic!("{e}"),
 			};
 
 			if expected_encoding == CompressionType::Passthrough {
@@ -715,7 +715,7 @@ mod tests {
 			let mut decoder: Box<dyn io::Read> = match expected_encoding {
 				CompressionType::Gzip => match gzip::Decoder::new(&mut body_cursor) {
 					Ok(dgz) => Box::new(dgz),
-					Err(e) => panic!("{}", e),
+					Err(e) => panic!("{e}"),
 				},
 
 				CompressionType::Brotli => Box::new(BrotliDecompressor::new(body_cursor, expected_lorem_ipsum.len())),
@@ -725,7 +725,7 @@ mod tests {
 
 			let mut decompressed = Vec::<u8>::new();
 			if let Err(e) = io::copy(&mut decoder, &mut decompressed) {
-				panic!("{}", e);
+				panic!("{e}");
 			};
 
 			assert!(decompressed.eq(&expected_lorem_ipsum));

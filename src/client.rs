@@ -90,12 +90,12 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 }
 
 pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, String> {
-	let mut url = format!("{}?{}", format, req.uri().query().unwrap_or_default());
+	let mut url = format!("{format}?{}", req.uri().query().unwrap_or_default());
 
 	// For each parameter in request
-	for (name, value) in req.params().iter() {
+	for (name, value) in &req.params() {
 		// Fill the parameter value in the url
-		url = url.replace(&format!("{{{}}}", name), value);
+		url = url.replace(&format!("{{{name}}}"), value);
 	}
 
 	stream(&url, &req).await
@@ -103,12 +103,12 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 
 async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String> {
 	// First parameter is target URL (mandatory).
-	let uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
+	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: client::Client<_, hyper::Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.clone();
 
-	let mut builder = Request::get(uri);
+	let mut builder = Request::get(parsed_uri);
 
 	// Copy useful headers from original request
 	for &key in &["Range", "If-Modified-Since", "Cache-Control"] {
@@ -154,15 +154,15 @@ fn reddit_head(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, S
 	request(&Method::HEAD, path, false, quarantine)
 }
 
-/// Makes a request to Reddit. If `redirect` is `true`, request_with_redirect
+/// Makes a request to Reddit. If `redirect` is `true`, `request_with_redirect`
 /// will recurse on the URL that Reddit provides in the Location HTTP header
 /// in its response.
 fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
 	// Build Reddit URL from path.
-	let url = format!("{}{}", REDDIT_URL_BASE, path);
+	let url = format!("{REDDIT_URL_BASE}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: client::Client<_, hyper::Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.clone();
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = block_on(OAUTH_CLIENT.read());
@@ -184,7 +184,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		.header("X-Reddit-Device-Id", device_id)
 		.header("x-reddit-loid", loid)
 		.header("Host", "oauth.reddit.com")
-		.header("Authorization", &format!("Bearer {}", token))
+		.header("Authorization", &format!("Bearer {token}"))
 		.header("Accept-Encoding", if method == Method::GET { "gzip" } else { "identity" })
 		.header("Accept-Language", "en-US,en;q=0.5")
 		.header("Connection", "keep-alive")
@@ -227,7 +227,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 									//
 									//     2. Percent-encode the path.
 									let new_path = percent_encode(val.as_bytes(), CONTROLS).to_string().trim_start_matches(REDDIT_URL_BASE).to_string();
-									format!("{}{}raw_json=1", new_path, if new_path.contains('?') { "&" } else { "?" })
+									format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
 								})
 								.unwrap_or_default()
 								.to_string(),
@@ -302,7 +302,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
 	let err = |msg: &str, e: String| -> Result<Value, String> {
 		// eprintln!("{} - {}: {}", url, msg, e);
-		Err(format!("{}: {}", msg, e))
+		Err(format!("{msg}: {e}"))
 	};
 
 	// Fetch the url...
@@ -324,7 +324,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 										.as_str()
 										.unwrap_or_else(|| {
 											json["message"].as_str().unwrap_or_else(|| {
-												eprintln!("{}{} - Error parsing reddit error", REDDIT_URL_BASE, path);
+												eprintln!("{REDDIT_URL_BASE}{path} - Error parsing reddit error");
 												"Error parsing reddit error"
 											})
 										})

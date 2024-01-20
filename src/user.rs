@@ -35,9 +35,8 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// Build the Reddit JSON API path
 	let path = format!(
-		"/user/{}/{}.json?{}&raw_json=1",
+		"/user/{}/{listing}.json?{}&raw_json=1",
 		req.param("name").unwrap_or_else(|| "reddit".to_string()),
-		listing,
 		req.uri().query().unwrap_or_default(),
 	);
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
@@ -60,11 +59,11 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	let filters = get_filters(&req);
 	if filters.contains(&["u_", &username].concat()) {
-		template(UserTemplate {
+		Ok(template(&UserTemplate {
 			user,
 			posts: Vec::new(),
 			sort: (sort, param(&path, "t").unwrap_or_default()),
-			ends: (param(&path, "after").unwrap_or_default(), "".to_string()),
+			ends: (param(&path, "after").unwrap_or_default(), String::new()),
 			listing,
 			prefs: Preferences::new(&req),
 			url,
@@ -73,7 +72,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 			all_posts_filtered: false,
 			all_posts_hidden_nsfw: false,
 			no_posts: false,
-		})
+		}))
 	} else {
 		// Request user posts/comments from Reddit
 		match Post::fetch(&path, false).await {
@@ -81,7 +80,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 				let (_, all_posts_filtered) = filter_posts(&mut posts, &filters);
 				let no_posts = posts.is_empty();
 				let all_posts_hidden_nsfw = !no_posts && (posts.iter().all(|p| p.flags.nsfw) && setting(&req, "show_nsfw") != "on");
-				template(UserTemplate {
+				Ok(template(&UserTemplate {
 					user,
 					posts,
 					sort: (sort, param(&path, "t").unwrap_or_default()),
@@ -94,10 +93,10 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 					all_posts_filtered,
 					all_posts_hidden_nsfw,
 					no_posts,
-				})
+				}))
 			}
 			// If there is an error show error page
-			Err(msg) => error(req, msg).await,
+			Err(msg) => error(req, &msg).await,
 		}
 	}
 }
@@ -105,7 +104,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 // USER
 async fn user(name: &str) -> Result<User, String> {
 	// Build the Reddit JSON API path
-	let path: String = format!("/user/{}/about.json?raw_json=1", name);
+	let path: String = format!("/user/{name}/about.json?raw_json=1");
 
 	// Send a request to the url
 	json(path, false).await.map(|res| {

@@ -116,8 +116,8 @@ impl Poll {
 
 		Some(Self {
 			poll_options,
-			total_vote_count,
 			voting_end_timestamp,
+			total_vote_count,
 		})
 	}
 
@@ -327,9 +327,8 @@ impl Post {
 		};
 
 		// Fetch the list of posts from the JSON response
-		let post_list = match res["data"]["children"].as_array() {
-			Some(list) => list,
-			None => return Err("No posts found".to_string()),
+		let Some(post_list) = res["data"]["children"].as_array() else {
+			return Err("No posts found".to_string());
 		};
 
 		let mut posts: Vec<Self> = Vec::new();
@@ -384,7 +383,7 @@ impl Post {
 					alt_url: String::new(),
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
-					poster: "".to_string(),
+					poster: String::new(),
 				},
 				media,
 				domain: val(post, "domain"),
@@ -457,7 +456,7 @@ pub struct Award {
 }
 
 impl std::fmt::Display for Award {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{} {} {}", self.name, self.icon_url, self.description)
 	}
 }
@@ -473,8 +472,8 @@ impl std::ops::Deref for Awards {
 }
 
 impl std::fmt::Display for Awards {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		self.iter().fold(Ok(()), |result, award| result.and_then(|_| writeln!(f, "{}", award)))
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		self.iter().fold(Ok(()), |result, award| result.and_then(|()| writeln!(f, "{award}")))
 	}
 }
 
@@ -603,7 +602,7 @@ impl Preferences {
 		let mut themes = vec!["system".to_string()];
 		for file in ThemeAssets::iter() {
 			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
-			themes.push(chunks[0].to_owned())
+			themes.push(chunks[0].to_owned());
 		}
 		Self {
 			available_themes: themes,
@@ -657,7 +656,7 @@ pub fn filter_posts(posts: &mut Vec<Post>, filters: &HashSet<String>) -> (u64, b
 }
 
 /// Creates a [`Post`] from a provided JSON.
-pub async fn parse_post(post: &serde_json::Value) -> Post {
+pub async fn parse_post(post: &Value) -> Post {
 	// Grab UTC time as unix timestamp
 	let (rel_time, created) = time(post["data"]["created_utc"].as_f64().unwrap_or_default());
 	// Parse post score and upvote ratio
@@ -675,9 +674,8 @@ pub async fn parse_post(post: &serde_json::Value) -> Post {
 
 	let body = if val(post, "removed_by_category") == "moderator" {
 		format!(
-			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{}\">view removed post</a></p></div>",
-			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
-			permalink
+			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{permalink}\">view removed post</a></p></div>",
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
 		rewrite_urls(&val(post, "selftext_html"))
@@ -753,7 +751,7 @@ pub async fn parse_post(post: &serde_json::Value) -> Post {
 // Grab a query parameter from a url
 pub fn param(path: &str, value: &str) -> Option<String> {
 	Some(
-		Url::parse(format!("https://libredd.it/{}", path).as_str())
+		Url::parse(format!("https://libredd.it/{path}").as_str())
 			.ok()?
 			.query_pairs()
 			.into_owned()
@@ -770,7 +768,7 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		.cookie(name)
 		.unwrap_or_else(|| {
 			// If there is no cookie for this setting, try receiving a default from the config
-			if let Some(default) = crate::config::get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
+			if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
 				Cookie::new(name, default)
 			} else {
 				Cookie::from(name)
@@ -783,21 +781,21 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 // Retrieve the value of a setting by name or the default value
 pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> String {
 	let value = setting(req, name);
-	if !value.is_empty() {
-		value
-	} else {
+	if value.is_empty() {
 		default
+	} else {
+		value
 	}
 }
 
 // Detect and redirect in the event of a random subreddit
 pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>, String> {
 	if sub == "random" || sub == "randnsfw" {
-		let new_sub = json(format!("/r/{}/about.json?raw_json=1", sub), false).await?["data"]["display_name"]
+		let new_sub = json(format!("/r/{sub}/about.json?raw_json=1"), false).await?["data"]["display_name"]
 			.as_str()
 			.unwrap_or_default()
 			.to_string();
-		Ok(redirect(format!("/r/{}{}", new_sub, additional)))
+		Ok(redirect(&format!("/r/{new_sub}{additional}")))
 	} else {
 		Err("No redirect needed".to_string())
 	}
@@ -963,28 +961,26 @@ pub fn val(j: &Value, k: &str) -> String {
 // NETWORKING
 //
 
-pub fn template(t: impl Template) -> Result<Response<Body>, String> {
-	Ok(
-		Response::builder()
-			.status(200)
-			.header("content-type", "text/html")
-			.body(t.render().unwrap_or_default().into())
-			.unwrap_or_default(),
-	)
+pub fn template(t: &impl Template) -> Response<Body> {
+	Response::builder()
+		.status(200)
+		.header("content-type", "text/html")
+		.body(t.render().unwrap_or_default().into())
+		.unwrap_or_default()
 }
 
-pub fn redirect(path: String) -> Response<Body> {
+pub fn redirect(path: &str) -> Response<Body> {
 	Response::builder()
 		.status(302)
 		.header("content-type", "text/html")
-		.header("Location", &path)
-		.body(format!("Redirecting to <a href=\"{0}\">{0}</a>...", path).into())
+		.header("Location", path)
+		.body(format!("Redirecting to <a href=\"{path}\">{path}</a>...").into())
 		.unwrap_or_default()
 }
 
 /// Renders a generic error landing page.
-pub async fn error(req: Request<Body>, msg: impl ToString) -> Result<Response<Body>, String> {
-	error!("Error page rendered: {}", msg.to_string());
+pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
+	error!("Error page rendered: {msg}");
 	let url = req.uri().to_string();
 	let body = ErrorTemplate {
 		msg: msg.to_string(),
@@ -1005,7 +1001,7 @@ pub async fn error(req: Request<Body>, msg: impl ToString) -> Result<Response<Bo
 /// subreddits or posts or userpages for users Reddit has deemed NSFW will
 /// be denied.
 pub fn sfw_only() -> bool {
-	match crate::config::get_setting("REDLIB_SFW_ONLY") {
+	match get_setting("REDLIB_SFW_ONLY") {
 		Some(val) => val == "on",
 		None => false,
 	}
@@ -1029,7 +1025,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 
 	// Determine from the request URL if the resource is a subreddit, a user
 	// page, or a post.
-	let res: String = if !req.param("name").unwrap_or_default().is_empty() {
+	let resource: String = if !req.param("name").unwrap_or_default().is_empty() {
 		res_type = ResourceType::User;
 		req.param("name").unwrap_or_default()
 	} else if !req.param("id").unwrap_or_default().is_empty() {
@@ -1041,7 +1037,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	};
 
 	let body = NSFWLandingTemplate {
-		res,
+		res: resource,
 		res_type,
 		prefs: Preferences::new(&req),
 		url: req_url,

@@ -24,7 +24,7 @@ pub async fn instance_info(req: Request<Body>) -> Result<Response<Body>, String>
 		"yaml" | "yml" => info_yaml(),
 		"txt" => info_txt(),
 		"json" => info_json(),
-		"html" | "" => info_html(req),
+		"html" | "" => info_html(&req),
 		_ => {
 			let error = ErrorTemplate {
 				msg: "Error: Invalid info extension".into(),
@@ -68,13 +68,13 @@ fn info_txt() -> Result<Response<Body>, Error> {
 	Response::builder()
 		.status(200)
 		.header("content-type", "text/plain")
-		.body(Body::from(INSTANCE_INFO.to_string(StringType::Raw)))
+		.body(Body::from(INSTANCE_INFO.to_string(&StringType::Raw)))
 }
-fn info_html(req: Request<Body>) -> Result<Response<Body>, Error> {
+fn info_html(req: &Request<Body>) -> Result<Response<Body>, Error> {
 	let message = MessageTemplate {
 		title: String::from("Instance information"),
-		body: INSTANCE_INFO.to_string(StringType::Html),
-		prefs: Preferences::new(&req),
+		body: INSTANCE_INFO.to_string(&StringType::Html),
+		prefs: Preferences::new(req),
 		url: req.uri().to_string(),
 	}
 	.render()
@@ -109,7 +109,7 @@ impl InstanceInfo {
 	}
 	fn to_table(&self) -> String {
 		let mut container = Container::default();
-		let convert = |o: &Option<String>| -> String { o.clone().unwrap_or("<span class=\"unset\"><i>Unset</i></span>".to_owned()) };
+		let convert = |o: &Option<String>| -> String { o.clone().unwrap_or_else(|| "<span class=\"unset\"><i>Unset</i></span>".to_owned()) };
 		if let Some(banner) = &self.config.banner {
 			container.add_header(3, "Instance banner");
 			container.add_raw("<br />");
@@ -151,7 +151,7 @@ impl InstanceInfo {
 		);
 		container.to_html_string().replace("<th>", "<th colspan=\"2\">")
 	}
-	fn to_string(&self, string_type: StringType) -> String {
+	fn to_string(&self, string_type: &StringType) -> String {
 		match string_type {
 			StringType::Raw => {
 				format!(
