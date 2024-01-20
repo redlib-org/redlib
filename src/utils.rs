@@ -6,6 +6,7 @@ use crate::{client::json, server::RequestExt};
 use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
+use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rust_embed::RustEmbed;
@@ -983,6 +984,7 @@ pub fn redirect(path: String) -> Response<Body> {
 
 /// Renders a generic error landing page.
 pub async fn error(req: Request<Body>, msg: impl ToString) -> Result<Response<Body>, String> {
+	error!("Error page rendered: {}", msg.to_string());
 	let url = req.uri().to_string();
 	let body = ErrorTemplate {
 		msg: msg.to_string(),
