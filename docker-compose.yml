@@ -2,7 +2,9 @@ version: "3.8"
 
 services:
   web:
-    build: .
+    image: quay.io/redlib/redlib
+    # quay.io/redlib/redlib:latest-arm # uncomment if you use arm64
+    # quay.io/redlib/redlib:latest-armv7 # uncomment if you use armv7
     restart: always
     container_name: "redlib"
     ports:
