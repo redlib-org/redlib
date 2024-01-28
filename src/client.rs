@@ -336,8 +336,12 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							}
 						}
 						Err(e) => {
-							error!("Got a bad response from reddit {e} - forcing a token refresh. Status code: {status}");
-							let () = force_refresh_token().await;
+							error!("Got a bad response from reddit {e}. Status code: {status}");
+							// Unauthorized; token expired
+							if status == 401 {
+								error!("Forcing a token refresh");
+								let () = force_refresh_token().await;
+							}
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {
