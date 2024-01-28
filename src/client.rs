@@ -5,6 +5,7 @@ use hyper::client::HttpConnector;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
+use log::error;
 use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
@@ -13,7 +14,7 @@ use std::{io, result::Result};
 use tokio::sync::RwLock;
 
 use crate::dbg_msg;
-use crate::oauth::{token_daemon, Oauth};
+use crate::oauth::{force_refresh_token, token_daemon, Oauth};
 use crate::server::RequestExt;
 use crate::utils::format_url;
 
@@ -335,6 +336,8 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							}
 						}
 						Err(e) => {
+							error!("Got a bad response from reddit {e} - forcing a token refresh. Status code: {status}");
+							let _ = force_refresh_token().await;
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {

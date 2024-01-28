@@ -129,6 +129,11 @@ pub async fn token_daemon() {
 		}
 	}
 }
+
+pub async fn force_refresh_token() {
+	OAUTH_CLIENT.write().await.refresh().await;
+}
+
 #[derive(Debug, Clone, Default)]
 struct Device {
 	oauth_id: String,
