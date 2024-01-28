@@ -1,42 +1,6 @@
 // Global specifiers
 #![forbid(unsafe_code)]
-#![deny(
-	anonymous_parameters,
-	clippy::all,
-	illegal_floating_point_literal_pattern,
-	late_bound_lifetime_arguments,
-	path_statements,
-	patterns_in_fns_without_body,
-	rust_2018_idioms,
-	trivial_numeric_casts,
-	unused_extern_crates
-)]
-#![warn(
-	clippy::dbg_macro,
-	clippy::decimal_literal_representation,
-	clippy::get_unwrap,
-	clippy::nursery,
-	clippy::pedantic,
-	clippy::todo,
-	clippy::unimplemented,
-	clippy::use_debug,
-	clippy::all,
-	unused_qualifications,
-	variant_size_differences
-)]
-#![allow(
-	clippy::cmp_owned,
-	clippy::unused_async,
-	clippy::option_if_let_else,
-	clippy::items_after_statements,
-	clippy::cast_possible_truncation,
-	clippy::cast_possible_wrap,
-	clippy::cast_precision_loss,
-	clippy::struct_field_names,
-	clippy::struct_excessive_bools,
-	clippy::useless_let_if_seq,
-	clippy::collection_is_never_read
-)]
+#![allow(clippy::cmp_owned)]
 
 // Reference local files
 mod config;
