@@ -337,7 +337,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 						}
 						Err(e) => {
 							error!("Got a bad response from reddit {e} - forcing a token refresh. Status code: {status}");
-							let _ = force_refresh_token().await;
+							let () = force_refresh_token().await;
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {
