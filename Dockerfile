@@ -1,27 +1,28 @@
 ####################################################################################################
 ## Builder
 ####################################################################################################
-FROM rust:alpine AS builder
 
-RUN apk add --no-cache musl-dev
+FROM alpine:3.19 AS builder
+
+RUN apk add --no-cache cargo git g++
 
 WORKDIR /redlib
 
 COPY . .
 
-RUN cargo build --target x86_64-unknown-linux-musl --release
+RUN cargo build --config net.git-fetch-with-cli=true --release
 
 ####################################################################################################
 ## Final image
 ####################################################################################################
-FROM alpine:latest
 
-# Import ca-certificates from builder
+FROM alpine:3.19
+
 COPY --from=builder /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 
 # Copy our build
-COPY --from=builder /redlib/target/x86_64-unknown-linux-musl/release/redlib /usr/local/bin/redlib
+COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
 
 # Use an unprivileged user.
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
@@ -34,3 +35,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
 
 CMD ["redlib"]
+
