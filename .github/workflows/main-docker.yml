@@ -1,4 +1,4 @@
-name: ci
+name: Container build
 
 on:
   push:
