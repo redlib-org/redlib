@@ -320,13 +320,13 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							let json: Value = value;
 							// If Reddit returned an error
 							if json["error"].is_i64() {
-								if json["message"] == "Unauthorized" { // OAuth token has expired
+								// OAuth token has expired; http status 401
+								if json["message"] == "Unauthorized" {
 									error!("Forcing a token refresh");
 									let () = force_refresh_token().await;
-									return Err("OAuth token has expired. Please refresh the page!".to_string())
+									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
 								Err(format!("Reddit error {} \"{}\": {}", json["error"], json["reason"], json["message"]))
-
 							} else {
 								Ok(json)
 							}
