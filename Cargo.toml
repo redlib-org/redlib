@@ -11,8 +11,8 @@ authors = [
 edition = "2021"
 
 [dependencies]
-askama = { version = "0.11.1", default-features = false }
-cached = { version = "0.46.1", features = ["async"] }
+askama = { version = "0.12.1", default-features = false }
+cached = { version = "0.48.1", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
     "env",
@@ -20,7 +20,7 @@ clap = { version = "4.4.11", default-features = false, features = [
 regex = "1.10.2"
 serde = { version = "1.0.193", features = ["derive"] }
 cookie = "0.18.0"
-futures-lite = "1.13.0"
+futures-lite = "2.2.0"
 hyper = { version = "0.14.28", features = ["full"] }
 hyper-rustls = "0.24.2"
 percent-encoding = "2.3.1"
