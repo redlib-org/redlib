@@ -30,12 +30,22 @@
 
             function initializeHls() {
                 newVideo.removeEventListener('play', initializeHls);
-
                 var hls = new Hls({ autoStartLoad: false });
                 hls.loadSource(playlist);
                 hls.attachMedia(newVideo);
+                console.log(hls);
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    hls.loadLevel = hls.levels.length - 1;
+                    hls.loadLevel = 0;
+                    var availableLevels = hls.levels.map(function(level) {
+                        return {
+                            height: level.height,
+                            width: level.width,
+                            bitrate: level.bitrate,
+                        };
+                    });
+
+                    addQualitySelector(newVideo, hls, availableLevels);
+
                     hls.startLoad();
                     newVideo.play();
                 });
@@ -59,6 +69,24 @@
 
                     console.error("HLS error", data);
                 });
+            }
+
+            function addQualitySelector(videoElement, hlsInstance, availableLevels) {
+                var qualitySelector = document.createElement('select');
+                availableLevels.forEach(function (level, index) {
+                    var option = document.createElement('option');
+                    option.value = index.toString();
+                    option.text = level.height + 'p';
+                    qualitySelector.appendChild(option);
+                });
+
+                qualitySelector.addEventListener('change', function () {
+                    var selectedIndex = qualitySelector.selectedIndex;
+                    hlsInstance.nextLevel = selectedIndex;
+                    hlsInstance.startLoad();
+                });
+
+                videoElement.parentNode.appendChild(qualitySelector);
             }
 
             newVideo.addEventListener('play', initializeHls);
