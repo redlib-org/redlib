@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web:
     image: quay.io/redlib/redlib
@@ -13,12 +11,11 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
+      - seccomp="seccomp-redlib.json"
     cap_drop:
       - ALL
     networks:
       - redlib
-    security_opt:
-      - seccomp="seccomp-redlib.json"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "--tries=1", "http://localhost:8080/settings"]
       interval: 5m
