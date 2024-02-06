@@ -75,7 +75,8 @@
                 availableLevels.forEach(function (level, index) {
                     var option = document.createElement('option');
                     option.value = index.toString();
-                    option.text = level.height + 'p';
+                    var bitrate = (level.bitrate / 1_000).toFixed(0);
+                    option.text = level.height + 'p (' + bitrate + ' kbps)';
                     qualitySelector.appendChild(option);
                 });
 
