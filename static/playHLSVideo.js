@@ -72,11 +72,16 @@
 
             function addQualitySelector(videoElement, hlsInstance, availableLevels) {
                 var qualitySelector = document.createElement('select');
+                qualitySelector.classList.add('quality-selector');
+                var last = availableLevels.length - 1;
                 availableLevels.forEach(function (level, index) {
                     var option = document.createElement('option');
                     option.value = index.toString();
                     var bitrate = (level.bitrate / 1_000).toFixed(0);
                     option.text = level.height + 'p (' + bitrate + ' kbps)';
+                    if (index === last) {
+                        option.selected = "selected";
+                    }
                     qualitySelector.appendChild(option);
                 });
                 qualitySelector.selectedIndex = availableLevels.length - 1;

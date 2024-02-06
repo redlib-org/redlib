@@ -1714,3 +1714,19 @@ td, th {
       justify-content: initial;
     }
 }
+
+.quality-selector {
+	border: 2px var(--outside) solid;
+	margin-top: 8px;
+	float: right;
+}
+
+.quality-selector option {
+	background-color: var(--background);
+	color: var(--text);  
+}
+
+.quality-selector option:hover {
+	background-color: var(--accent);
+	color: var(--text);
+}
