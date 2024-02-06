@@ -34,7 +34,7 @@
                 hls.loadSource(playlist);
                 hls.attachMedia(newVideo);
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    hls.loadLevel = 0;
+                    hls.loadLevel = hls.levels.length - 1;
                     var availableLevels = hls.levels.map(function(level) {
                         return {
                             height: level.height,
@@ -79,7 +79,7 @@
                     option.text = level.height + 'p (' + bitrate + ' kbps)';
                     qualitySelector.appendChild(option);
                 });
-
+                qualitySelector.selectedIndex = availableLevels.length - 1;
                 qualitySelector.addEventListener('change', function () {
                     var selectedIndex = qualitySelector.selectedIndex;
                     hlsInstance.nextLevel = selectedIndex;
