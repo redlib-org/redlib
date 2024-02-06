@@ -33,7 +33,6 @@
                 var hls = new Hls({ autoStartLoad: false });
                 hls.loadSource(playlist);
                 hls.attachMedia(newVideo);
-                console.log(hls);
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
                     hls.loadLevel = 0;
                     var availableLevels = hls.levels.map(function(level) {
