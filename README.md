@@ -132,21 +132,44 @@ cargo install libreddit
 
 ## 2) Docker
 
-Deploy the [Docker image](https://quay.io/repository/redlib/redlib) of Redlib:
+[Docker](https://www.docker.com) lets you run containerized applications. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
+
+Docker images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
+
+For configuration options, see the [Deployment section](#Deployment).
+
+### Docker CLI
+
+Deploy Redlib:
+
 ```
-docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib
+docker pull quay.io/redlib/redlib:latest
+docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib:latest
 ```
 
-Deploy using a different port (in this case, port 80):
+Deploy using a different port on the host (in this case, port 80):
+
 ```
-docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib
+docker pull quay.io/redlib/redlib:latest
+docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib:latest
 ```
 
-To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-arm`.
+If you're using a reverse proxy in front of Redlib, prefix the port numbers with `127.0.0.1` so that Redlib only listens on the host port **locally**. For example, if the host port for Redlib is `8080`, specify `127.0.0.1:8080:8080`. 
 
-To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-armv7`.
+If deploying on:
+
+- an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
+- an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
+
+### Docker Compose
+
+Copy `compose.yaml` and modify any relevant values (for example, the ports Redlib should listen on).
+
+Start Redlib in detached mode (running in the background):
+
+```bash
+docker compose up -d
+```
 
 <!-- ## 3) AUR
 
@@ -177,6 +200,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 ## 6) Replit/Heroku/Glitch
 
 > **Warning**
+>
 > These are free hosting options, but they are *not* private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
@@ -192,7 +216,39 @@ Once installed, deploy Redlib to `0.0.0.0:8080` by running:
 redlib
 ```
 
-## Instance settings
+## Configuration
+
+You can configure Redlib further using environment variables. For example:
+
+```bash
+REDLIB_DEFAULT_SHOW_NSFW=on redlib
+```
+
+```bash
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
+```
+
+You can also configure Redlib with a configuration file named `redlib.toml`. For example:
+
+```toml
+REDLIB_DEFAULT_WIDE = "on"
+REDLIB_DEFAULT_USE_HLS = "on"
+```
+
+### For Docker deployments
+
+If you're deploying Redlib using the **Docker CLI or Docker Compose**, environment variables can be defined in a [`.env` file](https://docs.docker.com/compose/environment-variables/set-environment-variables/), allowing you to centralize and manage configuration in one place.
+
+To configure Redlib using a `.env` file, copy the `.env.example` file to `.env` and edit it accordingly.
+
+If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
+```bash
+docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
+```
+
+If using Docker Compose, no change is needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
+
+### Instance settings
 
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
@@ -203,7 +259,7 @@ Assign a default value for each instance-specific setting by passing environment
 | `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 
-## Default User Settings
+### Default User Settings
 
 Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
@@ -226,26 +282,10 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 
-You can also configure Redlib with a configuration file. An example `redlib.toml` can be found below:
-
-```toml
-REDLIB_DEFAULT_WIDE = "on"
-REDLIB_DEFAULT_USE_HLS = "on"
-```
-
-### Examples
-
-```bash
-REDLIB_DEFAULT_SHOW_NSFW=on redlib
-```
-
-```bash
-REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
-```
-
 ## Proxying using NGINX
 
 > **Note**
+>
 > If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
 > ```nginx
 > proxy_http_version 1.1;
