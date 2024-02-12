@@ -2,17 +2,17 @@
 version: "3.8"
 
 services:
-  web:
+  redlib:
     build: .
     restart: always
     container_name: "redlib"
     ports:
-      - 8080:8080
+      - 8080:8080 # Specify `127.0.0.1:8080:8080` instead if using a reverse proxy
     user: nobody
     read_only: true
     security_opt:
       - no-new-privileges:true
-      - seccomp="seccomp-redlib.json"
+      - seccomp=seccomp-redlib.json
     cap_drop:
       - ALL
     networks:
