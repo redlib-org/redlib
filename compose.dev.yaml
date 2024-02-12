@@ -12,7 +12,7 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
-      - seccomp=seccomp-redlib.json
+      # - seccomp=seccomp-redlib.json
     cap_drop:
       - ALL
     networks:

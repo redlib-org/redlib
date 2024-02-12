@@ -11,7 +11,7 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
-      - seccomp=seccomp-redlib.json
+      # - seccomp=seccomp-redlib.json
     cap_drop:
       - ALL
     env_file: .env
