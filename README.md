@@ -189,6 +189,12 @@ docker logs -f redlib
 
 ### Docker CLI
 
+> [!IMPORTANT]
+> If deploying on:
+>
+> - an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
+> - an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
+
 Deploy Redlib:
 
 ```bash
@@ -204,11 +210,6 @@ docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib:latest
 ```
 
 If you're using a reverse proxy in front of Redlib, prefix the port numbers with `127.0.0.1` so that Redlib only listens on the host port **locally**. For example, if the host port for Redlib is `8080`, specify `127.0.0.1:8080:8080`.
-
-If deploying on:
-
-- an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
-- an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
 
 Stream logs from the Redlib container:
 
