@@ -245,7 +245,7 @@ Deploy Redlib to `0.0.0.0:8080`:
 redlib
 ```
 
-> [!NOTE]
+> [!IMPORTANT]
 > If you're proxying Redlib through NGINX (see [issue #122](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853)), add
 >
 > ```nginx
