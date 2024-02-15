@@ -59,7 +59,7 @@ This section outlines how Redlib compares to Reddit.
 
 ## Speed
 
-Lasted tested Jan 12, 2024.
+Last tested on January 12, 2024.
 
 Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
