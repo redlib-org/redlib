@@ -168,6 +168,9 @@ Docker images for Redlib are available at [quay.io](https://quay.io/repository/r
 
 ### Docker Compose
 
+> [!IMPORTANT]
+> These instructions assume the [Compose plugin](https://docs.docker.com/compose/migrate/#what-are-the-differences-between-compose-v1-and-compose-v2) has already been installed. If not, follow these [instructions on the Docker Docs](https://docs.docker.com/compose/install) for how to do so.
+
 Copy `compose.yaml` and modify any relevant values (for example, the ports Redlib should listen on).
 
 Start Redlib in detached mode (running in the background):
