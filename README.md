@@ -40,7 +40,7 @@
    - [launchd (macOS)](#launchd-macos)
 6. [Configuration](#configuration)
    - [Instance settings](#instance-settings)
-   - [Default User Settings](#default-user-settings)
+   - [Default user settings](#default-user-settings)
 
 ---
 
@@ -282,7 +282,7 @@ git clone https://github.com/redlib-org/redlib && cd redlib
 cargo run
 ```
 
-## Replit/Heroku/Glitch
+## Replit/Heroku
 
 > [!WARNING]
 > These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
@@ -373,7 +373,7 @@ Assign a default value for each instance-specific setting by passing environment
 | `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 
-## Default User Settings
+## Default user settings
 
 Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
