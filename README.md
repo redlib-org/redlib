@@ -125,23 +125,27 @@ The official instance is hosted at https://redlib.matthew.science.
 
 ---
 
-# Installation
+# Deployment
 
-<!-- ## 1) Cargo
+This section covers multiple ways of deploying Redlib. Using [Docker](#1-docker) is recommended for production.
 
-Make sure Rust stable is installed along with `cargo`, Rust's package manager.
+For configuration options, see the [Configuration section](#Configuration).
 
-```bash
-cargo install libreddit
-``` -->
-
-## 2) Docker
+## Docker
 
 [Docker](https://www.docker.com) lets you run containerized applications. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
 
 Docker images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
 
-For configuration options, see the [Configuration section](#Configuration).
+### Docker Compose
+
+Copy `compose.yaml` and modify any relevant values (for example, the ports Redlib should listen on).
+
+Start Redlib in detached mode (running in the background):
+
+```bash
+docker compose up -d
+```
 
 ### Docker CLI
 
@@ -166,24 +170,103 @@ If deploying on:
 - an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
 - an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
 
-### Docker Compose
+## Binary
 
-Copy `compose.yaml` and modify any relevant values (for example, the ports Redlib should listen on).
+If you're on Linux, you can grab a binary from [the newest release](https://github.com/redlib-org/redlib/releases/latest) from GitHub.
 
-Start Redlib in detached mode (running in the background):
+Download the binary using [Wget](https://www.gnu.org/software/wget/):
 
 ```bash
-docker compose up -d
+wget https://github.com/redlib-org/redlib/releases/download/v0.31.0/redlib
 ```
 
-<!-- ## 3) AUR
+Make the binary executable and change its ownership to `root`:
+
+```bash
+sudo chmod +x redlib && sudo chown root:root redlib
+```
+
+Copy the binary to `/usr/bin`:
+
+```bash
+sudo cp ./redlib /usr/bin/redlib
+```
+
+Deploy Redlib to `0.0.0.0:8080`:
+
+```bash
+redlib
+```
+
+> [!NOTE]
+> If you're proxying Redlib through NGINX (see [issue #122](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853)), add
+>
+> ```nginx
+> proxy_http_version 1.1;
+> ```
+>
+> to your NGINX configuration file above your `proxy_pass` line.
+
+### Running as a systemd service
+
+You can use the systemd service available in `contrib/redlib.service`
+(install it on `/etc/systemd/system/redlib.service`).
+
+That service can be optionally configured in terms of environment variables by
+creating a file in `/etc/redlib.conf`. Use the `contrib/redlib.conf` as a
+template. You can also add the `REDLIB_DEFAULT__{X}` settings explained
+above.
+
+When "Proxying using NGINX" where the proxy is on the same machine, you should
+guarantee nginx waits for this service to start. Edit
+`/etc/systemd/system/redlib.service.d/reverse-proxy.conf`:
+
+```conf
+[Unit]
+Before=nginx.service
+```
+
+## Building from source
+
+To deploy Redlib with changes not yet included in the latest release, you can build the application from source.
+
+```bash
+git clone https://github.com/redlib-org/redlib && cd redlib
+cargo run
+```
+
+## Replit/Heroku/Glitch
+
+> [!WARNING]
+> These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
+
+<a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+
+## launchd (macOS)
+
+If you are on macOS, you can use the [launchd](https://en.wikipedia.org/wiki/Launchd) service available in `contrib/redlib.plist`.
+
+Install it with `cp contrib/redlib.plist ~/Library/LaunchAgents/`.
+
+Load and start it with `launchctl load ~/Library/LaunchAgents/redlib.plist`.
+
+<!-- ## Cargo
+
+Make sure Rust stable is installed along with `cargo`, Rust's package manager.
+
+```bash
+cargo install libreddit
+``` -->
+
+<!-- ## AUR
 
 For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
 
 ```bash
 yay -S libreddit-git
 ```
-## 4) NetBSD/pkgsrc
+## NetBSD/pkgsrc
 
 For NetBSD users, Redlib is available from the official repositories.
 
@@ -198,29 +281,9 @@ cd /usr/pkgsrc/libreddit
 make install
 ``` -->
 
-## 5) GitHub Releases
-
-If you're on Linux and none of these methods work for you, you can grab a Linux binary from [the newest release](https://github.com/redlib-org/redlib/releases/latest).
-
-## 6) Replit/Heroku/Glitch
-
-> [!WARNING]
-> These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
-
-<a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
-
 ---
 
-# Deployment
-
-Once installed, deploy Redlib to `0.0.0.0:8080` by running:
-
-```bash
-redlib
-```
-
-## Configuration
+# Configuration
 
 You can configure Redlib further using environment variables. For example:
 
@@ -239,21 +302,20 @@ REDLIB_DEFAULT_WIDE = "on"
 REDLIB_DEFAULT_USE_HLS = "on"
 ```
 
-### For Docker deployments
+> [!NOTE]
+> If you're deploying Redlib using the **Docker CLI or Docker Compose**, environment variables can be defined in a [`.env` file](https://docs.docker.com/compose/environment-variables/set-environment-variables/), allowing you to centralize and manage configuration in one place.
+>
+> To configure Redlib using a `.env` file, copy the `.env.example` file to `.env` and edit it accordingly.
+>
+> If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
+>
+> ```bash
+> docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
+> ```
+>
+> If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
 
-If you're deploying Redlib using the **Docker CLI or Docker Compose**, environment variables can be defined in a [`.env` file](https://docs.docker.com/compose/environment-variables/set-environment-variables/), allowing you to centralize and manage configuration in one place.
-
-To configure Redlib using a `.env` file, copy the `.env.example` file to `.env` and edit it accordingly.
-
-If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
-
-```bash
-docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
-```
-
-If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
-
-### Instance settings
+## Instance settings
 
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
@@ -264,7 +326,7 @@ Assign a default value for each instance-specific setting by passing environment
 | `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 
-### Default User Settings
+## Default User Settings
 
 Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
@@ -286,49 +348,3 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
-
-## Proxying using NGINX
-
-> [!NOTE]
-> If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
->
-> ```nginx
-> proxy_http_version 1.1;
-> ```
->
-> to your NGINX configuration file above your `proxy_pass` line.
-
-## systemd
-
-You can use the systemd service available in `contrib/redlib.service`
-(install it on `/etc/systemd/system/redlib.service`).
-
-That service can be optionally configured in terms of environment variables by
-creating a file in `/etc/redlib.conf`. Use the `contrib/redlib.conf` as a
-template. You can also add the `REDLIB_DEFAULT__{X}` settings explained
-above.
-
-When "Proxying using NGINX" where the proxy is on the same machine, you should
-guarantee nginx waits for this service to start. Edit
-`/etc/systemd/system/redlib.service.d/reverse-proxy.conf`:
-
-```conf
-[Unit]
-Before=nginx.service
-```
-
-## launchd
-
-If you are on macOS, you can use the [launchd](https://en.wikipedia.org/wiki/Launchd) service available in `contrib/redlib.plist`.
-
-Install it with `cp contrib/redlib.plist ~/Library/LaunchAgents/`.
-
-Load and start it with `launchctl load ~/Library/LaunchAgents/redlib.plist`.
-
-## Building
-
-```bash
-git clone https://github.com/redlib-org/redlib
-cd redlib
-cargo run
-```
