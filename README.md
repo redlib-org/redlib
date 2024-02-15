@@ -175,6 +175,12 @@ Start Redlib in detached mode (running in the background):
 docker compose up -d
 ```
 
+Stream logs from the Redlib container:
+
+```bash
+docker logs -f redlib
+```
+
 ### Docker CLI
 
 Deploy Redlib:
@@ -197,6 +203,12 @@ If deploying on:
 
 - an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
 - an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
+
+Stream logs from the Redlib container:
+
+```bash
+docker logs -f redlib
+```
 
 ## Binary
 
