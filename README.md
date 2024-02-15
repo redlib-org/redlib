@@ -73,7 +73,9 @@ Redlib currently implements most of Reddit's (signed-out) functionalities but st
 - [Askama](https://github.com/djc/askama) - Templating engine
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
-## How is it different from Teddit?
+## How is it different from other Reddit front ends?
+
+### Teddit
 
 Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Redlib into an even more polished product.
 
@@ -81,6 +83,16 @@ If you are looking to compare, the biggest differences I have noticed are:
 
 - Redlib is themed around Reddit's redesign whereas Teddit appears to stick much closer to Reddit's old design. This may suit some users better as design is always subjective.
 - Redlib is written in [Rust](https://www.rust-lang.org) for speed and memory safety. It uses [Hyper](https://hyper.rs), a speedy and lightweight HTTP server/client implementation.
+
+### Libreddit
+
+While originating as a fork of Libreddit, the name "Redlib" was adopted to avoid legal issues, as Reddit only allows the use of their name if structured as "XYZ For Reddit".
+
+Several technical improvements have also been made, including:
+
+- **OAuth token spoofing**: To circumvent rate limits imposed by Reddit, OAuth token spoofing is used to mimick the most common iOS and Android clients. While spoofing both iOS and Android clients was explored, only the Android client was chosen due to content restrictions when using an anonymous iOS client.
+- **Token refreshing**: The authentication token is refreshed every 24 hours, emulating the behavior of the official Android app.
+- **HTTP header mimicking**: Efforts are made to send along as many of the official app's headers as possible to reduce the likelihood of Reddit's crackdown on Redlib's requests.
 
 ---
 
