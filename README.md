@@ -21,8 +21,7 @@
 2. [Instances](#instances)
 3. [About](#about)
    - [Built with](#built-with)
-   - [Info](#info)
-   - [How does it compare to Teddit?](#how-does-it-compare-to-teddit)
+   - [How is it different from Teddit?](#how-is-it-different-from-teddit)
 4. [Comparison](#comparison)
    - [Speed](#speed)
    - [Privacy](#privacy)
@@ -57,7 +56,12 @@ Both files are part of the [redlib-instances](https://github.com/redlib-org/redl
 
 # About
 
-Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/redlib-org/redlib), and 🦊 [GitLab](https://gitlab.com/redlib/redlib).
+> [!TIP]
+> Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/redlib-org/redlib), and 🦊 [GitLab](https://gitlab.com/redlib/redlib).
+
+Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
+
+Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
 
 ## Built with
 
@@ -66,13 +70,7 @@ Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay
 - [Askama](https://github.com/djc/askama) - Templating engine
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
-## Info
-
-Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
-
-Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
-
-## How does it compare to Teddit?
+## How is it different from Teddit?
 
 Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Redlib into an even more polished product.
 
