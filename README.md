@@ -37,6 +37,7 @@ Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
 ## Info
+
 Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
 
 Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
@@ -46,6 +47,7 @@ Redlib currently implements most of Reddit's (signed-out) functionalities but st
 Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Redlib into an even more polished product.
 
 If you are looking to compare, the biggest differences I have noticed are:
+
 - Redlib is themed around Reddit's redesign whereas Teddit appears to stick much closer to Reddit's old design. This may suit some users better as design is always subjective.
 - Redlib is written in [Rust](https://www.rust-lang.org) for speed and memory safety. It uses [Hyper](https://hyper.rs), a speedy and lightweight HTTP server/client implementation.
 
@@ -61,17 +63,18 @@ Lasted tested Jan 12, 2024.
 
 Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
-|                        | Redlib   | Reddit    |
-|------------------------|-------------|-----------|
-| Speed Index            | 0.6s        | 1.9s      |
-| Performance Score      | *100%*      | *64%*     |
-| Time to Interactive    | **2.8s**    | **12.4s** |
+|                     | Redlib   | Reddit    |
+| ------------------- | -------- | --------- |
+| Speed Index         | 0.6s     | 1.9s      |
+| Performance Score   | _100%_   | _64%_     |
+| Time to Interactive | **2.8s** | **12.4s** |
 
 ## Privacy
 
 ### Reddit
 
 **Logging:** According to Reddit's [privacy policy](https://www.redditinc.com/policies/privacy-policy), they "may [automatically] log information" including:
+
 - IP address
 - User-agent string
 - Browser type
@@ -85,12 +88,14 @@ Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.de
 - Search terms
 
 **Location:** The same privacy policy goes on to describe that location data may be collected through the use of:
+
 - GPS (consensual)
 - Bluetooth (consensual)
 - Content associated with a location (consensual)
 - Your IP Address
 
 **Cookies:** Reddit's [cookie notice](https://www.redditinc.com/policies/cookies) documents the array of cookies used by Reddit including/regarding:
+
 - Authentication
 - Functionality
 - Analytics and Performance
@@ -104,19 +109,19 @@ For transparency, I hope to describe all the ways Redlib handles user privacy.
 
 #### Server
 
-* **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
+- **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
 
-* **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
+- **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
 
 #### Official instance (redlib.matthew.science)
 
 The official instance is hosted at https://redlib.matthew.science.
 
-* **Server:** The official instance runs a production binary, and thus logs nothing.
+- **Server:** The official instance runs a production binary, and thus logs nothing.
 
-* **DNS:** The domain for the official instance uses Cloudflare as the DNS resolver. However, this site is not proxied through Cloudflare, and thus Cloudflare doesn't have access to user traffic.
+- **DNS:** The domain for the official instance uses Cloudflare as the DNS resolver. However, this site is not proxied through Cloudflare, and thus Cloudflare doesn't have access to user traffic.
 
-* **Hosting:** The official instance is hosted on [Replit](https://replit.com/), which monitors usage to prevent abuse. I can understand if this invalidates certain users' threat models, and therefore, self-hosting, using unofficial instances, and browsing through Tor are welcomed.
+- **Hosting:** The official instance is hosted on [Replit](https://replit.com/), which monitors usage to prevent abuse. I can understand if this invalidates certain users' threat models, and therefore, self-hosting, using unofficial instances, and browsing through Tor are welcomed.
 
 ---
 
@@ -154,7 +159,7 @@ docker pull quay.io/redlib/redlib:latest
 docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib:latest
 ```
 
-If you're using a reverse proxy in front of Redlib, prefix the port numbers with `127.0.0.1` so that Redlib only listens on the host port **locally**. For example, if the host port for Redlib is `8080`, specify `127.0.0.1:8080:8080`. 
+If you're using a reverse proxy in front of Redlib, prefix the port numbers with `127.0.0.1` so that Redlib only listens on the host port **locally**. For example, if the host port for Redlib is `8080`, specify `127.0.0.1:8080:8080`.
 
 If deploying on:
 
@@ -200,7 +205,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 ## 6) Replit/Heroku/Glitch
 
 > [!WARNING]
-> These are free hosting options, but they are *not* private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
+> These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
@@ -241,6 +246,7 @@ If you're deploying Redlib using the **Docker CLI or Docker Compose**, environme
 To configure Redlib using a `.env` file, copy the `.env.example` file to `.env` and edit it accordingly.
 
 If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
+
 ```bash
 docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
 ```
@@ -252,9 +258,9 @@ If using Docker Compose, no change is needed as the `.env` file is already refer
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
 | Name                      | Possible values | Default value    | Description                                                                                               |
-|---------------------------|-----------------|------------------|-----------------------------------------------------------------------------------------------------------|
+| ------------------------- | --------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
 | `SFW_ONLY`                | `["on", "off"]` | `off`            | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
-| `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. | 
+| `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
 | `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 
@@ -263,7 +269,7 @@ Assign a default value for each instance-specific setting by passing environment
 Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
 
 | Name                                | Possible values                                                                                                                    | Default value |
-|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight"]` | `system`      |
 | `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
 | `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
@@ -275,7 +281,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
 | `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
-| `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      | 
+| `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      |
 | `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
 | `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
@@ -285,9 +291,11 @@ Assign a default value for each user-modifiable setting by passing environment v
 
 > [!NOTE]
 > If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
+>
 > ```nginx
 > proxy_http_version 1.1;
 > ```
+>
 > to your NGINX configuration file above your `proxy_pass` line.
 
 ## systemd
