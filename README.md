@@ -126,7 +126,7 @@ The official instance is hosted at https://redlib.matthew.science.
 
 Make sure Rust stable is installed along with `cargo`, Rust's package manager.
 
-```
+```bash
 cargo install libreddit
 ``` -->
 
@@ -142,14 +142,14 @@ For configuration options, see the [Deployment section](#Deployment).
 
 Deploy Redlib:
 
-```
+```bash
 docker pull quay.io/redlib/redlib:latest
 docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib:latest
 ```
 
 Deploy using a different port on the host (in this case, port 80):
 
-```
+```bash
 docker pull quay.io/redlib/redlib:latest
 docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib:latest
 ```
@@ -175,20 +175,20 @@ docker compose up -d
 
 For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
 
-```
+```bash
 yay -S libreddit-git
 ```
 ## 4) NetBSD/pkgsrc
 
 For NetBSD users, Redlib is available from the official repositories.
 
-```
+```bash
 pkgin install libreddit
 ```
 
 Or, if you prefer to build from source
 
-```
+```bash
 cd /usr/pkgsrc/libreddit
 make install
 ``` -->
@@ -211,7 +211,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 
 Once installed, deploy Redlib to `0.0.0.0:8080` by running:
 
-```
+```bash
 redlib
 ```
 
@@ -319,7 +319,7 @@ Load and start it with `launchctl load ~/Library/LaunchAgents/redlib.plist`.
 
 ## Building
 
-```
+```bash
 git clone https://github.com/redlib-org/redlib
 cd redlib
 cargo run
