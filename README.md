@@ -15,6 +15,36 @@
 
 ---
 
+## Table of Contents
+
+1. [Redlib](#redlib)
+2. [Instances](#instances)
+3. [About](#about)
+   - [Built with](#built-with)
+   - [Info](#info)
+   - [How does it compare to Teddit?](#how-does-it-compare-to-teddit)
+4. [Comparison](#comparison)
+   - [Speed](#speed)
+   - [Privacy](#privacy)
+     - [Reddit](#reddit)
+     - [Redlib](#redlib-1)
+       - [Server](#server)
+       - [Official instance (redlib.matthew.science)](#official-instance-redlibmatthewscience)
+5. [Deployment](#deployment)
+   - [Docker](#docker)
+     - [Docker Compose](#docker-compose)
+     - [Docker CLI](#docker-cli)
+   - [Binary](#binary)
+     - [Running as a systemd service](#running-as-a-systemd-service)
+   - [Building from source](#building-from-source)
+   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
+   - [launchd (macOS)](#launchd-macos)
+6. [Configuration](#configuration)
+   - [Instance settings](#instance-settings)
+   - [Default User Settings](#default-user-settings)
+
+---
+
 # Instances
 
 🔗 **Want to automatically redirect Reddit links to Redlib? Use [LibRedirect](https://github.com/libredirect/libredirect) or [Privacy Redirect](https://github.com/SimonBrazell/privacy-redirect)!**
