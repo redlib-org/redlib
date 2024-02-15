@@ -63,10 +63,10 @@ Lasted tested Jan 12, 2024.
 
 Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
-|                     | Redlib   | Reddit    |
+| Metric              | Redlib   | Reddit    |
 | ------------------- | -------- | --------- |
 | Speed Index         | 0.6s     | 1.9s      |
-| Performance Score   | _100%_   | _64%_     |
+| Performance Score   | 100%     | 64%       |
 | Time to Interactive | **2.8s** | **12.4s** |
 
 ## Privacy
