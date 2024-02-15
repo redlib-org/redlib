@@ -319,7 +319,7 @@ Before=nginx.service
 
 ## launchd
 
-If you are on macOS, you can use the launchd service available in `contrib/redlib.plist`.
+If you are on macOS, you can use the [launchd](https://en.wikipedia.org/wiki/Launchd) service available in `contrib/redlib.plist`.
 
 Install it with `cp contrib/redlib.plist ~/Library/LaunchAgents/`.
 
