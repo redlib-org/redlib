@@ -199,8 +199,7 @@ If you're on Linux and none of these methods work for you, you can grab a Linux 
 
 ## 6) Replit/Heroku/Glitch
 
-> **Warning**
->
+> [!WARNING]
 > These are free hosting options, but they are *not* private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
@@ -284,8 +283,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 
 ## Proxying using NGINX
 
-> **Note**
->
+> [!NOTE]
 > If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
 > ```nginx
 > proxy_http_version 1.1;
