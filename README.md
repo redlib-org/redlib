@@ -158,7 +158,7 @@ The official instance is hosted at https://redlib.matthew.science.
 
 # Deployment
 
-This section covers multiple ways of deploying Redlib. Using [Docker](#1-docker) is recommended for production.
+This section covers multiple ways of deploying Redlib. Using [Docker](#docker) is recommended for production.
 
 For configuration options, see the [Configuration section](#Configuration).
 
