@@ -55,7 +55,7 @@ If you are looking to compare, the biggest differences I have noticed are:
 
 # Comparison
 
-This section outlines how Redlib compares to Reddit.
+This section outlines how Redlib compares to Reddit in terms of speed and privacy.
 
 ## Speed
 
@@ -141,7 +141,7 @@ cargo install libreddit
 
 Docker images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
 
-For configuration options, see the [Deployment section](#Deployment).
+For configuration options, see the [Configuration section](#Configuration).
 
 ### Docker CLI
 
@@ -251,7 +251,7 @@ If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib.
 docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
 ```
 
-If using Docker Compose, no change is needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
+If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
 
 ### Instance settings
 
