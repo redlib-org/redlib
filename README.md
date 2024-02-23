@@ -15,19 +15,58 @@
 
 ---
 
+## Table of Contents
+
+1. [Redlib](#redlib)
+2. [Instances](#instances)
+3. [About](#about)
+   - [Built with](#built-with)
+   - [How is it different from other Reddit front ends?](#how-is-it-different-from-other-reddit-front-ends)
+     - [Teddit](#teddit)
+     - [Libreddit](#libreddit)
+4. [Comparison](#comparison)
+   - [Speed](#speed)
+   - [Privacy](#privacy)
+     - [Reddit](#reddit)
+     - [Redlib](#redlib-1)
+       - [Server](#server)
+       - [Official instance (redlib.matthew.science)](#official-instance-redlibmatthewscience)
+5. [Deployment](#deployment)
+   - [Docker](#docker)
+     - [Docker Compose](#docker-compose)
+     - [Docker CLI](#docker-cli)
+   - [Binary](#binary)
+     - [Running as a systemd service](#running-as-a-systemd-service)
+   - [Building from source](#building-from-source)
+   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
+   - [launchd (macOS)](#launchd-macos)
+6. [Configuration](#configuration)
+   - [Instance settings](#instance-settings)
+   - [Default user settings](#default-user-settings)
+
+---
+
 # Instances
 
-🔗 **Want to automatically redirect Reddit links to Redlib? Use [LibRedirect](https://github.com/libredirect/libredirect) or [Privacy Redirect](https://github.com/SimonBrazell/privacy-redirect)!**
+> [!TIP]
+> 🔗 **Want to automatically redirect Reddit links to Redlib? Use [LibRedirect](https://github.com/libredirect/libredirect) or [Privacy Redirect](https://github.com/SimonBrazell/privacy-redirect)!**
 
-[Follow this link](https://github.com/redlib-org/redlib-instances/blob/main/instances.md) for an up-to-date table of instances in Markdown format. This list is also available as [a machine-readable JSON](https://github.com/redlib-org/redlib-instances/blob/main/instances.json).
+An up-to-date table of instances is available in [Markdown](https://github.com/redlib-org/redlib-instances/blob/main/instances.md) and [machine-readable JSON](https://github.com/redlib-org/redlib-instances/blob/main/instances.json).
 
 Both files are part of the [redlib-instances](https://github.com/redlib-org/redlib-instances) repository. To contribute your [self-hosted instance](#deployment) to the list, see the [redlib-instances README](https://github.com/redlib-org/redlib-instances/blob/main/README.md).
+
+For information on instance uptime, see the [Uptime Robot status page](https://stats.uptimerobot.com/mpmqAs1G2Q).
 
 ---
 
 # About
 
-Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/redlib-org/redlib), and 🦊 [GitLab](https://gitlab.com/redlib/redlib).
+> [!NOTE]
+> Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay.io](https://quay.io/repository/redlib/redlib), :octocat: [GitHub](https://github.com/redlib-org/redlib), and 🦊 [GitLab](https://gitlab.com/redlib/redlib).
+
+Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
+
+Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
 
 ## Built with
 
@@ -36,42 +75,51 @@ Find Redlib on 💬 [Matrix](https://matrix.to/#/#redlib:matrix.org), 🐋 [Quay
 - [Askama](https://github.com/djc/askama) - Templating engine
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
-## Info
-Redlib hopes to provide an easier way to browse Reddit, without the ads, trackers, and bloat. Redlib was inspired by other alternative front-ends to popular services such as [Invidious](https://github.com/iv-org/invidious) for YouTube, [Nitter](https://github.com/zedeus/nitter) for Twitter, and [Bibliogram](https://sr.ht/~cadence/bibliogram/) for Instagram.
+## How is it different from other Reddit front ends?
 
-Redlib currently implements most of Reddit's (signed-out) functionalities but still lacks [a few features](https://github.com/redlib-org/redlib/issues).
-
-## How does it compare to Teddit?
+### Teddit
 
 Teddit is another awesome open source project designed to provide an alternative frontend to Reddit. There is no connection between the two, and you're welcome to use whichever one you favor. Competition fosters innovation and Teddit's release has motivated me to build Redlib into an even more polished product.
 
 If you are looking to compare, the biggest differences I have noticed are:
+
 - Redlib is themed around Reddit's redesign whereas Teddit appears to stick much closer to Reddit's old design. This may suit some users better as design is always subjective.
 - Redlib is written in [Rust](https://www.rust-lang.org) for speed and memory safety. It uses [Hyper](https://hyper.rs), a speedy and lightweight HTTP server/client implementation.
+
+### Libreddit
+
+While originating as a fork of Libreddit, the name "Redlib" was adopted to avoid legal issues, as Reddit only allows the use of their name if structured as "XYZ For Reddit".
+
+Several technical improvements have also been made, including:
+
+- **OAuth token spoofing**: To circumvent rate limits imposed by Reddit, OAuth token spoofing is used to mimick the most common iOS and Android clients. While spoofing both iOS and Android clients was explored, only the Android client was chosen due to content restrictions when using an anonymous iOS client.
+- **Token refreshing**: The authentication token is refreshed every 24 hours, emulating the behavior of the official Android app.
+- **HTTP header mimicking**: Efforts are made to send along as many of the official app's headers as possible to reduce the likelihood of Reddit's crackdown on Redlib's requests.
 
 ---
 
 # Comparison
 
-This section outlines how Redlib compares to Reddit.
+This section outlines how Redlib compares to Reddit in terms of speed and privacy.
 
 ## Speed
 
-Lasted tested Jan 12, 2024.
+Last tested on January 12, 2024.
 
 Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
-|                        | Redlib   | Reddit    |
-|------------------------|-------------|-----------|
-| Speed Index            | 0.6s        | 1.9s      |
-| Performance Score      | *100%*      | *64%*     |
-| Time to Interactive    | **2.8s**    | **12.4s** |
+| Performance metric  | Redlib   | Reddit    |
+| ------------------- | -------- | --------- |
+| Speed Index         | 0.6s     | 1.9s      |
+| Performance Score   | 100%     | 64%       |
+| Time to Interactive | **2.8s** | **12.4s** |
 
 ## Privacy
 
 ### Reddit
 
 **Logging:** According to Reddit's [privacy policy](https://www.redditinc.com/policies/privacy-policy), they "may [automatically] log information" including:
+
 - IP address
 - User-agent string
 - Browser type
@@ -85,12 +133,14 @@ Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.de
 - Search terms
 
 **Location:** The same privacy policy goes on to describe that location data may be collected through the use of:
+
 - GPS (consensual)
 - Bluetooth (consensual)
 - Content associated with a location (consensual)
 - Your IP Address
 
 **Cookies:** Reddit's [cookie notice](https://www.redditinc.com/policies/cookies) documents the array of cookies used by Reddit including/regarding:
+
 - Authentication
 - Functionality
 - Analytics and Performance
@@ -104,155 +154,121 @@ For transparency, I hope to describe all the ways Redlib handles user privacy.
 
 #### Server
 
-* **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
+- **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
 
-* **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
+- **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
 
 #### Official instance (redlib.matthew.science)
 
 The official instance is hosted at https://redlib.matthew.science.
 
-* **Server:** The official instance runs a production binary, and thus logs nothing.
+- **Server:** The official instance runs a production binary, and thus logs nothing.
 
-* **DNS:** The domain for the official instance uses Cloudflare as the DNS resolver. However, this site is not proxied through Cloudflare, and thus Cloudflare doesn't have access to user traffic.
+- **DNS:** The domain for the official instance uses Cloudflare as the DNS resolver. However, this site is not proxied through Cloudflare, and thus Cloudflare doesn't have access to user traffic.
 
-* **Hosting:** The official instance is hosted on [Replit](https://replit.com/), which monitors usage to prevent abuse. I can understand if this invalidates certain users' threat models, and therefore, self-hosting, using unofficial instances, and browsing through Tor are welcomed.
-
----
-
-# Installation
-
-<!-- ## 1) Cargo
-
-Make sure Rust stable is installed along with `cargo`, Rust's package manager.
-
-```
-cargo install libreddit
-``` -->
-
-## 2) Docker
-
-Deploy the [Docker image](https://quay.io/repository/redlib/redlib) of Redlib:
-```
-docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib
-```
-
-Deploy using a different port (in this case, port 80):
-```
-docker pull quay.io/redlib/redlib
-docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib
-```
-
-To deploy on `arm64` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-arm`.
-
-To deploy on `armv7` platforms, simply replace `quay.io/redlib/redlib` in the commands above with `quay.io/redlib/redlib:latest-armv7`.
-
-<!-- ## 3) AUR
-
-For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
-
-```
-yay -S libreddit-git
-```
-## 4) NetBSD/pkgsrc
-
-For NetBSD users, Redlib is available from the official repositories.
-
-```
-pkgin install libreddit
-```
-
-Or, if you prefer to build from source
-
-```
-cd /usr/pkgsrc/libreddit
-make install
-``` -->
-
-## 5) GitHub Releases
-
-If you're on Linux and none of these methods work for you, you can grab a Linux binary from [the newest release](https://github.com/redlib-org/redlib/releases/latest).
-
-## 6) Replit/Heroku/Glitch
-
-> **Warning**
-> These are free hosting options, but they are *not* private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
-
-<a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+- **Hosting:** The official instance is hosted on [Replit](https://replit.com/), which monitors usage to prevent abuse. I can understand if this invalidates certain users' threat models, and therefore, self-hosting, using unofficial instances, and browsing through Tor are welcomed.
 
 ---
 
 # Deployment
 
-Once installed, deploy Redlib to `0.0.0.0:8080` by running:
+This section covers multiple ways of deploying Redlib. Using [Docker](#docker) is recommended for production.
 
+For configuration options, see the [Configuration section](#Configuration).
+
+## Docker
+
+[Docker](https://www.docker.com) lets you run containerized applications. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
+
+Docker images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
+
+### Docker Compose
+
+> [!IMPORTANT]
+> These instructions assume the [Compose plugin](https://docs.docker.com/compose/migrate/#what-are-the-differences-between-compose-v1-and-compose-v2) has already been installed. If not, follow these [instructions on the Docker Docs](https://docs.docker.com/compose/install) for how to do so.
+
+Copy `compose.yaml` and modify any relevant values (for example, the ports Redlib should listen on).
+
+Start Redlib in detached mode (running in the background):
+
+```bash
+docker compose up -d
 ```
+
+Stream logs from the Redlib container:
+
+```bash
+docker logs -f redlib
+```
+
+### Docker CLI
+
+> [!IMPORTANT]
+> If deploying on:
+>
+> - an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
+> - an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
+
+Deploy Redlib:
+
+```bash
+docker pull quay.io/redlib/redlib:latest
+docker run -d --name redlib -p 8080:8080 quay.io/redlib/redlib:latest
+```
+
+Deploy using a different port on the host (in this case, port 80):
+
+```bash
+docker pull quay.io/redlib/redlib:latest
+docker run -d --name redlib -p 80:8080 quay.io/redlib/redlib:latest
+```
+
+If you're using a reverse proxy in front of Redlib, prefix the port numbers with `127.0.0.1` so that Redlib only listens on the host port **locally**. For example, if the host port for Redlib is `8080`, specify `127.0.0.1:8080:8080`.
+
+Stream logs from the Redlib container:
+
+```bash
+docker logs -f redlib
+```
+
+## Binary
+
+If you're on Linux, you can grab a binary from [the newest release](https://github.com/redlib-org/redlib/releases/latest) from GitHub.
+
+Download the binary using [Wget](https://www.gnu.org/software/wget/):
+
+```bash
+wget https://github.com/redlib-org/redlib/releases/download/v0.31.0/redlib
+```
+
+Make the binary executable and change its ownership to `root`:
+
+```bash
+sudo chmod +x redlib && sudo chown root:root redlib
+```
+
+Copy the binary to `/usr/bin`:
+
+```bash
+sudo cp ./redlib /usr/bin/redlib
+```
+
+Deploy Redlib to `0.0.0.0:8080`:
+
+```bash
 redlib
 ```
 
-## Instance settings
-
-Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
-
-| Name                      | Possible values | Default value    | Description                                                                                               |
-|---------------------------|-----------------|------------------|-----------------------------------------------------------------------------------------------------------|
-| `SFW_ONLY`                | `["on", "off"]` | `off`            | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
-| `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. | 
-| `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
-| `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
-
-## Default User Settings
-
-Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
-
-| Name                                | Possible values                                                                                                                    | Default value |
-|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight"]` | `system`      |
-| `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
-| `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
-| `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
-| `POST_SORT`                         | `["hot", "new", "top", "rising", "controversial"]`                                                                                 | `hot`         |
-| `COMMENT_SORT`                      | `["confidence", "top", "new", "controversial", "old"]`                                                                             | `confidence`  |
-| `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
-| `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
-| `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
-| `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
-| `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
-| `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      | 
-| `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
-| `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
-| `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
-| `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
-
-You can also configure Redlib with a configuration file. An example `redlib.toml` can be found below:
-
-```toml
-REDLIB_DEFAULT_WIDE = "on"
-REDLIB_DEFAULT_USE_HLS = "on"
-```
-
-### Examples
-
-```bash
-REDLIB_DEFAULT_SHOW_NSFW=on redlib
-```
-
-```bash
-REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
-```
-
-## Proxying using NGINX
-
-> **Note**
-> If you're [proxying Redlib through an NGINX Reverse Proxy](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853), add
+> [!IMPORTANT]
+> If you're proxying Redlib through NGINX (see [issue #122](https://github.com/libreddit/libreddit/issues/122#issuecomment-782226853)), add
+>
 > ```nginx
 > proxy_http_version 1.1;
 > ```
+>
 > to your NGINX configuration file above your `proxy_pass` line.
 
-## systemd
+### Running as a systemd service
 
 You can use the systemd service available in `contrib/redlib.service`
 (install it on `/etc/systemd/system/redlib.service`).
@@ -271,18 +287,125 @@ guarantee nginx waits for this service to start. Edit
 Before=nginx.service
 ```
 
-## launchd
+## Building from source
 
-If you are on macOS, you can use the launchd service available in `contrib/redlib.plist`.
+To deploy Redlib with changes not yet included in the latest release, you can build the application from source.
+
+```bash
+git clone https://github.com/redlib-org/redlib && cd redlib
+cargo run
+```
+
+## Replit/Heroku
+
+> [!WARNING]
+> These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
+
+<a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+
+## launchd (macOS)
+
+If you are on macOS, you can use the [launchd](https://en.wikipedia.org/wiki/Launchd) service available in `contrib/redlib.plist`.
 
 Install it with `cp contrib/redlib.plist ~/Library/LaunchAgents/`.
 
 Load and start it with `launchctl load ~/Library/LaunchAgents/redlib.plist`.
 
-## Building
+<!-- ## Cargo
 
+Make sure Rust stable is installed along with `cargo`, Rust's package manager.
+
+```bash
+cargo install libreddit
+``` -->
+
+<!-- ## AUR
+
+For ArchLinux users, Redlib is available from the AUR as [`libreddit-git`](https://aur.archlinux.org/packages/libreddit-git).
+
+```bash
+yay -S libreddit-git
 ```
-git clone https://github.com/redlib-org/redlib
-cd redlib
-cargo run
+## NetBSD/pkgsrc
+
+For NetBSD users, Redlib is available from the official repositories.
+
+```bash
+pkgin install libreddit
 ```
+
+Or, if you prefer to build from source
+
+```bash
+cd /usr/pkgsrc/libreddit
+make install
+``` -->
+
+---
+
+# Configuration
+
+You can configure Redlib further using environment variables. For example:
+
+```bash
+REDLIB_DEFAULT_SHOW_NSFW=on redlib
+```
+
+```bash
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
+```
+
+You can also configure Redlib with a configuration file named `redlib.toml`. For example:
+
+```toml
+REDLIB_DEFAULT_WIDE = "on"
+REDLIB_DEFAULT_USE_HLS = "on"
+```
+
+> [!NOTE]
+> If you're deploying Redlib using the **Docker CLI or Docker Compose**, environment variables can be defined in a [`.env` file](https://docs.docker.com/compose/environment-variables/set-environment-variables/), allowing you to centralize and manage configuration in one place.
+>
+> To configure Redlib using a `.env` file, copy the `.env.example` file to `.env` and edit it accordingly.
+>
+> If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
+>
+> ```bash
+> docker run -d --name redlib -p 8080:8080 --env-file .env quay.io/redlib/redlib:latest
+> ```
+>
+> If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
+
+## Instance settings
+
+Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
+
+| Name                      | Possible values | Default value    | Description                                                                                               |
+| ------------------------- | --------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
+| `SFW_ONLY`                | `["on", "off"]` | `off`            | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
+| `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
+| `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
+| `PUSHSHIFT_FRONTEND`      | String          | `www.unddit.com` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
+
+## Default user settings
+
+Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
+
+| Name                                | Possible values                                                                                                                    | Default value |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight"]` | `system`      |
+| `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
+| `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
+| `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
+| `POST_SORT`                         | `["hot", "new", "top", "rising", "controversial"]`                                                                                 | `hot`         |
+| `COMMENT_SORT`                      | `["confidence", "top", "new", "controversial", "old"]`                                                                             | `confidence`  |
+| `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
+| `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
+| `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
+| `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
+| `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
+| `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      |
+| `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
+| `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
+| `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
+| `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |

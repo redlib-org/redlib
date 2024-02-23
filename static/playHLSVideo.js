@@ -30,12 +30,21 @@
 
             function initializeHls() {
                 newVideo.removeEventListener('play', initializeHls);
-
                 var hls = new Hls({ autoStartLoad: false });
                 hls.loadSource(playlist);
                 hls.attachMedia(newVideo);
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
                     hls.loadLevel = hls.levels.length - 1;
+                    var availableLevels = hls.levels.map(function(level) {
+                        return {
+                            height: level.height,
+                            width: level.width,
+                            bitrate: level.bitrate,
+                        };
+                    });
+
+                    addQualitySelector(newVideo, hls, availableLevels);
+
                     hls.startLoad();
                     newVideo.play();
                 });
@@ -59,6 +68,30 @@
 
                     console.error("HLS error", data);
                 });
+            }
+
+            function addQualitySelector(videoElement, hlsInstance, availableLevels) {
+                var qualitySelector = document.createElement('select');
+                qualitySelector.classList.add('quality-selector');
+                var last = availableLevels.length - 1;
+                availableLevels.forEach(function (level, index) {
+                    var option = document.createElement('option');
+                    option.value = index.toString();
+                    var bitrate = (level.bitrate / 1_000).toFixed(0);
+                    option.text = level.height + 'p (' + bitrate + ' kbps)';
+                    if (index === last) {
+                        option.selected = "selected";
+                    }
+                    qualitySelector.appendChild(option);
+                });
+                qualitySelector.selectedIndex = availableLevels.length - 1;
+                qualitySelector.addEventListener('change', function () {
+                    var selectedIndex = qualitySelector.selectedIndex;
+                    hlsInstance.nextLevel = selectedIndex;
+                    hlsInstance.startLoad();
+                });
+
+                videoElement.parentNode.appendChild(qualitySelector);
             }
 
             newVideo.addEventListener('play', initializeHls);

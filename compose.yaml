@@ -1,23 +1,22 @@
-# docker-compose -f docker-compose.dev.yml up -d
-version: "3.8"
-
 services:
-  web:
-    build: .
+  redlib:
+    image: quay.io/redlib/redlib:latest
+    # image: quay.io/redlib/redlib:latest-arm # uncomment if you use arm64
+    # image: quay.io/redlib/redlib:latest-armv7 # uncomment if you use armv7
     restart: always
     container_name: "redlib"
     ports:
-      - 8080:8080
+      - 8080:8080 # Specify `127.0.0.1:8080:8080` instead if using a reverse proxy
     user: nobody
     read_only: true
     security_opt:
       - no-new-privileges:true
+      # - seccomp=seccomp-redlib.json
     cap_drop:
       - ALL
+    env_file: .env
     networks:
       - redlib
-    security_opt:
-      - seccomp="seccomp-redlib.json"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "--tries=1", "http://localhost:8080/settings"]
       interval: 5m
