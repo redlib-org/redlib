@@ -1,30 +1,12 @@
-####################################################################################################
-## Builder
-####################################################################################################
-
-FROM alpine:3.19 AS builder
-
-RUN apk add --no-cache cargo git g++
-
-WORKDIR /redlib
-
-COPY . .
-
-RUN cargo build --config net.git-fetch-with-cli=true --release
-
-####################################################################################################
-## Final image
-####################################################################################################
-
 FROM alpine:3.19
 
-COPY --from=builder /usr/share/ca-certificates /usr/share/ca-certificates
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
+ARG TARGET
 
-# Copy our build
-COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
+RUN apk add --no-cache curl
 
-# Use an unprivileged user.
+RUN curl -L https://github.com/nohoster/redlib/releases/latest/download/redlib-${TARGET}.tar.gz | \
+    tar xz -C /usr/local/bin/
+
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
 USER redlib
 

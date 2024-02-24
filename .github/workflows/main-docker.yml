@@ -1,23 +1,23 @@
 name: Container build
 
 on:
-  push:
-    paths-ignore:
-      - "**.md"
-    branches:
-      - "main"
+  workflow_run:
+    workflows: ["Release Build"]
+    types:
+      - completed
 env:
   REGISTRY_IMAGE: ghcr.io/nohoster/redlib
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-          - linux/arm/v7
+        include:
+          - { platform: linux/amd64, target: x86_64-unknown-linux-musl}
+          - { platform: linux/arm64, target: aarch64-unknown-linux-musl}
+          - { platform: linux/arm/v7, target: armv7-unknown-linux-musleabihf}
     steps:
       -
         name: Checkout
@@ -54,6 +54,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           file: Dockerfile
+          build-args: TARGET=${{ matrix.target }}
       -
         name: Export digest
         run: |
