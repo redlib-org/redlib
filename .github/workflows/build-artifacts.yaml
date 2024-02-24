@@ -47,10 +47,16 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu musl-tools
-      
+
+      # Using DATE-TIME for release name
       - name: Date
         id: date
         run: echo "DATE=$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+
+      # In case app version is prefered
+      # - name: Versions
+      #   id: version
+      #   run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
