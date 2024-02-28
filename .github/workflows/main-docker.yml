@@ -105,6 +105,16 @@ jobs:
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Oush README to Quay.io
+        uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_APIKEY: ${{ secrets.APIKEY__QUAY_IO }}
+        with:
+          destination_container_repo: quay.io/redlib/redlib
+          provider: quay
+          readme_file: 'README.md'
+
       -
         name: Inspect image
         run: |
