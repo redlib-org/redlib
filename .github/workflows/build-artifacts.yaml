@@ -48,15 +48,9 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu musl-tools
 
-      # Using DATE-TIME for release name
-      - name: Date
-        id: date
-        run: echo "DATE=$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
-
-      # In case app version is prefered
-      # - name: Versions
-      #   id: version
-      #   run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
+      - name: Versions
+        id: version
+        run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
@@ -66,9 +60,16 @@ jobs:
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
+        if: github.base_ref != 'main' && github.event_name == 'release'
         with:
-          tag_name: ${{ steps.date.outputs.DATE }}
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: ${{ steps.version.outputs.VERSION }} - ${{ github.event.head_commit.message }}
+          draft: true
           files: |
             redlib-${{ matrix.target }}.tar.gz
+          body: |
+            - ${{ github.event.head_commit.message }} ${{ github.sha }}
+          generate_release_notes: true
+
 
 
