@@ -1,14 +1,29 @@
 {
-    "name": "Rust",
-    "image": "mcr.microsoft.com/devcontainers/rust:0-1-bullseye",
-    "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-    },
-    "portsAttributes": {
-        "8080": {
-            "label": "redlib",
-            "onAutoForward": "notify"
-        }
-    },
-    "postCreateCommand": "cargo build"
+  "name": "Rust Development",
+  "image": "mcr.microsoft.com/vscode/devcontainers/rust:latest",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "mutantdino.resourcemonitor",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates"
+      ],
+      "settings": {
+        "rust-analyzer.checkOnSave.command": "clippy",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "RUSTUP_HOME": "/usr/local/rustup",
+    "CARGO_HOME": "/usr/local/cargo",
+    "PATH": "${containerEnv:PATH}:/usr/local/cargo/bin"
+  }
 }
