@@ -880,11 +880,11 @@ static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www
 
 // Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
-	let text1 =
+	let mut text1 =
 		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
 			.to_string();
-	let text1 = REDDIT_EMOJI_REGEX
+	text1 = REDDIT_EMOJI_REGEX
 		.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
 		.to_string()
 		// Remove (html-encoded) "\" from URLs.
@@ -893,9 +893,15 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Rewrite external media previews to Redlib
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
-		REDDIT_PREVIEW_REGEX
-			.replace_all(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
-			.to_string()
+		loop {
+			if REDDIT_PREVIEW_REGEX.find(&text1) == None {
+				return text1;
+			} else {
+				text1 = REDDIT_PREVIEW_REGEX
+				.replace(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
+				.to_string()
+			}
+		};
 	} else {
 		text1
 	}
