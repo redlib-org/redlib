@@ -894,14 +894,14 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	// Rewrite external media previews to Redlib
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
 		loop {
-			if REDDIT_PREVIEW_REGEX.find(&text1) == None {
+			if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
 				return text1;
 			} else {
 				text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
-				.to_string()
+					.replace(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
+					.to_string()
 			}
-		};
+		}
 	} else {
 		text1
 	}
