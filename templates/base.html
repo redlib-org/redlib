@@ -1,7 +1,7 @@
 {% import "utils.html" as utils %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="{% if prefs.fixed_navbar == "on" %}fixed_navbar{% endif %}">
 	<head>
 		{% block head %}
 		<title>{% block title %}Redlib{% endblock %}</title>
