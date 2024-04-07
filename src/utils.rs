@@ -1154,3 +1154,10 @@ async fn test_fetching_ws() {
 		assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
 	}
 }
+
+#[test]
+fn test_rewriting_image_links() {
+	let input = r#"<p><a href="https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p><p><a href="https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p><p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p><p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	let output = r#"<p><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p><p><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p><p><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p><p><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	assert_eq!(rewrite_urls(input), output);
+}
