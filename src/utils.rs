@@ -877,8 +877,8 @@ pub fn format_url(url: &str) -> String {
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview)\.redd\.it(.*)[^?]").unwrap());
 static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/preview/(pre|external-pre)/(.*)">"#).unwrap());
-static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*)</a>").unwrap());
+static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/preview/(pre|external-pre)/(.*?)>"#).unwrap());
+static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
 // Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
@@ -894,24 +894,23 @@ pub fn rewrite_urls(input_text: &str) -> String {
 		.replace("\\_", "_");
 
 	// Rewrite external media previews to Redlib
-	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
-		loop {
-			if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
-				return text1;
-			} else {
-				let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
+	loop {
+    	if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
+			return text1;
+		} else {
+			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
-				let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-				let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			
+			let image_to_replace = format!("<a href=\"{image_url}{image_text}").replace(">>", ">");
+			let image_replacement = format!("<a href=\"{image_url}<img src=\"{image_url}</a>");
 
-				text1 = REDDIT_PREVIEW_REGEX
-					.replace(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
-					.replace(&image_text, &format!("><img src=\"{image_url}</a>"))
-					.to_string()
-			}
+			text1 = REDDIT_PREVIEW_REGEX
+				.replace(&text1, formatted_url)
+				.replace(&image_to_replace, &image_replacement)
+				.to_string()
 		}
-	} else {
-		text1
 	}
 }
 
