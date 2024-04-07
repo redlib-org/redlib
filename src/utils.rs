@@ -880,11 +880,11 @@ static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www
 
 // Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
-	let text1 =
+	let mut text1 =
 		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
 			.to_string();
-	let text1 = REDDIT_EMOJI_REGEX
+	text1 = REDDIT_EMOJI_REGEX
 		.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
 		.to_string()
 		// Remove (html-encoded) "\" from URLs.
@@ -893,9 +893,15 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Rewrite external media previews to Redlib
 	if REDDIT_PREVIEW_REGEX.is_match(&text1) {
-		REDDIT_PREVIEW_REGEX
-			.replace_all(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
-			.to_string()
+		loop {
+			if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
+				return text1;
+			} else {
+				text1 = REDDIT_PREVIEW_REGEX
+					.replace(&text1, format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
+					.to_string()
+			}
+		}
 	} else {
 		text1
 	}
@@ -1147,4 +1153,11 @@ async fn test_fetching_ws() {
 	for post in subreddit.unwrap().0 {
 		assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
 	}
+}
+
+#[test]
+fn test_rewriting_image_links() {
+	let input = r#"<p><a href="https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p><p><a href="https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p><p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p><p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	let output = r#"<p><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p><p><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p><p><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p><p><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	assert_eq!(rewrite_urls(input), output);
 }
