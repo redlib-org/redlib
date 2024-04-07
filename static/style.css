@@ -112,6 +112,16 @@ pre, form, fieldset, table, th, td, select, input {
 	font-family: "Inter", sans-serif;
 }
 
+html.fixed_navbar {
+	scroll-padding-top: 50px;
+}
+
+@media screen and (max-width: 800px) {
+	html.fixed_navbar {
+		scroll-padding-top: 100px;
+	}
+}
+
 body {
 	background: var(--background);
 	padding-bottom: var(--footer-height);
