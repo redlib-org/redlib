@@ -895,14 +895,14 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Rewrite external media previews to Redlib
 	loop {
-    		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
+		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
 			return text1;
 		} else {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 			let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			
+
 			let image_to_replace = format!("<a href=\"{image_url}{image_text}").replace(">>", ">");
 			let image_replacement = format!("<a href=\"{image_url}<img src=\"{image_url}</a>");
 
