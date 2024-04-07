@@ -895,7 +895,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Rewrite external media previews to Redlib
 	loop {
-    	if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
+    		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
 			return text1;
 		} else {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
