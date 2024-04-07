@@ -1008,6 +1008,10 @@ a.search_subreddit:hover {
 	overflow-wrap: anywhere;
 }
 
+.post_body img {
+	max-width: 100%;
+}
+
 .post_poll {
 	grid-area: post_poll;
 	padding: 5px 15px 5px 12px;
@@ -1169,6 +1173,16 @@ a.search_subreddit:hover {
 	margin: 10px 0;
 	border-radius: 5px;
 	display: flex;
+}
+
+.comment img {
+	max-width: 50%;
+}
+
+@media screen and (max-width: 500px) {
+	.comment img {
+		max-width: 80%;
+	}
 }
 
 .comment_left, .comment_right {
