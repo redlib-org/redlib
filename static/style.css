@@ -1177,11 +1177,13 @@ a.search_subreddit:hover {
 
 .comment img {
 	max-width: 50%;
+	height: auto;
 }
 
 @media screen and (max-width: 500px) {
 	.comment img {
 		max-width: 80%;
+		height: auto;
 	}
 }
 
