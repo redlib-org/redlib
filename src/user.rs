@@ -1,8 +1,9 @@
 // CRATES
 use crate::client::json;
 use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
+use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, rewrite_urls, setting, template, Post, Preferences, User};
 use askama::Template;
+use hyper::header::CONTENT_TYPE;
 use hyper::{Body, Request, Response};
 use time::{macros::format_description, OffsetDateTime};
 
@@ -127,6 +128,51 @@ async fn user(name: &str) -> Result<User, String> {
 			nsfw: res["data"]["subreddit"]["over_18"].as_bool().unwrap_or_default(),
 		}
 	})
+}
+
+use rss::{ChannelBuilder, Item};
+
+pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
+	// Get user
+	let user_str = req.param("name").unwrap_or_default();
+
+	let listing = req.param("listing").unwrap_or_else(|| "overview".to_string());
+
+	// Get path
+	let path = format!("/user/{user_str}/{listing}.json?{}&raw_json=1", req.uri().query().unwrap_or_default(),);
+
+	// Get user
+	let user_obj = user(&user_str).await.unwrap_or_default();
+
+	// Get posts
+	let (posts, _) = Post::fetch(&path, false).await?;
+
+	// Build the RSS feed
+	let channel = ChannelBuilder::default()
+		.title(user_str)
+		.description(user_obj.description)
+		.items(
+			posts
+				.into_iter()
+				.map(|post| Item {
+					title: Some(post.title),
+					link: Some(post.permalink),
+					author: Some(post.author.name),
+					content: Some(rewrite_urls(&post.body)),
+					..Default::default()
+				})
+				.collect::<Vec<_>>(),
+		)
+		.build();
+
+	// Serialize the feed to RSS
+	let body = channel.to_string().into_bytes();
+
+	// Create the HTTP response
+	let mut res = Response::new(Body::from(body));
+	res.headers_mut().insert(CONTENT_TYPE, hyper::header::HeaderValue::from_static("application/rss+xml"));
+
+	Ok(res)
 }
 
 #[tokio::test(flavor = "multi_thread")]

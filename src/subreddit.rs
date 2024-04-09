@@ -5,6 +5,7 @@ use crate::utils::{
 use crate::{client::json, server::ResponseExt, RequestExt};
 use askama::Template;
 use cookie::Cookie;
+use hyper::header::CONTENT_TYPE;
 use hyper::{Body, Request, Response};
 
 use time::{Duration, OffsetDateTime};
@@ -444,6 +445,51 @@ async fn subreddit(sub: &str, quarantined: bool) -> Result<Subreddit, String> {
 		wiki: res["data"]["wiki_enabled"].as_bool().unwrap_or_default(),
 		nsfw: res["data"]["over18"].as_bool().unwrap_or_default(),
 	})
+}
+
+use rss::{ChannelBuilder, Item};
+
+pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
+	// Get subreddit
+	let sub = req.param("sub").unwrap_or_default();
+	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
+	let sort = req.param("sort").unwrap_or_else(|| req.param("id").unwrap_or(post_sort));
+
+	// Get path
+	let path = format!("/r/{sub}/{sort}.json?{}", req.uri().query().unwrap_or_default());
+
+	// Get subreddit data
+	let subreddit = subreddit(&sub, false).await?;
+
+	// Get posts
+	let (posts, _) = Post::fetch(&path, false).await?;
+
+	// Build the RSS feed
+	let channel = ChannelBuilder::default()
+		.title(&subreddit.title)
+		.description(&subreddit.description)
+		.items(
+			posts
+				.into_iter()
+				.map(|post| Item {
+					title: Some(post.title),
+					link: Some(post.permalink),
+					author: Some(post.author.name),
+					content: Some(rewrite_urls(&post.body)),
+					..Default::default()
+				})
+				.collect::<Vec<_>>(),
+		)
+		.build();
+
+	// Serialize the feed to RSS
+	let body = channel.to_string().into_bytes();
+
+	// Create the HTTP response
+	let mut res = Response::new(Body::from(body));
+	res.headers_mut().insert(CONTENT_TYPE, hyper::header::HeaderValue::from_static("application/rss+xml"));
+
+	Ok(res)
 }
 
 #[tokio::test(flavor = "multi_thread")]
