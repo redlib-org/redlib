@@ -187,6 +187,15 @@ nav #redlib {
 	vertical-align: -2px;
 }
 
+figure {
+	margin: 0;
+}
+
+figcaption {
+	margin-top: 5px;
+	text-align: center;
+}
+
 #settings_link {
 	opacity: 0.8;
 	margin-left: 10px;
@@ -979,10 +988,6 @@ a.search_subreddit:hover {
 	vertical-align: bottom;
 }
 
-.gallery figcaption {
-	margin-top: 5px;
-}
-
 .gallery .outbound_url {
 	color: var(--accent);
 	text-overflow: ellipsis;
@@ -1010,6 +1015,9 @@ a.search_subreddit:hover {
 
 .post_body img {
 	max-width: 100%;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .post_poll {

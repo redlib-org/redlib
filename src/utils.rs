@@ -901,14 +901,30 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let mut image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			if !image_text.is_empty() {
+				image_text.remove(0);
+				image_text.pop();
+				image_text.pop();
+				image_text.pop();
+				image_text.pop();
+			}
 
-			let image_to_replace = format!("<a href=\"{image_url}{image_text}").replace(">>", ">");
-			let image_replacement = format!("<a href=\"{image_url}<img src=\"{image_url}</a>");
+			let image_to_replace = format!("<p><a href=\"{image_url}{image_text}</a></p>");
+
+			image_text = image_text.replace("\\&quot;", "\"");
+
+			let mut _image_replacement = String::new();
+
+			if REDDIT_PREVIEW_REGEX.find(&image_text).is_none() {
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_text}</figcaption></figure>");
+			} else {
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
+			}
 
 			text1 = REDDIT_PREVIEW_REGEX
 				.replace(&text1, formatted_url)
-				.replace(&image_to_replace, &image_replacement)
+				.replace(&image_to_replace, &_image_replacement)
 				.to_string()
 		}
 	}
@@ -1169,6 +1185,6 @@ fn test_rewriting_image_links() {
 	<p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p>
 	<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>
 	<p><a href="https://preview.redd.it/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f">caption 2</a></p>"#;
-	let output = r#"<p><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"><img src="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"></a></p>	<p><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"><img src="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"></a></p>	<p><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"><img src="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"></a></p>	<p><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a></p>	<p><a href="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"><img src="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"></a></p>"#;
+	let output = r#"<figure><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"><img loading="lazy" src="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"></a></figure>	<figure><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"><img loading="lazy" src="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"></a></figure>	<figure><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"><img loading="lazy" src="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"></a></figure>	<figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure>	<figure><a href="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"><img loading="lazy" src="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"></a><figcaption>caption 2</figcaption></figure>"#;
 	assert_eq!(rewrite_urls(input), output);
 }
