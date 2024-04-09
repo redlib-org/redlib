@@ -187,10 +187,6 @@ nav #redlib {
 	vertical-align: -2px;
 }
 
-figure {
-	margin: 0;
-}
-
 figcaption {
 	margin-top: 5px;
 	text-align: center;
@@ -1193,6 +1189,10 @@ a.search_subreddit:hover {
 		max-width: 80%;
 		height: auto;
 	}
+}
+
+.comment figure {
+	margin: 0;
 }
 
 .comment_left, .comment_right {
