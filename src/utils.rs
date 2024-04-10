@@ -901,23 +901,26 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			let mut image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			if !image_text.is_empty() {
-				image_text.remove(0);
-				image_text.pop();
-				image_text.pop();
-				image_text.pop();
-				image_text.pop();
-			}
+			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 
-			let image_to_replace = format!("<p><a href=\"{image_url}{image_text}</a></p>");
+			/* Remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
+			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
+			image_caption = image_caption[1..image_caption.len() - 4].to_string();
 
-			image_text = image_text.replace("\\&quot;", "\"");
+			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
+			let image_to_replace = format!("<p><a href=\"{image_url}{image_caption}</a></p>");
 
+			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
 			let mut _image_replacement = String::new();
 
-			if REDDIT_PREVIEW_REGEX.find(&image_text).is_none() {
-				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_text}</figcaption></figure>");
+			/* We don't want to show a caption that's just the image's link, so we check if we find a Reddit preview link within the image's caption.
+			If we don't find one we must have actual text, so we include a <figcaption> block that contains it.
+			Otherwise we don't include the <figcaption> block as we don't need it. */
+			if REDDIT_PREVIEW_REGEX.find(&image_caption).is_none() {
+				// Without this " would show as \" instead. "\&quot;" is how the quotes are formatted within image_text beforehand
+				image_caption = image_caption.replace("\\&quot;", "\"");
+
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_caption}</figcaption></figure>");
 			} else {
 				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
 			}
