@@ -903,12 +903,16 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 
-			/* Remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
+			/* As long as image_caption isn't empty remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
 			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
-			image_caption = image_caption[1..image_caption.len() - 4].to_string();
+			if !image_caption.is_empty() {
+				image_caption = image_caption[1..image_caption.len() - 4].to_string();
+			}
 
 			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
-			let image_to_replace = format!("<p><a href=\"{image_url}{image_caption}</a></p>");
+			let image_to_replace = format!("<a href=\"{image_url}{image_caption}</a>");
+
+			//println!("{}", image_to_replace);
 
 			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
 			let mut _image_replacement = String::new();
@@ -928,6 +932,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			text1 = REDDIT_PREVIEW_REGEX
 				.replace(&text1, formatted_url)
 				.replace(&image_to_replace, &_image_replacement)
+				.replace("<p></p>", "")
 				.to_string()
 		}
 	}
@@ -1183,11 +1188,7 @@ async fn test_fetching_ws() {
 
 #[test]
 fn test_rewriting_image_links() {
-	let input = r#"<p><a href="https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p>
-	<p><a href="https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p>
-	<p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p>
-	<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>
-	<p><a href="https://preview.redd.it/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f">caption 2</a></p>"#;
-	let output = r#"<figure><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"><img loading="lazy" src="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"></a></figure>	<figure><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"><img loading="lazy" src="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"></a></figure>	<figure><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"><img loading="lazy" src="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"></a></figure>	<figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure>	<figure><a href="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"><img loading="lazy" src="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"></a><figcaption>caption 2</figcaption></figure>"#;
+	let input = r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p>"#;
 	assert_eq!(rewrite_urls(input), output);
 }
