@@ -4,6 +4,7 @@ use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
+use hyper_socks2::SocksConnector;
 use libflate::gzip;
 use log::error;
 use once_cell::sync::Lazy;
@@ -13,6 +14,7 @@ use serde_json::Value;
 use std::{io, result::Result};
 use tokio::sync::RwLock;
 
+use crate::config::CONFIG;
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
 use crate::server::RequestExt;
@@ -20,14 +22,17 @@ use crate::utils::format_url;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 
-pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	let https = hyper_rustls::HttpsConnectorBuilder::new()
-		.with_native_roots()
-		.expect("No native root certificates found")
-		.https_only()
-		.enable_http1()
-		.build();
-	client::Client::builder().build(https)
+pub static CLIENT: Lazy<Client<HttpsConnector<SocksConnector<HttpConnector>>>> = Lazy::new(|| {
+	let mut connector = HttpConnector::new();
+	connector.enforce_http(false);
+	let proxy = SocksConnector {
+		proxy_addr: CONFIG.socket_proxy.as_ref().unwrap().parse().unwrap(), // scheme is required by HttpConnector
+		auth: None,
+		connector,
+	};
+	let proxy = proxy.with_tls().unwrap();
+	// let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+	client::Client::builder().build::<_, Body>(proxy)
 });
 
 pub static OAUTH_CLIENT: Lazy<RwLock<Oauth>> = Lazy::new(|| {

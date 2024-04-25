@@ -135,7 +135,7 @@ async fn main() {
 				.long("address")
 				.value_name("ADDRESS")
 				.help("Sets address to listen on")
-				.default_value("0.0.0.0")
+				.default_value("127.0.0.1")
 				.num_args(1),
 		)
 		.arg(
@@ -203,21 +203,7 @@ async fn main() {
 	app
 		.at("/manifest.json")
 		.get(|_| resource(include_str!("../static/manifest.json"), "application/json", false).boxed());
-	app.at("/robots.txt").get(|_| {
-		resource(
-			if match config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
-				Some(val) => val == "on",
-				None => false,
-			} {
-				"User-agent: *\nDisallow: /"
-			} else {
-				"User-agent: *\nDisallow: /u/\nDisallow: /user/"
-			},
-			"text/plain",
-			true,
-		)
-		.boxed()
-	});
+	app.at("/robots.txt").get(|_| resource("User-agent: *\nDisallow: /", "text/plain", true).boxed());
 	app.at("/favicon.ico").get(|_| favicon().boxed());
 	app.at("/logo.png").get(|_| pwa_logo().boxed());
 	app.at("/Inter.var.woff2").get(|_| font().boxed());

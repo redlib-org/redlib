@@ -17,32 +17,33 @@
 
 ## Table of Contents
 
-1. [Redlib](#redlib)
-2. [Instances](#instances)
-3. [About](#about)
-   - [Built with](#built-with)
-   - [How is it different from other Reddit front ends?](#how-is-it-different-from-other-reddit-front-ends)
-     - [Teddit](#teddit)
-     - [Libreddit](#libreddit)
-4. [Comparison](#comparison)
-   - [Speed](#speed)
-   - [Privacy](#privacy)
-     - [Reddit](#reddit)
-     - [Redlib](#redlib-1)
-       - [Server](#server)
-       - [Official instance (redlib.matthew.science)](#official-instance-redlibmatthewscience)
-5. [Deployment](#deployment)
-   - [Docker](#docker)
-     - [Docker Compose](#docker-compose)
-     - [Docker CLI](#docker-cli)
-   - [Binary](#binary)
-     - [Running as a systemd service](#running-as-a-systemd-service)
-   - [Building from source](#building-from-source)
-   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
-   - [launchd (macOS)](#launchd-macos)
-6. [Configuration](#configuration)
-   - [Instance settings](#instance-settings)
-   - [Default user settings](#default-user-settings)
+- [Redlib](#redlib)
+  - [Table of Contents](#table-of-contents)
+- [Instances](#instances)
+- [About](#about)
+  - [Built with](#built-with)
+  - [How is it different from other Reddit front ends?](#how-is-it-different-from-other-reddit-front-ends)
+    - [Teddit](#teddit)
+    - [Libreddit](#libreddit)
+- [Comparison](#comparison)
+  - [Speed](#speed)
+  - [Privacy](#privacy)
+    - [Reddit](#reddit)
+    - [Redlib](#redlib-1)
+      - [Server](#server)
+      - [Official instance (redlib.matthew.science)](#official-instance-redlibmatthewscience)
+- [Deployment](#deployment)
+  - [Docker](#docker)
+    - [Docker Compose](#docker-compose)
+    - [Docker CLI](#docker-cli)
+  - [Binary](#binary)
+    - [Running as a systemd service](#running-as-a-systemd-service)
+  - [Building from source](#building-from-source)
+  - [Replit/Heroku](#replitheroku)
+  - [launchd (macOS)](#launchd-macos)
+- [Configuration](#configuration)
+  - [Instance settings](#instance-settings)
+  - [Default user settings](#default-user-settings)
 
 ---
 
@@ -384,7 +385,6 @@ Assign a default value for each instance-specific setting by passing environment
 | ------------------------- | --------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
 | `SFW_ONLY`                | `["on", "off"]` | `off`            | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
 | `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
-| `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `undelete.pullpush.io` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 
 ## Default user settings

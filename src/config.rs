@@ -84,13 +84,13 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_BANNER")]
 	pub(crate) banner: Option<String>,
 
-	#[serde(rename = "REDLIB_ROBOTS_DISABLE_INDEXING")]
-	#[serde(alias = "LIBREDDIT_ROBOTS_DISABLE_INDEXING")]
-	pub(crate) robots_disable_indexing: Option<String>,
-
 	#[serde(rename = "REDLIB_PUSHSHIFT_FRONTEND")]
 	#[serde(alias = "LIBREDDIT_PUSHSHIFT_FRONTEND")]
 	pub(crate) pushshift: Option<String>,
+
+	#[serde(rename = "REDLIB_SOCKET_PROXY")]
+	#[serde(alias = "LIBREDDIT_SOCKET_PROXY")]
+	pub(crate) socket_proxy: Option<String>,
 }
 
 impl Config {
@@ -131,8 +131,8 @@ impl Config {
 			default_subscriptions: parse("REDLIB_DEFAULT_SUBSCRIPTIONS"),
 			default_disable_visit_reddit_confirmation: parse("REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
 			banner: parse("REDLIB_BANNER"),
-			robots_disable_indexing: parse("REDLIB_ROBOTS_DISABLE_INDEXING"),
 			pushshift: parse("REDLIB_PUSHSHIFT_FRONTEND"),
+			socket_proxy: parse("REDLIB_SOCKET_PROXY"),
 		}
 	}
 }
@@ -155,8 +155,8 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
 		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
 		"REDLIB_BANNER" => config.banner.clone(),
-		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
 		"REDLIB_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
+		"REDLIB_SOCKET_PROXY" => config.socket_proxy.clone(),
 		_ => None,
 	}
 }

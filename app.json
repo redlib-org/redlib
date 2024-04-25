@@ -53,9 +53,6 @@
     "REDLIB_BANNER": {
       "required": false
     },
-    "REDLIB_ROBOTS_DISABLE_INDEXING":  {
-        "required": false
-    },
     "REDLIB_DEFAULT_SUBSCRIPTIONS": {
       "required": false
     },
