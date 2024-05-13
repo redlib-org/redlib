@@ -82,7 +82,7 @@
 			</footer>
 		</div>
 		{% endif %}
-		{% if is_filtered || (!sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+")) %}
+		{% if is_filtered || (!sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+")) && prefs.hide_sidebar_and_summary != "on" %}
 		<aside>
 			{% if is_filtered %}
 				<center>(Content from r/{{ sub.name }} has been filtered)</center>
