@@ -932,7 +932,6 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			text1 = REDDIT_PREVIEW_REGEX
 				.replace(&text1, "/preview/pre$2")
 				.replace(&image_to_replace, &_image_replacement)
-				.replace("<p></p>", "")
 				.to_string()
 		}
 	}
