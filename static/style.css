@@ -1496,6 +1496,15 @@ input[type="submit"] {
 	margin-top: 20px;
 }
 
+.md > figure:first-of-type {
+	margin-top: 5px;
+	margin-bottom: 0px;
+}
+
+.md > figure:not(:first-of-type) {
+	margin-top: 10px;
+}
+
 .md h1 { font-size: 22px; }
 .md h2 { font-size: 20px; }
 .md h3 { font-size: 18px; }
