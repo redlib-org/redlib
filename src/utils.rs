@@ -930,7 +930,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			}
 
 			text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, formatted_url)
+				.replace(&text1, "/preview/pre$2")
 				.replace(&image_to_replace, &_image_replacement)
 				.replace("<p></p>", "")
 				.to_string()
@@ -1190,6 +1190,6 @@ async fn test_fetching_ws() {
 fn test_rewriting_image_links() {
 	let input =
 		r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
-	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p>"#;
+	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p"#;
 	assert_eq!(rewrite_urls(input), output);
 }
