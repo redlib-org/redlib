@@ -929,8 +929,18 @@ pub fn rewrite_urls(input_text: &str) -> String {
 				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
 			}
 
+			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
+			if it's preview we're dealing with something that needs /preview/pre, otherwise it needs /preview/external-pre */
+			let reddit_preview_regex_captures = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap();
+			let mut _preview_type = String::new();
+			if reddit_preview_regex_captures.get(1).map_or("", |m| m.as_str()).to_string() == "preview" {
+				_preview_type = "/preview/pre".to_string();
+			} else {
+				_preview_type = "/preview/external-pre".to_string();
+			}
+
 			text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, "/preview/pre$2")
+				.replace(&text1, format!("{_preview_type}$2"))
 				.replace(&image_to_replace, &_image_replacement)
 				.to_string()
 		}
