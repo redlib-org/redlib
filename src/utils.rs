@@ -875,9 +875,9 @@ pub fn format_url(url: &str) -> String {
 
 // These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview)\.redd\.it(.*)[^?]").unwrap());
+static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)[^?]").unwrap());
 static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/preview/(pre|external-pre)/(.*?)>"#).unwrap());
+static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
 static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
 // Rewrite Reddit links to Redlib in body of text
@@ -912,8 +912,6 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
 			let image_to_replace = format!("<a href=\"{image_url}{image_caption}</a>");
 
-			//println!("{}", image_to_replace);
-
 			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
 			let mut _image_replacement = String::new();
 
@@ -930,13 +928,15 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			}
 
 			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
-			if it's preview we're dealing with something that needs /preview/pre, otherwise it needs /preview/external-pre */
-			let reddit_preview_regex_captures = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap();
+			if it's preview we're dealing with something that needs /preview/pre, external-preview is /preview/external-pre, and i is /img */
+			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str()).to_string();
 			let mut _preview_type = String::new();
-			if reddit_preview_regex_captures.get(1).map_or("", |m| m.as_str()).to_string() == "preview" {
+			if reddit_preview_regex_capture == "preview" {
 				_preview_type = "/preview/pre".to_string();
-			} else {
+			} else if reddit_preview_regex_capture == "external-preview" {
 				_preview_type = "/preview/external-pre".to_string();
+			} else {
+				_preview_type = "/img".to_string();
 			}
 
 			text1 = REDDIT_PREVIEW_REGEX
