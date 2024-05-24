@@ -380,12 +380,13 @@ REDLIB_DEFAULT_USE_HLS = "on"
 
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
-| Name                      | Possible values | Default value    | Description                                                                                               |
-| ------------------------- | --------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| `SFW_ONLY`                | `["on", "off"]` | `off`            | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
-| `BANNER`                  | String          | (empty)          | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
-| `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`            | Disables indexing of the instance by search engines.                                                      |
+| Name                      | Possible values | Default value          | Description                                                                                               |
+| ------------------------- | --------------- | ----------------       | --------------------------------------------------------------------------------------------------------- |
+| `SFW_ONLY`                | `["on", "off"]` | `off`                  | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
+| `BANNER`                  | String          | (empty)                | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
+| `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`                  | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `undelete.pullpush.io` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
+| `PORT`                    | Integer 0-65535 | `8080`                 | The **internal** port Redlib listens on.                                                                  |
 
 ## Default user settings
 
