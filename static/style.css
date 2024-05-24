@@ -1492,7 +1492,7 @@ input[type="submit"] {
 	width: 100%;
 }
 
-.md > *:not(:first-child) {
+.md > p:not(:first-child):not(:last-child) {
 	margin-top: 20px;
 }
 
