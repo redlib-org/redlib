@@ -1102,7 +1102,7 @@ a.search_subreddit:hover {
 	display: auto;
 }
 
-@media screen and (min-width: 480px) {
+@media screen and (min-width: 481px) {
 	#post_links > li.mobile_item {
 			display: none;
 	}
