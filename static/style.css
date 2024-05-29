@@ -187,6 +187,11 @@ nav #redlib {
 	vertical-align: -2px;
 }
 
+figcaption {
+	margin-top: 5px;
+	text-align: center;
+}
+
 #settings_link {
 	opacity: 0.8;
 	margin-left: 10px;
@@ -979,10 +984,6 @@ a.search_subreddit:hover {
 	vertical-align: bottom;
 }
 
-.gallery figcaption {
-	margin-top: 5px;
-}
-
 .gallery .outbound_url {
 	color: var(--accent);
 	text-overflow: ellipsis;
@@ -1010,6 +1011,9 @@ a.search_subreddit:hover {
 
 .post_body img {
 	max-width: 100%;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .post_poll {
@@ -1185,6 +1189,10 @@ a.search_subreddit:hover {
 		max-width: 80%;
 		height: auto;
 	}
+}
+
+.comment figure {
+	margin: 0;
 }
 
 .comment_left, .comment_right {
@@ -1484,8 +1492,17 @@ input[type="submit"] {
 	width: 100%;
 }
 
-.md > *:not(:first-child) {
+.md > p:not(:first-child):not(:last-child) {
 	margin-top: 20px;
+}
+
+.md > figure:first-of-type {
+	margin-top: 5px;
+	margin-bottom: 0px;
+}
+
+.md > figure:not(:first-of-type) {
+	margin-top: 10px;
 }
 
 .md h1 { font-size: 22px; }
