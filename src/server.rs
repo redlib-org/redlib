@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use brotli::enc::{BrotliCompress, BrotliEncoderParams};
 use cached::proc_macro::cached;
 use cookie::Cookie;

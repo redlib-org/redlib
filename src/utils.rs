@@ -877,9 +877,9 @@ pub fn format_url(url: &str) -> String {
 
 // These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview)\.redd\.it(.*)[^?]").unwrap());
+static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)[^?]").unwrap());
 static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/preview/(pre|external-pre)/(.*?)>"#).unwrap());
+static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
 static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
 // Rewrite Reddit links to Redlib in body of text
@@ -903,14 +903,47 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 
-			let image_to_replace = format!("<a href=\"{image_url}{image_text}").replace(">>", ">");
-			let image_replacement = format!("<a href=\"{image_url}<img src=\"{image_url}</a>");
+			/* As long as image_caption isn't empty remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
+			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
+			if !image_caption.is_empty() {
+				image_caption = image_caption[1..image_caption.len() - 4].to_string();
+			}
+
+			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
+			let image_to_replace = format!("<a href=\"{image_url}{image_caption}</a>");
+
+			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
+			let mut _image_replacement = String::new();
+
+			/* We don't want to show a caption that's just the image's link, so we check if we find a Reddit preview link within the image's caption.
+			If we don't find one we must have actual text, so we include a <figcaption> block that contains it.
+			Otherwise we don't include the <figcaption> block as we don't need it. */
+			if REDDIT_PREVIEW_REGEX.find(&image_caption).is_none() {
+				// Without this " would show as \" instead. "\&quot;" is how the quotes are formatted within image_text beforehand
+				image_caption = image_caption.replace("\\&quot;", "\"");
+
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_caption}</figcaption></figure>");
+			} else {
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
+			}
+
+			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
+			if it's preview we're dealing with something that needs /preview/pre, external-preview is /preview/external-pre, and i is /img */
+			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str()).to_string();
+			let mut _preview_type = String::new();
+			if reddit_preview_regex_capture == "preview" {
+				_preview_type = "/preview/pre".to_string();
+			} else if reddit_preview_regex_capture == "external-preview" {
+				_preview_type = "/preview/external-pre".to_string();
+			} else {
+				_preview_type = "/img".to_string();
+			}
 
 			text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, formatted_url)
-				.replace(&image_to_replace, &image_replacement)
+				.replace(&text1, format!("{_preview_type}$2"))
+				.replace(&image_to_replace, &_image_replacement)
 				.to_string()
 		}
 	}
@@ -1166,11 +1199,8 @@ async fn test_fetching_ws() {
 
 #[test]
 fn test_rewriting_image_links() {
-	let input = r#"<p><a href="https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p>
-	<p><a href="https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p>
-	<p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p>
-	<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>
-	<p><a href="https://preview.redd.it/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f">caption 2</a></p>"#;
-	let output = r#"<p><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"><img src="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"></a></p>	<p><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"><img src="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"></a></p>	<p><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"><img src="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"></a></p>	<p><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a></p>	<p><a href="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"><img src="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"></a></p>"#;
+	let input =
+		r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p"#;
 	assert_eq!(rewrite_urls(input), output);
 }
