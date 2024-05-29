@@ -68,6 +68,10 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_AWARDS")]
 	pub(crate) default_hide_awards: Option<String>,
 
+	#[serde(rename = "REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY")]
+	pub(crate) default_hide_sidebar_and_summary: Option<String>,
+
 	#[serde(rename = "REDLIB_DEFAULT_HIDE_SCORE")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_HIDE_SCORE")]
 	pub(crate) default_hide_score: Option<String>,
@@ -127,6 +131,7 @@ impl Config {
 			default_use_hls: parse("REDLIB_DEFAULT_USE_HLS"),
 			default_hide_hls_notification: parse("REDLIB_DEFAULT_HIDE_HLS"),
 			default_hide_awards: parse("REDLIB_DEFAULT_HIDE_AWARDS"),
+			default_hide_sidebar_and_summary: parse("REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY"),
 			default_hide_score: parse("REDLIB_DEFAULT_HIDE_SCORE"),
 			default_subscriptions: parse("REDLIB_DEFAULT_SUBSCRIPTIONS"),
 			default_disable_visit_reddit_confirmation: parse("REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
@@ -151,6 +156,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
 		"REDLIB_DEFAULT_WIDE" => config.default_wide.clone(),
 		"REDLIB_DEFAULT_HIDE_AWARDS" => config.default_hide_awards.clone(),
+		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => config.default_hide_awards.clone(),
 		"REDLIB_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
 		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
 		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),

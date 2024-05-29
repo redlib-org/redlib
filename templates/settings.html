@@ -71,11 +71,16 @@
 					<input type="hidden" value="off" name="autoplay_videos">
 					<input type="checkbox" name="autoplay_videos" id="autoplay_videos" {% if prefs.autoplay_videos == "on" %}checked{% endif %}>
 				</div>
-        <div class="prefs-group">
+				<div class="prefs-group">
 					<label for="fixed_navbar">Keep navbar fixed</label>
-        	<input type="hidden" value="off" name="fixed_navbar">
-        	<input type="checkbox" name="fixed_navbar" {% if prefs.fixed_navbar == "on" %}checked{% endif %}>
-        </div>
+					<input type="hidden" value="off" name="fixed_navbar">
+					<input type="checkbox" name="fixed_navbar" {% if prefs.fixed_navbar == "on" %}checked{% endif %}>
+				</div>
+				<div class="prefs-group">
+					<label for="hide_sidebar_and_summary">Hide the summary and sidebar</label>
+					<input type="hidden" value="off" name="hide_sidebar_and_summary">
+					<input type="checkbox" name="hide_sidebar_and_summary" {% if prefs.hide_sidebar_and_summary == "on" %}checked{% endif %}>
+				</div>
 				<div class="prefs-group">
 					<label for="use_hls">Use HLS for videos</label>
 					<details id="feeds">
