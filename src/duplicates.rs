@@ -151,7 +151,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				}
 
 				if have_after {
-					before = "t3_".to_owned();
+					"t3_".clone_into(&mut before);
 					before.push_str(&duplicates[0].id);
 				}
 
@@ -161,7 +161,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				if have_before {
 					// The next batch will need to start from one after the
 					// last post in the current batch.
-					after = "t3_".to_owned();
+					"t3_".clone_into(&mut after);
 					after.push_str(&duplicates[l - 1].id);
 
 					// Here is where things get terrible. Notice that we
@@ -182,7 +182,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 					match json(new_path, true).await {
 						Ok(response) => {
 							if !response[1]["data"]["children"].as_array().unwrap_or(&Vec::new()).is_empty() {
-								before = "t3_".to_owned();
+								"t3_".clone_into(&mut before);
 								before.push_str(&duplicates[0].id);
 							}
 						}

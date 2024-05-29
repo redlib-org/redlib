@@ -182,8 +182,8 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	};
 
 	// Check if multi sub requested. If so, replace "Android" with a tricky word.
-	if path.contains("+") {
-		user_agent = user_agent.replace("Android", "Andr​oid");
+	if path.contains('+') {
+		user_agent = user_agent.replace("Android", "Andr\u{200B}oid");
 	}
 
 	// Build request to Reddit. When making a GET, request gzip compression.
