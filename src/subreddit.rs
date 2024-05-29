@@ -7,6 +7,8 @@ use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use time::{Duration, OffsetDateTime};
 
 // STRUCTS
@@ -50,10 +52,13 @@ struct WallTemplate {
 	url: String,
 }
 
+static GEO_FILTER_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"geo_filter=(?<region>\w+)").unwrap());
+
 // SERVICES
 pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
 	let root = req.uri().path() == "/";
+	let query = req.uri().query().unwrap_or_default().to_string();
 	let subscribed = setting(&req, "subscriptions");
 	let front_page = setting(&req, "front_page");
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
@@ -107,7 +112,11 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	let mut params = String::from("&raw_json=1");
 	if sub_name == "popular" {
-		params.push_str("&geo_filter=GLOBAL");
+		let geo_filter = match GEO_FILTER_MATCH.captures(&query) {
+			Some(geo_filter) => geo_filter["region"].to_string(),
+			None => "GLOBAL".to_owned(),
+		};
+		params.push_str(&format!("&geo_filter={geo_filter}"));
 	}
 
 	let path = format!("/r/{sub_name}/{sort}.json?{}{params}", req.uri().query().unwrap_or_default());
