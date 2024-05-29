@@ -16,7 +16,13 @@ use hyper::{Body, Method, Request, Response, Server as HyperServer};
 use libflate::gzip;
 use route_recognizer::{Params, Router};
 use std::{
-	cmp::Ordering, fmt::Display, io, pin::Pin, result::Result, str::{from_utf8, Split}, string::ToString
+	cmp::Ordering,
+	fmt::Display,
+	io,
+	pin::Pin,
+	result::Result,
+	str::{from_utf8, Split},
+	string::ToString,
 };
 use time::Duration;
 
