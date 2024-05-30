@@ -3,7 +3,7 @@ name = "redlib"
 description = " Alternative private front-end to Reddit"
 license = "AGPL-3.0"
 repository = "https://github.com/redlib-org/redlib"
-version = "0.33.1"
+version = "0.33.2"
 authors = [
     "Matthew Esposito <matt+cargo@matthew.science>",
     "spikecodes <19519553+spikecodes@users.noreply.github.com>",
@@ -12,7 +12,7 @@ edition = "2021"
 
 [dependencies]
 askama = { version = "0.12.1", default-features = false }
-cached = { version = "0.48.1", features = ["async"] }
+cached = { version = "0.51.3", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
     "env",
@@ -31,13 +31,13 @@ time = { version = "0.3.31", features = ["local-offset"] }
 url = "2.5.0"
 rust-embed = { version = "8.1.0", features = ["include-exclude"] }
 libflate = "2.0.0"
-brotli = { version = "3.4.0", features = ["std"] }
+brotli = { version = "6.0.0", features = ["std"] }
 toml = "0.8.8"
 once_cell = "1.19.0"
 serde_yaml = "0.9.29"
 build_html = "2.4.0"
 uuid = { version = "1.6.1", features = ["v4"] }
-base64 = "0.21.5"
+base64 = "0.22.1"
 fastrand = "2.0.1"
 log = "0.4.20"
 pretty_env_logger = "0.5.0"
