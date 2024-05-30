@@ -181,8 +181,9 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		)
 	};
 
-	// Check if multi sub requested. If so, replace "Android" with a tricky word.
-	if path.contains('+') {
+	// Check if multi sub requested, or if submitted was requested. If so, replace "Android" with a tricky word.
+	// Issues: #78/#115, #116
+	if path.contains('+') || path.contains("/submitted") {
 		user_agent = user_agent.replace("Android", "Andr\u{200B}oid");
 	}
 
