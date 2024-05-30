@@ -30,6 +30,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Install cargo musl target
+        run: rustup target add x86_64-unknown-linux-musl
+
       # Building actions
       - name: Build
         run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-musl
