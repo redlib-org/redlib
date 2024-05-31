@@ -1,10 +1,7 @@
 FROM docker.io/library/rust:1.78-slim-bookworm AS builder
 
+WORKDIR /app
 COPY ./ ./
-
-# Base image appears to pre-install these
-# RUN apt-get update
-# RUN apt-get install -y ca-certificates
 
 RUN cargo test --release
 RUN cargo build --release
@@ -14,7 +11,7 @@ FROM docker.io/library/debian:bookworm-slim AS release
 WORKDIR /app
 # ca-certificates are not preinstalled in the base image
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder --chown=600 target/release/redlib /app/
+COPY --from=builder --chown=600 /app/target/release/redlib /app/
 
 RUN useradd -M redlib
 USER redlib
