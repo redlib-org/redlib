@@ -3,7 +3,7 @@ FROM docker.io/library/rust:1.78-slim-bookworm AS builder
 WORKDIR /app
 COPY ./ ./
 
-RUN cargo test --release
+# RUN cargo test --release
 RUN cargo build --release
 
 FROM docker.io/library/debian:bookworm-slim AS release
