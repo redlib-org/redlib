@@ -156,7 +156,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
 		"REDLIB_DEFAULT_WIDE" => config.default_wide.clone(),
 		"REDLIB_DEFAULT_HIDE_AWARDS" => config.default_hide_awards.clone(),
-		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => config.default_hide_awards.clone(),
+		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => config.default_hide_sidebar_and_summary.clone(),
 		"REDLIB_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
 		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
 		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
