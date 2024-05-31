@@ -1,10 +1,12 @@
 name: Container build
 
 on:
-  workflow_run:
-    workflows: ["Release Build"]
-    types:
-      - completed
+  pull_request:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+
 env:
   REGISTRY_IMAGE: quay.io/redlib/redlib
   PLATFORMS: "linux/amd64,linux/arm64,linux/arm/v7"
