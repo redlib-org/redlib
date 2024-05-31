@@ -7,6 +7,8 @@ on:
       - "compose.*"
     branches:
       - "main"
+  release:
+    types: [published]
 
 env: 
   CARGO_TERM_COLOR: always
@@ -60,7 +62,6 @@ jobs:
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
-        if: github.base_ref != 'main' && github.event_name == 'release'
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: ${{ steps.version.outputs.VERSION }} - ${{ github.event.head_commit.message }}
