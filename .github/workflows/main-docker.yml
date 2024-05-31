@@ -55,7 +55,7 @@ jobs:
           file: Dockerfile
           push: true
       -
-        name: Build and push
+        name: Build and push (Pull Request)
         if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v5
         with:
