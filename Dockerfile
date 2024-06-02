@@ -2,10 +2,9 @@ FROM alpine:3.19
 
 ARG TARGET
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache wget
 
-RUN curl -L https://github.com/redlib-org/redlib/releases/latest/download/redlib-${TARGET}.tar.gz | \
-    tar xz -C /usr/local/bin/
+RUN wget -q -O /usr/local/bin/redlib https://github.com/redlib-org/redlib/releases/latest/download/redlib && chmod +x /usr/local/bin/redlib
 
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
 USER redlib
