@@ -203,12 +203,6 @@ docker logs -f redlib
 
 ### Docker CLI
 
-> [!IMPORTANT]
-> If deploying on:
->
-> - an `arm64` platform, use the `quay.io/redlib/redlib:latest-arm` image instead.
-> - an `armv7` platform, use the `quay.io/redlib/redlib:latest-armv7` image instead.
-
 Deploy Redlib:
 
 ```bash
