@@ -1,8 +1,6 @@
 services:
   redlib:
     image: quay.io/redlib/redlib:latest
-    # image: quay.io/redlib/redlib:latest-arm # uncomment if you use arm64
-    # image: quay.io/redlib/redlib:latest-armv7 # uncomment if you use armv7
     restart: always
     container_name: "redlib"
     ports:
