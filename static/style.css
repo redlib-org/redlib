@@ -34,6 +34,7 @@
 	font-family: 'Inter';
 	src: url('/Inter.var.woff2') format('woff2-variations');
 	font-style: normal;
+	font-weight: 100 900;
 }
 
 /* Automatic theme selection */
