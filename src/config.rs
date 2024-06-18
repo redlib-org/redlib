@@ -79,6 +79,10 @@ pub struct Config {
 	#[serde(rename = "REDLIB_DEFAULT_SUBSCRIPTIONS")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_SUBSCRIPTIONS")]
 	pub(crate) default_subscriptions: Option<String>,
+	
+	#[serde(rename = "REDLIB_DEFAULT_FILTERS")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_FILTERS")]
+	pub(crate) default_filters: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION")]
@@ -134,6 +138,7 @@ impl Config {
 			default_hide_sidebar_and_summary: parse("REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY"),
 			default_hide_score: parse("REDLIB_DEFAULT_HIDE_SCORE"),
 			default_subscriptions: parse("REDLIB_DEFAULT_SUBSCRIPTIONS"),
+			default_filters: parse("REDLIB_DEFAULT_FILTERS"),
 			default_disable_visit_reddit_confirmation: parse("REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION"),
 			banner: parse("REDLIB_BANNER"),
 			robots_disable_indexing: parse("REDLIB_ROBOTS_DISABLE_INDEXING"),
@@ -159,6 +164,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => config.default_hide_sidebar_and_summary.clone(),
 		"REDLIB_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
 		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
+		"REDLIB_DEFAULT_FILTERS" => config.default_filters.clone(),
 		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
 		"REDLIB_BANNER" => config.banner.clone(),
 		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
@@ -229,6 +235,12 @@ fn test_alt_env_config_precedence() {
 #[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
 fn test_default_subscriptions() {
 	assert_eq!(get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
+}
+
+#[test]
+#[sealed_test(env = [("REDLIB_DEFAULT_FILTERS", "news+bestof")])]
+fn test_default_filters() {
+	assert_eq!(get_setting("REDLIB_DEFAULT_FILTERS"), Some("news+bestof".into()));
 }
 
 #[test]
