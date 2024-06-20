@@ -2,10 +2,14 @@
 {% block title %}Error: {{ msg }}{% endblock %}
 {% block sortstyle %}{% endblock %}
 {% block content %}
-	<div id="error">
-		<h1>{{ msg }}</h1>
-		<h3><a href="https://www.redditstatus.com/">Reddit Status</a></h3>
-		<br />
-		<h3>Head back <a href="/">home</a>?</h3>
-	</div>
+<div id="error">
+	<h1>{{ msg }}</h1>
+	<h3><a href="https://www.redditstatus.com/">Reddit Status</a></h3>
+	<br />
+	<h3>Expected something to work? <a
+			href="https://github.com/redlib-org/redlib/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=%F0%9F%90%9B+Bug+Report%3A+{{ msg }}">Report
+			an issue</a></h3>
+	<br />
+	<h3>Head back <a href="/">home</a>?</h3>
+</div>
 {% endblock %}

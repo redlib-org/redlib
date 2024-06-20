@@ -314,9 +314,9 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
-	let err = |msg: &str, e: String| -> Result<Value, String> {
+	let err = |msg: &str, e: String, path: String| -> Result<Value, String> {
 		// eprintln!("{} - {}: {}", url, msg, e);
-		Err(format!("{msg}: {e}"))
+		Err(format!("{msg}: {e} | {path}"))
 	};
 
 	// Fetch the url...
@@ -339,7 +339,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 									let () = force_refresh_token().await;
 									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
-								Err(format!("Reddit error {} \"{}\": {}", json["error"], json["reason"], json["message"]))
+								Err(format!("Reddit error {} \"{}\": {} | {path}", json["error"], json["reason"], json["message"]))
 							} else {
 								Ok(json)
 							}
@@ -349,15 +349,15 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {
-								err("Failed to parse page JSON data", e.to_string())
+								err("Failed to parse page JSON data", e.to_string(), path)
 							}
 						}
 					}
 				}
-				Err(e) => err("Failed receiving body from Reddit", e.to_string()),
+				Err(e) => err("Failed receiving body from Reddit", e.to_string(), path),
 			}
 		}
-		Err(e) => err("Couldn't send request to Reddit", e),
+		Err(e) => err("Couldn't send request to Reddit", e, path),
 	}
 }
 

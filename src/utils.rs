@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::config::get_setting;
 //
 // CRATES
@@ -1028,7 +1029,7 @@ pub fn redirect(path: &str) -> Response<Body> {
 
 /// Renders a generic error landing page.
 pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
-	error!("Error page rendered: {msg}");
+	error!("Error page rendered: {}", msg.split('|').next().unwrap_or_default());
 	let url = req.uri().to_string();
 	let body = ErrorTemplate {
 		msg: msg.to_string(),
