@@ -59,6 +59,9 @@
     "REDLIB_DEFAULT_SUBSCRIPTIONS": {
       "required": false
     },
+    "REDLIB_DEFAULT_FILTERS": {
+      "required": false
+    },
     "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION": {
       "required": false
     },

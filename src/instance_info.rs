@@ -146,6 +146,7 @@ impl InstanceInfo {
 				["Use HLS", &convert(&self.config.default_use_hls)],
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
+				["Filters", &convert(&self.config.default_filters)],
 			])
 			.with_header_row(["Default preferences"]),
 		);
@@ -177,7 +178,8 @@ impl InstanceInfo {
                     Default blur NSFW: {:?}\n
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
-                    Default subscriptions: {:?}\n",
+                    Default subscriptions: {:?}\n
+                    Default filters: {:?}\n",
 					self.package_name,
 					self.crate_version,
 					self.git_commit,
@@ -200,6 +202,7 @@ impl InstanceInfo {
 					self.config.default_use_hls,
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,
+					self.config.default_filters,
 				)
 			}
 			StringType::Html => self.to_table(),
