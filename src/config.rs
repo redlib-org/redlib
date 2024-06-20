@@ -79,7 +79,7 @@ pub struct Config {
 	#[serde(rename = "REDLIB_DEFAULT_SUBSCRIPTIONS")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_SUBSCRIPTIONS")]
 	pub(crate) default_subscriptions: Option<String>,
-	
+
 	#[serde(rename = "REDLIB_DEFAULT_FILTERS")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_FILTERS")]
 	pub(crate) default_filters: Option<String>,
