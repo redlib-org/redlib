@@ -19,13 +19,14 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 16] = [
+const PREFS: [&str; 17] = [
 	"theme",
 	"front_page",
 	"layout",
 	"wide",
 	"comment_sort",
 	"post_sort",
+	"blur_spoiler",
 	"show_nsfw",
 	"blur_nsfw",
 	"use_hls",

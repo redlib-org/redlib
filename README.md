@@ -394,6 +394,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
 | `POST_SORT`                         | `["hot", "new", "top", "rising", "controversial"]`                                                                                 | `hot`         |
 | `COMMENT_SORT`                      | `["confidence", "top", "new", "controversial", "old"]`                                                                             | `confidence`  |
+| `BLUR_SPOILER`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
