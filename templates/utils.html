@@ -93,6 +93,7 @@
 				style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};">{% call render_flair(post.flair.flair_parts) %}</a>
 		{% endif %}
 		{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}
+		{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
 	</h1>
 
 	<!-- POST MEDIA -->
@@ -223,7 +224,7 @@
 				style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};"
 				dir="ltr">{% call render_flair(post.flair.flair_parts) %}</a>
 		{% endif %}
-		<a href="{{ post.permalink }}">{{ post.title }}</a>{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}
+		<a href="{{ post.permalink }}">{{ post.title }}</a>{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
 	</h2>
 	<!-- POST MEDIA/THUMBNAIL -->
 	{% if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "image" %}

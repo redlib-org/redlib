@@ -52,6 +52,7 @@
 	--visited: #aaa;
 	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 	--popup: #b80a27;
+	--spoiler: #ddd;
 
 	/* Hint color theme to browser for scrollbar */
 	color-scheme: dark;
@@ -71,6 +72,7 @@
 		--highlighted: white;
 		--visited: #555;
 		--shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		--spoiler: #0f0f0f;
 
 		/* Hint color theme to browser for scrollbar */
 		color-scheme: light;
@@ -927,6 +929,15 @@ a.search_subreddit:hover {
 	font-size: 12px;
 	border-radius: 5px;
 	font-weight: bold;
+}
+
+.spoiler {
+	color: var(--spoiler);
+	margin-left: 5px;
+	border: 1px solid var(--spoiler);
+	padding: 3px;
+	font-size: 12px;
+	border-radius: 5px;
 }
 
 .post_media_content, .post .__NoScript_PlaceHolder__, .gallery {
