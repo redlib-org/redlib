@@ -100,11 +100,10 @@ impl Oauth {
 	}
 
 	async fn refresh(&mut self) -> Option<()> {
-		// Refresh is actually just a subsequent login with the same headers (without the old token
-		// or anything). This logic is handled in login, so we just call login again.
-		let refresh = self.login().await;
-		info!("Refreshing OAuth token... {}", if refresh.is_some() { "success" } else { "failed" });
-		refresh
+		// Set self to Oauth::new()
+		*self = Self::new().await;
+		info!("Refreshing OAuth token... success! New token: \"{}...\"", &self.token[..32]);
+		Some(())
 	}
 }
 
