@@ -157,6 +157,7 @@ impl PollOption {
 
 // Post flags with nsfw and stickied
 pub struct Flags {
+	pub spoiler: bool,
 	pub nsfw: bool,
 	pub stickied: bool,
 }
@@ -403,6 +404,7 @@ impl Post {
 					},
 				},
 				flags: Flags {
+					spoiler: data["spoiler"].as_bool().unwrap_or_default(),
 					nsfw: data["over_18"].as_bool().unwrap_or_default(),
 					stickied: data["stickied"].as_bool().unwrap_or_default() || data["pinned"].as_bool().unwrap_or_default(),
 				},
@@ -575,6 +577,7 @@ pub struct Preferences {
 	pub front_page: String,
 	pub layout: String,
 	pub wide: String,
+	pub blur_spoiler: String,
 	pub show_nsfw: String,
 	pub blur_nsfw: String,
 	pub hide_hls_notification: String,
@@ -612,6 +615,7 @@ impl Preferences {
 			front_page: setting(req, "front_page"),
 			layout: setting(req, "layout"),
 			wide: setting(req, "wide"),
+			blur_spoiler: setting(req, "blur_spoiler"),
 			show_nsfw: setting(req, "show_nsfw"),
 			hide_sidebar_and_summary: setting(req, "hide_sidebar_and_summary"),
 			blur_nsfw: setting(req, "blur_nsfw"),
@@ -732,6 +736,7 @@ pub async fn parse_post(post: &Value) -> Post {
 			},
 		},
 		flags: Flags {
+			spoiler: post["data"]["spoiler"].as_bool().unwrap_or_default(),
 			nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
 			stickied: post["data"]["stickied"].as_bool().unwrap_or_default() || post["data"]["pinned"].as_bool().unwrap_or(false),
 		},

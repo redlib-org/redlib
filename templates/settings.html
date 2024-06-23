@@ -54,6 +54,11 @@
 						{% call utils::options(prefs.comment_sort, ["confidence", "top", "new", "controversial", "old"], "confidence") %}
 					</select>
 				</div>
+				<div class="prefs-group">
+					<label for="blur_spoiler">Blur spoiler previews:</label>
+					<input type="hidden" value="off" name="blur_spoiler">
+					<input type="checkbox" name="blur_spoiler" id="blur_spoiler" {% if prefs.blur_spoiler == "on" %}checked{% endif %}>
+				</div>
         {% if !crate::utils::sfw_only() %}
 				<div class="prefs-group">
 					<label for="show_nsfw">Show NSFW posts:</label>

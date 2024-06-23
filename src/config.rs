@@ -48,6 +48,10 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_DEFAULT_POST_SORT")]
 	pub(crate) default_post_sort: Option<String>,
 
+	#[serde(rename = "REDLIB_DEFAULT_BLUR_SPOILER")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_BLUR_SPOILER")]
+	pub(crate) default_blur_spoiler: Option<String>,
+
 	#[serde(rename = "REDLIB_DEFAULT_SHOW_NSFW")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_SHOW_NSFW")]
 	pub(crate) default_show_nsfw: Option<String>,
@@ -130,6 +134,7 @@ impl Config {
 			default_post_sort: parse("REDLIB_DEFAULT_POST_SORT"),
 			default_wide: parse("REDLIB_DEFAULT_WIDE"),
 			default_comment_sort: parse("REDLIB_DEFAULT_COMMENT_SORT"),
+			default_blur_spoiler: parse("REDLIB_DEFAULT_BLUR_SPOILER"),
 			default_show_nsfw: parse("REDLIB_DEFAULT_SHOW_NSFW"),
 			default_blur_nsfw: parse("REDLIB_DEFAULT_BLUR_NSFW"),
 			default_use_hls: parse("REDLIB_DEFAULT_USE_HLS"),
@@ -155,6 +160,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_LAYOUT" => config.default_layout.clone(),
 		"REDLIB_DEFAULT_COMMENT_SORT" => config.default_comment_sort.clone(),
 		"REDLIB_DEFAULT_POST_SORT" => config.default_post_sort.clone(),
+		"REDLIB_DEFAULT_BLUR_SPOILER" => config.default_blur_spoiler.clone(),
 		"REDLIB_DEFAULT_SHOW_NSFW" => config.default_show_nsfw.clone(),
 		"REDLIB_DEFAULT_BLUR_NSFW" => config.default_blur_nsfw.clone(),
 		"REDLIB_DEFAULT_USE_HLS" => config.default_use_hls.clone(),
