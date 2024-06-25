@@ -170,7 +170,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// Construct the hyper client from the HTTPS connector.
 	let client: Client<_, Body> = CLIENT.clone();
 
-	let (token, vendor_id, device_id, mut user_agent, loid) = {
+	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = block_on(OAUTH_CLIENT.read());
 		(
 			client.token.clone(),
@@ -180,13 +180,6 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 			client.headers_map.get("x-reddit-loid").cloned().unwrap_or_default(),
 		)
 	};
-
-	// Replace "Android" with a tricky word.
-	// Issues: #78/#115, #116
-	// If you include the word "Android", you will get a number of different errors
-	// I guess they don't expect mobile traffic on the endpoints we use
-	// Scrawled on wall for next poor soul: Run the test suite.
-	user_agent = user_agent.replace("Android", "Andr\u{200B}oid");
 
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
