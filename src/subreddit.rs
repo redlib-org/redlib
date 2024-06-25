@@ -64,7 +64,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
 	let sort = req.param("sort").unwrap_or_else(|| req.param("id").unwrap_or(post_sort));
 
-	let sub_name = req.param("sub").unwrap_or(if front_page == "default" || front_page.is_empty() {
+	let mut sub_name = req.param("sub").unwrap_or(if front_page == "default" || front_page.is_empty() {
 		if subscribed.is_empty() {
 			"popular".to_string()
 		} else {
@@ -82,6 +82,11 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	if req.param("sub").is_some() && sub_name.starts_with("u_") {
 		return Ok(redirect(&["/user/", &sub_name[2..]].concat()));
+	}
+
+	// If multi-sub, replace + with url encoded +
+	if sub_name.contains('+') {
+		sub_name = sub_name.replace('+', "%2B");
 	}
 
 	// Request subreddit metadata
