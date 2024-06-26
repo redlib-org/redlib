@@ -5,7 +5,7 @@ use hyper::client::HttpConnector;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
-use log::error;
+use log::{error, trace};
 use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
@@ -304,7 +304,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 }
 
 // Make a request to a Reddit API and parse the JSON response
-#[cached(size = 100, time = 30, result = true)]
+// #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
 	let err = |msg: &str, e: String, path: String| -> Result<Value, String> {
@@ -317,9 +317,36 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 		Ok(response) => {
 			let status = response.status();
 
+			// Ratelimit remaining
+			if let Some(Ok(remaining)) = response.headers().get("x-ratelimit-remaining").map(|val| val.to_str()) {
+				trace!("Ratelimit remaining: {}", remaining);
+			}
+
+			// Ratelimit used
+			if let Some(Ok(used)) = response.headers().get("x-ratelimit-used").map(|val| val.to_str()) {
+				trace!("Ratelimit used: {}", used);
+			}
+
+			// Ratelimit reset
+			let reset = if let Some(Ok(reset)) = response.headers().get("x-ratelimit-reset").map(|val| val.to_str()) {
+				trace!("Ratelimit reset: {}", reset);
+				Some(reset.to_string())
+			} else {
+				None
+			};
+
 			// asynchronously aggregate the chunks of the body
 			match hyper::body::aggregate(response).await {
 				Ok(body) => {
+					let has_remaining = body.has_remaining();
+
+					if !has_remaining {
+						return match reset {
+							Some(val) => Err(format!("Reddit rate limit exceeded. Will reset in: {val}")),
+							None => Err("Reddit rate limit exceeded".to_string()),
+						};
+					}
+
 					// Parse the response from Reddit as JSON
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
