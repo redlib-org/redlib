@@ -1,12 +1,12 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 
 use crate::{
-	client::{CLIENT, OAUTH_CLIENT},
+	client::{CLIENT, OAUTH_CLIENT, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
-use log::info;
+use log::{info, trace};
 
 use serde_json::json;
 
@@ -131,7 +131,9 @@ pub async fn token_daemon() {
 }
 
 pub async fn force_refresh_token() {
+	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::Relaxed));
 	OAUTH_CLIENT.write().await.refresh().await;
+	OAUTH_RATELIMIT_REMAINING.store(99, Ordering::Relaxed);
 }
 
 #[derive(Debug, Clone, Default)]
