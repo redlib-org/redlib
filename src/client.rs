@@ -11,7 +11,7 @@ use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
 use std::sync::atomic::Ordering;
-use std::sync::atomic::{AtomicU16, Ordering::Relaxed};
+use std::sync::atomic::{AtomicU16, Ordering::SeqCst};
 use std::{io, result::Result};
 use tokio::sync::RwLock;
 
@@ -317,10 +317,10 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	};
 
 	// First, handle rolling over the OAUTH_CLIENT if need be.
-	let current_rate_limit = OAUTH_RATELIMIT_REMAINING.load(Ordering::Relaxed);
+	let current_rate_limit = OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst);
 	if current_rate_limit < 10 {
 		warn!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
-		OAUTH_RATELIMIT_REMAINING.store(99, Ordering::Relaxed);
+		OAUTH_RATELIMIT_REMAINING.store(99, Ordering::SeqCst);
 		tokio::spawn(force_refresh_token());
 	}
 
@@ -333,7 +333,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 			if let Some(Ok(remaining)) = response.headers().get("x-ratelimit-remaining").map(|val| val.to_str()) {
 				trace!("Ratelimit remaining: {}", remaining);
 				if let Ok(remaining) = remaining.parse::<f32>().map(|f| f.round() as u16) {
-					OAUTH_RATELIMIT_REMAINING.store(remaining, Relaxed);
+					OAUTH_RATELIMIT_REMAINING.store(remaining, SeqCst);
 				} else {
 					warn!("Failed to parse rate limit {remaining} from header.");
 				}

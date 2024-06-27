@@ -131,7 +131,7 @@ pub async fn token_daemon() {
 }
 
 pub async fn force_refresh_token() {
-	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::Relaxed));
+	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst));
 	OAUTH_CLIENT.write().await.refresh().await;
 }
 
