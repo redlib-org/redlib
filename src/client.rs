@@ -320,6 +320,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	let current_rate_limit = OAUTH_RATELIMIT_REMAINING.load(Ordering::Relaxed);
 	if current_rate_limit < 10 {
 		warn!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
+		OAUTH_RATELIMIT_REMAINING.store(99, Ordering::Relaxed);
 		tokio::spawn(force_refresh_token());
 	}
 
