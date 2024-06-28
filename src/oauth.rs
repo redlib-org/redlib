@@ -98,21 +98,13 @@ impl Oauth {
 
 		Some(())
 	}
-
-	async fn refresh(&mut self) -> Option<()> {
-		// Refresh is actually just a subsequent login with the same headers (without the old token
-		// or anything). This logic is handled in login, so we just call login again.
-		let refresh = self.login().await;
-		info!("Refreshing OAuth token... {}", if refresh.is_some() { "success" } else { "failed" });
-		refresh
-	}
 }
 
 pub async fn token_daemon() {
 	// Monitor for refreshing token
 	loop {
 		// Get expiry time - be sure to not hold the read lock
-		let expires_in = { OAUTH_CLIENT.read().await.expires_in };
+		let expires_in = { OAUTH_CLIENT.load_full().expires_in };
 
 		// sleep for the expiry time minus 2 minutes
 		let duration = Duration::from_secs(expires_in - 120);
@@ -125,7 +117,7 @@ pub async fn token_daemon() {
 
 		// Refresh token - in its own scope
 		{
-			OAUTH_CLIENT.write().await.refresh().await;
+			force_refresh_token().await;
 		}
 	}
 }
@@ -137,7 +129,8 @@ pub async fn force_refresh_token() {
 	}
 
 	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst));
-	OAUTH_CLIENT.write().await.refresh().await;
+	let new_client = Oauth::new().await;
+	OAUTH_CLIENT.swap(new_client.into());
 	OAUTH_RATELIMIT_REMAINING.store(99, Ordering::SeqCst);
 	OAUTH_IS_ROLLING_OVER.store(false, Ordering::SeqCst);
 }
@@ -187,21 +180,21 @@ fn choose<T: Copy>(list: &[T]) -> T {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_client() {
-	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
+	assert!(!OAUTH_CLIENT.load_full().token.is_empty());
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_client_refresh() {
-	OAUTH_CLIENT.write().await.refresh().await.unwrap();
+	force_refresh_token().await;
 }
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_token_exists() {
-	assert!(!OAUTH_CLIENT.read().await.token.is_empty());
+	assert!(!OAUTH_CLIENT.load_full().token.is_empty());
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_headers_len() {
-	assert!(OAUTH_CLIENT.read().await.headers_map.len() >= 3);
+	assert!(OAUTH_CLIENT.load_full().headers_map.len() >= 3);
 }
 
 #[test]

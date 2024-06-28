@@ -1,3 +1,4 @@
+use arc_swap::ArcSwap;
 use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
@@ -13,7 +14,6 @@ use serde_json::Value;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::{io, result::Result};
-use tokio::sync::RwLock;
 
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
@@ -32,10 +32,10 @@ pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
 	client::Client::builder().build(https)
 });
 
-pub static OAUTH_CLIENT: Lazy<RwLock<Oauth>> = Lazy::new(|| {
+pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());
 	tokio::spawn(token_daemon());
-	RwLock::new(client)
+	ArcSwap::new(client.into())
 });
 
 pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
@@ -177,7 +177,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let client: Client<_, Body> = CLIENT.clone();
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
-		let client = block_on(OAUTH_CLIENT.read());
+		let client = OAUTH_CLIENT.load_full();
 		(
 			client.token.clone(),
 			client.headers_map.get("Client-Vendor-Id").cloned().unwrap_or_default(),
