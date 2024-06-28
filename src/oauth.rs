@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 
 use crate::{
-	client::{CLIENT, OAUTH_CLIENT, OAUTH_RATELIMIT_REMAINING},
+	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
@@ -131,8 +131,11 @@ pub async fn token_daemon() {
 }
 
 pub async fn force_refresh_token() {
+	OAUTH_IS_ROLLING_OVER.store(true, Ordering::SeqCst);
 	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst));
 	OAUTH_CLIENT.write().await.refresh().await;
+	OAUTH_RATELIMIT_REMAINING.store(99, Ordering::SeqCst);
+	OAUTH_IS_ROLLING_OVER.store(false, Ordering::SeqCst);
 }
 
 #[derive(Debug, Clone, Default)]
