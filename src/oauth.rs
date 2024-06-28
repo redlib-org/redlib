@@ -131,7 +131,11 @@ pub async fn token_daemon() {
 }
 
 pub async fn force_refresh_token() {
-	OAUTH_IS_ROLLING_OVER.store(true, Ordering::SeqCst);
+	if !OAUTH_IS_ROLLING_OVER.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+		trace!("Skipping refresh token roll over, already in progress");
+		return;
+	}
+
 	trace!("Rolling over refresh token. Current rate limit: {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst));
 	OAUTH_CLIENT.write().await.refresh().await;
 	OAUTH_RATELIMIT_REMAINING.store(99, Ordering::SeqCst);
