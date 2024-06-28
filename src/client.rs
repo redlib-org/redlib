@@ -359,8 +359,13 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 					let has_remaining = body.has_remaining();
 
 					if !has_remaining {
+						// Rate limited, so spawn a force_refresh_token()
+						tokio::spawn(force_refresh_token());
 						return match reset {
-							Some(val) => Err(format!("Reddit rate limit exceeded. Will reset in: {val}")),
+							Some(val) => Err(format!(
+								"Reddit rate limit exceeded. Try refreshing in a few seconds.\
+								 Rate limit will reset in: {val}"
+							)),
 							None => Err("Reddit rate limit exceeded".to_string()),
 						};
 					}
