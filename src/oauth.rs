@@ -131,7 +131,7 @@ pub async fn token_daemon() {
 }
 
 pub async fn force_refresh_token() {
-	if !OAUTH_IS_ROLLING_OVER.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+	if OAUTH_IS_ROLLING_OVER.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
 		trace!("Skipping refresh token roll over, already in progress");
 		return;
 	}
