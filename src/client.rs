@@ -339,23 +339,19 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 		Ok(response) => {
 			let status = response.status();
 
-			// Ratelimit remaining
-			if let Some(Ok(remaining)) = response.headers().get("x-ratelimit-remaining").map(|val| val.to_str()) {
+			let reset: Option<String> = if let (Some(remaining), Some(reset), Some(used)) = (
+				response.headers().get("x-ratelimit-remaining").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+				response.headers().get("x-ratelimit-reset").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+				response.headers().get("x-ratelimit-used").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+			) {
 				trace!(
-					"Ratelimit remaining: Header says {remaining}, we have {current_rate_limit}. {}",
-					if is_rolling_over { "Rolling over" } else { "" }
+					"Ratelimit remaining: Header says {}, we have {}. Rollover: {}. Ratelimit used: {}",
+					remaining,
+					current_rate_limit,
+					if is_rolling_over { "yes" } else { "no" },
+					used,
 				);
-			}
-
-			// Ratelimit used
-			if let Some(Ok(used)) = response.headers().get("x-ratelimit-used").map(|val| val.to_str()) {
-				trace!("Ratelimit used: {}", used);
-			}
-
-			// Ratelimit reset
-			let reset = if let Some(Ok(reset)) = response.headers().get("x-ratelimit-reset").map(|val| val.to_str()) {
-				trace!("Ratelimit reset: {}", reset);
-				Some(reset.to_string())
+				Some(reset)
 			} else {
 				None
 			};
