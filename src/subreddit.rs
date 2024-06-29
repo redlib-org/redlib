@@ -119,7 +119,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 		params.push_str(&format!("&geo_filter={geo_filter}"));
 	}
 
-	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace("+", "%2B"), req.uri().query().unwrap_or_default());
+	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);
