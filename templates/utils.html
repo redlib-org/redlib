@@ -170,6 +170,10 @@
 			<li class="desktop_item"><a href="/r/{{ post.community }}/duplicates/{{ post.id }}">duplicates</a></li>
 			<li class="mobile_item"><a href="/r/{{ post.community }}/duplicates/{{ post.id }}">dupes</a></li>
 			{% endif %}
+			{% if post.post_type == "link" %}
+			<li class="desktop_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive.is</a></li>
+			<li class="mobile_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive</a></li>
+			{% endif %}
 			{% call external_reddit_link(post.permalink) %}
 		</ul>
 		<p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>
