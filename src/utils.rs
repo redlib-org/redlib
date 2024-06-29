@@ -309,6 +309,7 @@ pub struct Post {
 	pub domain: String,
 	pub rel_time: String,
 	pub created: String,
+	pub created_ts: u64,
 	pub num_duplicates: u64,
 	pub comments: (String, String),
 	pub gallery: Vec<GalleryMedia>,
@@ -340,6 +341,7 @@ impl Post {
 			let data = &post["data"];
 
 			let (rel_time, created) = time(data["created_utc"].as_f64().unwrap_or_default());
+			let created_ts = data["created_utc"].as_f64().unwrap_or_default().round() as u64;
 			let score = data["score"].as_i64().unwrap_or_default();
 			let ratio: f64 = data["upvote_ratio"].as_f64().unwrap_or(1.0) * 100.0;
 			let title = val(post, "title");
@@ -412,6 +414,7 @@ impl Post {
 				poll: Poll::parse(&data["poll_data"]),
 				rel_time,
 				created,
+				created_ts,
 				num_duplicates: post["data"]["num_duplicates"].as_u64().unwrap_or(0),
 				comments: format_num(data["num_comments"].as_i64().unwrap_or_default()),
 				gallery,
@@ -420,7 +423,7 @@ impl Post {
 				ws_url: val(post, "websocket_url"),
 			});
 		}
-
+		posts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
 		Ok((posts, res["data"]["after"].as_str().unwrap_or_default().to_string()))
 	}
 }
@@ -673,6 +676,8 @@ pub async fn parse_post(post: &Value) -> Post {
 	// Determine the type of media along with the media URL
 	let (post_type, media, gallery) = Media::parse(&post["data"]).await;
 
+	let created_ts = post["data"]["created_utc"].as_f64().unwrap_or_default().round() as u64;
+
 	let awards: Awards = Awards::parse(&post["data"]["all_awardings"]);
 
 	let permalink = val(post, "permalink");
@@ -743,6 +748,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		domain: val(post, "domain"),
 		rel_time,
 		created,
+		created_ts,
 		num_duplicates: post["data"]["num_duplicates"].as_u64().unwrap_or(0),
 		comments: format_num(post["data"]["num_comments"].as_i64().unwrap_or_default()),
 		gallery,
