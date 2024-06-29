@@ -345,11 +345,8 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 				response.headers().get("x-ratelimit-used").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
 			) {
 				trace!(
-					"Ratelimit remaining: Header says {}, we have {}. Rollover: {}. Ratelimit used: {}",
-					remaining,
-					current_rate_limit,
+					"Ratelimit remaining: Header says {remaining}, we have {current_rate_limit}. Resets in {reset}. Rollover: {}. Ratelimit used: {used}",
 					if is_rolling_over { "yes" } else { "no" },
-					used,
 				);
 				Some(reset)
 			} else {
