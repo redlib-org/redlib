@@ -424,15 +424,7 @@ impl Post {
 			});
 		}
 		posts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
-		posts.sort_by(|a, b| {
-			if a.flags.stickied && !b.flags.stickied {
-				return std::cmp::Ordering::Less;
-			}
-			if !a.flags.stickied && b.flags.stickied {
-				return std::cmp::Ordering::Greater;
-			}
-			std::cmp::Ordering::Equal
-		});
+		posts.sort_by(|a, b| b.flags.stickied.cmp(&a.flags.stickied));
 		Ok((posts, res["data"]["after"].as_str().unwrap_or_default().to_string()))
 	}
 }
