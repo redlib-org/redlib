@@ -1255,8 +1255,26 @@ a.search_subreddit:hover {
 	min-width: 0;
 }
 
-.comment_data > * {
+.comment:has([id]) .comment_data > * {
 	margin-right: 5px;
+}
+
+.comment:not([id]) .comment_data {
+    display: inline-flex;
+    max-width: 100%;
+}
+ 
+.comment:not([id]) .comment_data > * {
+    flex: 0 0 auto;
+}
+ 
+.comment:not([id]) .comment_data > .comment_link {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    word-break: break-all;
+    overflow: hidden;
+    flex: 0 1 auto;
 }
 
 .comment_image {

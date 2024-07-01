@@ -63,8 +63,10 @@
 				</div>
 				<details class="comment_right" open>
 					<summary class="comment_data">
-						<a class="comment_link" href="{{ post.permalink }}">Comment on r/{{ post.community }}</a>
-						<span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
+                        <a class="comment_link" href="{{ post.permalink }}" title="{{ post.link_title }}">{{ post.link_title }}</a>
+                        <span class="created">&nbsp;in&nbsp;</span>
+                        <a href="/r/{{ post.community }}">r/{{ post.community }}</a>
+                        <span class="created" title="{{ post.created }}">&nbsp;{{ post.rel_time }}</span>
 					</summary>
 					<p class="comment_body">{{ post.body|safe }}</p>
 				</details>
