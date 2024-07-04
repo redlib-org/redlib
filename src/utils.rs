@@ -1131,17 +1131,9 @@ pub fn url_path_basename(path: &str) -> String {
 		path.to_string()
 	} else {
 		let mut url = url_result.unwrap();
-		url
-			.path_segments_mut()
-			.unwrap()
-			.pop_if_empty();
+		url.path_segments_mut().unwrap().pop_if_empty();
 
-		url
-			.path_segments()
-			.unwrap()
-			.last()
-			.unwrap()
-			.to_string()
+		url.path_segments().unwrap().last().unwrap().to_string()
 	}
 }
 
