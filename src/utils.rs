@@ -237,7 +237,7 @@ impl Media {
 		let alt_url = alt_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
 
 		let download_name = if post_type == "image" || post_type == "gif" || post_type == "video" {
-			let permalink_base = url_path_basename(&data["permalink"].as_str().unwrap_or_default());
+			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
 			let media_url_base = url_path_basename(url_val.as_str().unwrap_or_default());
 
 			format!("redlib_{permalink_base}_{media_url_base}")
