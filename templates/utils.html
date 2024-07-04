@@ -164,13 +164,28 @@
     <span class="label"> Upvotes</span></div>
 	<div class="post_footer">
 		<ul id="post_links">
-			<li class="desktop_item"><a href="{{ post.permalink }}">permalink</a></li>
-			<li class="mobile_item"><a href="{{ post.permalink }}">link</a></li>
+			<li>
+				<a href="{{ post.permalink }}">
+					<span class="desktop_item">perma</span>link
+				</a>
+			</li>
 			{% if post.num_duplicates > 0 %}
-			<li class="desktop_item"><a href="/r/{{ post.community }}/duplicates/{{ post.id }}">duplicates</a></li>
-			<li class="mobile_item"><a href="/r/{{ post.community }}/duplicates/{{ post.id }}">dupes</a></li>
+			<li>
+				<a href="/r/{{ post.community }}/duplicates/{{ post.id }}">
+					dup<span class="desktop_item">licat</span>es
+				</a>
+			</li>
 			{% endif %}
 			{% call external_reddit_link(post.permalink) %}
+
+			{% if post.media.download_name != "" %}
+			<li>
+				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download</span>
+				</a>
+			</li>
+			{% endif %}
 		</ul>
 		<p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>
 	</div>
@@ -178,8 +193,7 @@
 {%- endmacro %}
 
 {% macro external_reddit_link(permalink) %}
-{% for dev_type in ["desktop", "mobile"] %}
-<li class="{{ dev_type }}_item">
+<li>
 	<a
 		{% if prefs.disable_visit_reddit_confirmation != "on" %}
 		href="#popup"
@@ -193,7 +207,6 @@
 		{% call visit_reddit_confirmation(permalink) %}
 	{% endif %}
 </li>
-{% endfor %}
 {% endmacro %}
 
 {% macro post_in_list(post) -%}

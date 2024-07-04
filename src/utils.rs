@@ -169,6 +169,7 @@ pub struct Media {
 	pub width: i64,
 	pub height: i64,
 	pub poster: String,
+	pub download_name: String,
 }
 
 impl Media {
@@ -235,6 +236,15 @@ impl Media {
 
 		let alt_url = alt_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
 
+		let download_name = if post_type == "image" || post_type == "gif" || post_type == "video" {
+			let permalink_base = url_path_basename(&data["permalink"].as_str().unwrap_or_default());
+			let media_url_base = url_path_basename(url_val.as_str().unwrap_or_default());
+
+			format!("redlib_{permalink_base}_{media_url_base}")
+		} else {
+			String::new()
+		};
+
 		(
 			post_type.to_string(),
 			Self {
@@ -245,6 +255,7 @@ impl Media {
 				width: source["width"].as_i64().unwrap_or_default(),
 				height: source["height"].as_i64().unwrap_or_default(),
 				poster: format_url(source["url"].as_str().unwrap_or_default()),
+				download_name,
 			},
 			gallery,
 		)
@@ -389,6 +400,7 @@ impl Post {
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
 					poster: String::new(),
+					download_name: String::new(),
 				},
 				media,
 				domain: val(post, "domain"),
@@ -727,6 +739,7 @@ pub async fn parse_post(post: &Value) -> Post {
 			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
 			poster: String::new(),
+			download_name: String::new(),
 		},
 		flair: Flair {
 			flair_parts: FlairPart::parse(
@@ -1110,6 +1123,28 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
+// Returns the last (non-empty) segment of a path string
+pub fn url_path_basename(path: &str) -> String {
+	let url_result = Url::parse(format!("https://libredd.it/{path}").as_str());
+
+	if url_result.is_err() {
+		path.to_string()
+	} else {
+		let mut url = url_result.unwrap();
+		url
+			.path_segments_mut()
+			.unwrap()
+			.pop_if_empty();
+
+		url
+			.path_segments()
+			.unwrap()
+			.last()
+			.unwrap()
+			.to_string()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::{format_num, format_url, rewrite_urls};
@@ -1217,4 +1252,20 @@ fn test_rewriting_image_links() {
 		r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
 	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p"#;
 	assert_eq!(rewrite_urls(input), output);
+}
+
+#[test]
+fn test_url_path_basename() {
+	// without trailing slash
+	assert_eq!(url_path_basename("/first/last"), "last");
+	// with trailing slash
+	assert_eq!(url_path_basename("/first/last/"), "last");
+	// with query parameters
+	assert_eq!(url_path_basename("/first/last/?some=query"), "last");
+	// file path
+	assert_eq!(url_path_basename("/cdn/image.jpg"), "image.jpg");
+	// when a full url is passed instead of just a path
+	assert_eq!(url_path_basename("https://doma.in/first/last"), "last");
+	// empty path
+	assert_eq!(url_path_basename("/"), "");
 }
