@@ -662,9 +662,12 @@ button.submit:hover > svg { stroke: var(--accent); }
 }
 
 #search_sort {
-	background: var(--highlighted);
 	border-radius: 5px;
 	overflow: auto;
+}
+
+#search_sort > * {
+	background: var(--highlighted);
 }
 
 #search_sort > #search {
