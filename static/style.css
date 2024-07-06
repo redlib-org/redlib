@@ -695,7 +695,7 @@ button.submit:hover > svg { stroke: var(--accent); }
 }
 
 .search_widget_divider_box > * {
-	border-right: 2px var(--background) solid;
+	border-right: 2px var(--outside) solid;
 	margin: 0;
 }
 
@@ -721,7 +721,7 @@ button.submit:hover > svg { stroke: var(--accent); }
 		flex: 1;
 		min-width: unset;
 		border-right: 0;
-		border-bottom: 2px var(--background) solid;
+		border-bottom: 2px var(--outside) solid;
 	}
 
 	#search:focus {
@@ -742,7 +742,7 @@ button.submit:hover > svg { stroke: var(--accent); }
 
 	#sort_submit {
 		height: unset;
-		border-left: 2px var(--background) solid;
+		border-left: 2px var(--outside) solid;
 	}
 }
 
