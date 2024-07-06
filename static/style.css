@@ -711,6 +711,41 @@ button.submit:hover > svg { stroke: var(--accent); }
 	box-shadow: none;
 }
 
+/* When screen size is smaller than 480px we switch to a design better suited for mobile devices */
+@media screen and (max-width: 480px) {
+	#search_sort {
+		align-items: unset;
+	}
+
+	#search {
+		flex: 1;
+		min-width: unset;
+		border-right: 0;
+		border-bottom: 2px var(--background) solid;
+	}
+
+	#search:focus {
+		outline: 0;
+	}
+
+	#search_sort > .search_widget_divider_box {
+		flex-wrap: wrap;
+	}
+
+	.search_widget_divider_box > * {
+		width: 100%;
+	}
+
+	.search_widget_divider_box > select:last-child {
+		border-right: 0;
+	}
+
+	#sort_submit {
+		height: unset;
+		border-left: 2px var(--background) solid;
+	}
+}
+
 #sort_options, #listing_options, main > * > footer > a {
 	border-radius: 5px;
 	align-items: center;
