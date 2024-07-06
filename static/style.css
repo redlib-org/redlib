@@ -717,7 +717,7 @@ button.submit:hover > svg { stroke: var(--accent); }
 		align-items: unset;
 	}
 
-	#search {
+	.search_widget_divider_box > #search {
 		flex: 1;
 		min-width: unset;
 		border-right: 0;
@@ -734,6 +734,10 @@ button.submit:hover > svg { stroke: var(--accent); }
 
 	.search_widget_divider_box > * {
 		width: 100%;
+	}
+
+	#sort_options {
+		min-width: fit-content;
 	}
 
 	.search_widget_divider_box > select:last-child {
