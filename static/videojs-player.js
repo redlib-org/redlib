@@ -1,5 +1,5 @@
 
-const codecs = {
+var codecs = {
     dash: {
         mimeType: 'application/dash+xml',
         isSupported: 'MediaSource' in window
@@ -8,11 +8,11 @@ const codecs = {
         mimeType: 'application/vnd.apple.mpegurl',
         isSupported: undefined
     }
-}
+};
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
     var observer = new IntersectionObserver(handleVideoIntersect, {
-        rootMargin: '100px',
+        rootMargin: '100px'
     });
     
     var videoElements = document.querySelectorAll(".post_media_content > video[data-dash]");
@@ -20,16 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if native hls playback is supported, if so we are probably on an apple device
     var videoEl = videoElements[0];
     if (videoEl) {
-        var canPlay = videoEl.canPlayType(codecs.hls.mimeType)
+        var canPlayHls = videoEl.canPlayType(codecs.hls.mimeType)
         // Maybe is f.e. returned by Firefox on iOS
-        codecs.hls.isSupported = canPlay === 'probably' || canPlay === 'maybe';
+        codecs.hls.isSupported = canPlayHls === 'probably' || canPlayHls === 'maybe';
     }
 
-    videoElements.forEach((el) => observer.observe(el));
+    videoElements.forEach(function (el) { observer.observe(el) });
 });
 
 function handleVideoIntersect(entries) {
-    entries.forEach((entry) => {
+    entries.forEach(function (entry) {
         var videoEl = entry.target;
         var player = videojs.getPlayer(videoEl);
 
@@ -57,11 +57,9 @@ function initPlayer(videoEl, forceAutoplay = false) {
     const autoplay = forceAutoplay || videoEl.classList.contains('autoplay');
 
     if (srcHls && codecs.hls.isSupported) {
-        // Try to play HLS video with native playback
-        videoEl.src = srcHls;
-        videoEl.controls = true;
-        videoEl.addEventListener('error', (err) => {
+        function handleHlsPlayerError(err) {
             if (err.target.error.code === 4) { // Failed to init decoder
+                videoEl.removeEventListener('error', handleHlsPlayerError);
                 codecs.hls.isSupported = false;
 
                 // Re-init player but try to use dash instead, probably
@@ -70,7 +68,12 @@ function initPlayer(videoEl, forceAutoplay = false) {
                 videoEl.dataset.dash = srcDash;
                 initPlayer(videoEl, true);
             }
-        });
+        }
+
+        // Try to play HLS video with native playback
+        videoEl.src = srcHls;
+        videoEl.controls = true;
+        videoEl.addEventListener('error', handleHlsPlayerError);
 
         if (autoplay) {
             videoEl.play();

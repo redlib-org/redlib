@@ -245,11 +245,11 @@ async fn main() {
 		.at("/jb-videojs-hls-quality-selector.min.js")
 		.get(|_| resource(include_str!("../static/jb-videojs-hls-quality-selector.min.js"), "text/javascript", false).boxed());
 	app
-		.at("/player.js")
-		.get(|_| resource(include_str!("../static/player.js"), "text/javascript", false).boxed());
+		.at("/videojs-player.js")
+		.get(|_| resource(include_str!("../static/videojs-player.js"), "text/javascript", false).boxed());
 	app
-		.at("/player.css")
-		.get(|_| resource(include_str!("../static/player-invidious.css"), "text/css", false).boxed());
+		.at("/videojs-player.css")
+		.get(|_| resource(include_str!("../static/videojs-player-invidious.css"), "text/css", false).boxed());
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());

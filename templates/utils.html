@@ -349,11 +349,11 @@
 {% macro render_video_js() -%}
 	{% if prefs.use_vjs == "on" -%}
 	<link href="/video-js.min.css" rel="stylesheet">
-	<link href="/player.css" rel="stylesheet">
+	<link href="/videojs-player.css" rel="stylesheet">
 	<script src="/video.min.js" defer></script>
 	<script src="/videojs-contrib-quality-levels.js" defer></script>
 	<script src="/jb-videojs-hls-quality-selector.min.js" defer></script>
-	<script src="/player.js" defer></script>
+	<script src="/videojs-player.js" defer></script>
 	{% else if prefs.use_hls == "on" -%}
 	<script src="/hls.min.js" defer></script>
 	<script src="/playHLSVideo.js" defer></script>
