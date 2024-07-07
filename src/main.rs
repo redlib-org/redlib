@@ -189,7 +189,7 @@ async fn main() {
 		"Referrer-Policy" => "no-referrer",
 		"X-Content-Type-Options" => "nosniff",
 		"X-Frame-Options" => "DENY",
-		"Content-Security-Policy" => "default-src 'none'; font-src 'self'; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"
+		"Content-Security-Policy" => "default-src 'none'; font-src 'self' data:; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"
 	};
 
 	if let Some(expire_time) = hsts {
@@ -232,10 +232,29 @@ async fn main() {
 	app
 		.at("/highlighted.js")
 		.get(|_| resource(include_str!("../static/highlighted.js"), "text/javascript", false).boxed());
+	app
+		.at("/video.min.js")
+		.get(|_| resource(include_str!("../static/video.min.js"), "text/javascript", false).boxed());
+	app
+		.at("/video-js.min.css")
+		.get(|_| resource(include_str!("../static/video-js.min.css"), "text/css", false).boxed());
+	app
+		.at("/videojs-contrib-quality-levels.js")
+		.get(|_| resource(include_str!("../static/videojs-contrib-quality-levels.js"), "text/javascript", false).boxed());
+	app
+		.at("/jb-videojs-hls-quality-selector.min.js")
+		.get(|_| resource(include_str!("../static/jb-videojs-hls-quality-selector.min.js"), "text/javascript", false).boxed());
+	app
+		.at("/player.js")
+		.get(|_| resource(include_str!("../static/player.js"), "text/javascript", false).boxed());
+	app
+		.at("/player.css")
+		.get(|_| resource(include_str!("../static/player-invidious.css"), "text/css", false).boxed());
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
+	app.at("/dash/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
 	app.at("/img/*path").get(|r| proxy(r, "https://i.redd.it/{path}").boxed());
 	app.at("/thumb/:point/:id").get(|r| proxy(r, "https://{point}.thumbs.redditmedia.com/{id}").boxed());
 	app.at("/emoji/:id/:name").get(|r| proxy(r, "https://emoji.redditmedia.com/{id}/{name}").boxed());
