@@ -1,5 +1,5 @@
 
-var codecs = {
+var streamProto = {
     dash: {
         mimeType: 'application/dash+xml',
         isSupported: 'MediaSource' in window
@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Check if native hls playback is supported, if so we are probably on an apple device
     var videoEl = videoElements[0];
     if (videoEl) {
-        var canPlayHls = videoEl.canPlayType(codecs.hls.mimeType)
+        var canPlayHls = videoEl.canPlayType(streamProto.hls.mimeType)
         // Maybe is f.e. returned by Firefox on iOS
-        codecs.hls.isSupported = canPlayHls === 'probably' || canPlayHls === 'maybe';
+        streamProto.hls.isSupported = canPlayHls === 'probably' || canPlayHls === 'maybe';
     }
 
     videoElements.forEach(function (el) { observer.observe(el) });
@@ -56,11 +56,11 @@ function initPlayer(videoEl, forceAutoplay = false) {
 
     const autoplay = forceAutoplay || videoEl.classList.contains('autoplay');
 
-    if (srcHls && codecs.hls.isSupported) {
+    if (srcHls && streamProto.hls.isSupported) {
         function handleHlsPlayerError(err) {
             if (err.target.error.code === 4) { // Failed to init decoder
                 videoEl.removeEventListener('error', handleHlsPlayerError);
-                codecs.hls.isSupported = false;
+                streamProto.hls.isSupported = false;
 
                 // Re-init player but try to use dash instead, probably
                 // canPlayType returned 'maybe' and after trying to play
@@ -113,10 +113,10 @@ function initPlayer(videoEl, forceAutoplay = false) {
         }
     });
 
-    if (srcDash && codecs.dash.isSupported) {
+    if (srcDash && streamProto.dash.isSupported) {
         player.src({
             src: srcDash,
-            type: codecs.dash.mimeType
+            type: streamProto.dash.mimeType
         });
     }
 
