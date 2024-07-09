@@ -87,16 +87,25 @@
 					<input type="checkbox" name="hide_sidebar_and_summary" {% if prefs.hide_sidebar_and_summary == "on" %}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
-					<label for="use_hls">Use HLS for videos</label>
-					<details id="feeds">
+					<label for="use_dash">Use DASH for videos</label>
+					<details class="feeds">
 						<summary>Why?</summary>
-						<div id="feed_list" class="helper">Reddit videos require JavaScript (via HLS.js) to be enabled to be played with audio. Therefore, this toggle lets you either use Redlib JS-free or utilize this feature.</div>
+						<div class="feed_list helper">Reddit videos require JavaScript to be played with audio. Therefore, this toggle lets you either use Redlib JS-free (without audio) or with.</div>
+					</details>
+					<input type="hidden" value="off" name="use_dash">
+					<input type="checkbox" name="use_dash" id="use_dash" {% if prefs.use_dash == "on" %}checked{% endif %}>
+				</div>
+				<div class="prefs-group">
+					<label for="use_hls">Use HLS for videos</label>
+					<details class="feeds">
+						<summary>Why?</summary>
+						<div class="feed_list helper">See comment for DASH which is recommended. Redlib previously only supported HLS using hls.js, therefore it's still provided. HLS support using hls.js might be removed in a future release.</div>
 					</details>
 					<input type="hidden" value="off" name="use_hls">
 					<input type="checkbox" name="use_hls" id="use_hls" {% if prefs.use_hls == "on" %}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
-					<label for="hide_hls_notification">Hide notification about possible HLS usage</label>
+					<label for="hide_hls_notification">Hide notification about possible DASH/HLS usage</label>
 					<input type="hidden" value="off" name="hide_hls_notification">
 					<input type="checkbox" name="hide_hls_notification" id="hide_hls_notification" {% if prefs.hide_hls_notification == "on" %}checked{% endif %}>
 				</div>
