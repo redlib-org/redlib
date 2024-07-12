@@ -40,7 +40,6 @@ function handleVideoIntersect(entries) {
                 initPlayer(videoEl);
             }
         } else {
-            console.log('player', player)
             if (player) {
                 player.pause();
             }
@@ -57,7 +56,7 @@ function initPlayer(videoEl, forceAutoplay = false) {
         return;
     }
 
-    const autoplay = forceAutoplay || videoEl.classList.contains('autoplay');
+    var autoplay = forceAutoplay || videoEl.classList.contains('autoplay');
 
     if (srcHls && streamProto.hls.isSupported) {
         function handleHlsPlayerError(err) {
@@ -85,14 +84,31 @@ function initPlayer(videoEl, forceAutoplay = false) {
         return;
     }
 
+    // remove mp4 source on video element
+    videoEl.querySelectorAll('source').forEach(function (el) { el.remove(); });
+    delete videoEl.src;
+    delete videoEl.srcObject;
+    videoEl.load(); // required to really remove the source without replacing the video element
+
     var player = dashjs.MediaPlayer().create();
     player.updateSettings({
         streaming: {
             abr: {
+                autoSwitchBitrate: true,
                 limitBitrateByPortal: true,
+                usePixelRatioInLimitBitrateByPortal: true
+            },
+            buffer: {
+                fastSwitchEnabled: true
+            },
+            scheduling: {
+                scheduleWhilePaused: false
             }
         }
     });
+
+    player.on(dashjs.MediaPlayer.events.STREAM_ACTIVATED, function (e) { onStreamActivated(e, player); });
+    player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, function (e) { onQualityChangeRendered(e, player); });
     player.initialize(videoEl, srcDash, autoplay);
 
     if (!videoEl._dashjs_player) {
@@ -100,4 +116,75 @@ function initPlayer(videoEl, forceAutoplay = false) {
     }
 
     return player;
+}
+
+function onStreamActivated(e, player) {
+    /* e = { streamInfo: { ... } } */
+    if (player.getBitrateInfoListFor) {
+        var videoBitrates = player.getBitrateInfoListFor('video');
+        addQualitySelector(player, videoBitrates);
+    }
+}
+
+function onQualityChangeRendered(e, player) {
+    /* e = { mediaType: "video", oldQuality: 1, newQuality: 2, streamId: "0", type: "qualityChangeRendered" } */
+    var videoEl = player.getVideoElement();
+    var qualitySelector = videoEl.nextElementSibling;
+    if (qualitySelector && qualitySelector.tagName === 'SELECT') {
+        var selectedIndex = qualitySelector.selectedIndex;
+        var optionCount = qualitySelector.options.length;
+
+        if (selectedIndex === optionCount - 1) { // auto quality
+            var [mode] = qualitySelector.options[e.newQuality].innerText.split(' ', 2);
+            qualitySelector.options[selectedIndex].innerText = 'auto ('+ mode +')';
+        } else {
+            qualitySelector.selectedIndex = e.newQuality;
+        }
+    }
+}
+
+function addOption(selectEl, value, label, isSelected = false) {
+    var option = document.createElement('option');
+    option.value = value;
+    option.text = label;
+    if (isSelected) {
+        option.selected = "selected"
+    }
+    selectEl.appendChild(option);
+}
+
+function addQualitySelector(player, availableLevels) {
+    var qualitySelector = document.createElement('select');
+    qualitySelector.classList.add('quality-selector');
+
+    availableLevels.forEach(function (level, index) {
+        var bitrate = (level.bitrate / 1e3).toFixed(0);
+        var label = level.height + 'p (' + bitrate + ' kbps)';
+
+        addOption(qualitySelector, index.toString(), label);
+    });
+    addOption(qualitySelector, 'auto', 'auto', true);
+
+    var lastIndex = availableLevels.length;
+    qualitySelector.selectedIndex = lastIndex;
+    qualitySelector.addEventListener('change', function () {
+        var selectedIndex = qualitySelector.selectedIndex;
+
+        // Only auto switch bitrate if user did not manually change it
+        var autoSwitchBitrate = selectedIndex >= lastIndex ? true : false;
+        player.updateSettings({
+            streaming: {
+                abr: {
+                    autoSwitchBitrate,
+                }
+            }
+        });
+
+        if (!autoSwitchBitrate) {
+            player.setQualityFor('video', selectedIndex, true);
+        }
+    });
+
+    var videoEl = player.getVideoElement();
+    videoEl.parentNode.appendChild(qualitySelector);
 }
