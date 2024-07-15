@@ -1233,10 +1233,6 @@ a.search_subreddit:hover {
 	font-weight: bold;
 }
 
-.comment_subreddit {
-	font-weight: bold;
-}
-
 .comment_score {
 	color: var(--accent);
 	background: var(--foreground);
