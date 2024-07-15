@@ -50,7 +50,7 @@
 			{% else if !post.title.is_empty() %}
 			{% call utils::post_in_list(post) %}
 			{% else %}
-			<div class="comment">
+			<div class="comment user-comment">
 				<div class="comment_left">
 					<p class="comment_score" title="{{ post.score.1 }}">
                     {% if prefs.hide_score != "on" %}
@@ -65,8 +65,9 @@
 					<summary class="comment_data">
                         <a class="comment_link" href="{{ post.permalink }}" title="{{ post.link_title }}">{{ post.link_title }}</a>
 						<div class="user_comment_data_divider">
-							<span class="created">&nbsp;in&nbsp;</span>
-							<a href="/r/{{ post.community }}">r/{{ post.community }}</a>
+							<span class="created-in">&nbsp;in&nbsp;</span>
+							<a class="comment_subreddit" href="/r/{{ post.community }}">r/{{ post.community }}</a>
+							<span class="dot">&bull;</span>
 							<span class="created" title="{{ post.created }}">&nbsp;{{ post.rel_time }}</span>
 						</div>
 					</summary>
