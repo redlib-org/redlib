@@ -64,9 +64,11 @@
 				<details class="comment_right" open>
 					<summary class="comment_data">
                         <a class="comment_link" href="{{ post.permalink }}" title="{{ post.link_title }}">{{ post.link_title }}</a>
-                        <span class="created">&nbsp;in&nbsp;</span>
-                        <a href="/r/{{ post.community }}">r/{{ post.community }}</a>
-                        <span class="created" title="{{ post.created }}">&nbsp;{{ post.rel_time }}</span>
+						<div class="user_comment_data_divider">
+							<span class="created">&nbsp;in&nbsp;</span>
+							<a href="/r/{{ post.community }}">r/{{ post.community }}</a>
+							<span class="created" title="{{ post.created }}">&nbsp;{{ post.rel_time }}</span>
+						</div>
 					</summary>
 					<p class="comment_body">{{ post.body|safe }}</p>
 				</details>
