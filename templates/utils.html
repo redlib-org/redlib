@@ -38,9 +38,9 @@
 {%- endmacro %}
 
 {% macro sub_list(current) -%}
-	<details id="feeds">
+	<details class="feeds">
 		<summary>Feeds</summary>
-		<div id="feed_list">
+		<div class="feed_list">
 			<p>MAIN FEEDS</p>
 			<a href="/">Home</a>
 			<a href="/r/popular">Popular</a>
@@ -53,12 +53,6 @@
 			{% endif %}
 		</div>
 	</details>
-{%- endmacro %}
-
-{% macro render_hls_notification(redirect_url) -%}
-{% if post.post_type == "video" && !post.media.alt_url.is_empty() && prefs.hide_hls_notification != "on" %}
-<div class="post_notification"><p><a href="/settings/update/?use_hls=on&redirect={{ redirect_url }}">Enable HLS</a> to view with audio, or <a href="/settings/update/?hide_hls_notification=on&redirect={{ redirect_url }}">disable this notification</a></p></div>
-{% endif %}
 {%- endmacro %}
 
 {% macro post(post) -%}
@@ -120,21 +114,7 @@
 		</a>
 	</div>
 	{% else if post.post_type == "video" || post.post_type == "gif" %}
-	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-	<script src="/hls.min.js"></script>
-	<div class="post_media_content">
-		<video class="post_media_video short {% if prefs.autoplay_videos == "on" %}hls_autoplay{% endif %}{%if post_should_be_blurred %} post_nsfw_blur{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls>
-			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
-			<source src="{{ post.media.url }}" type="video/mp4" />
-		</video>
-	</div>
-	<script src="/playHLSVideo.js"></script>
-	{% else %}
-	<div class="post_media_content">
-		<video class="post_media_video{%if post_should_be_blurred %} post_nsfw_blur{% endif %}" src="{{ post.media.url }}" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %} loop><a href={{ post.media.url }}>Video</a></video>
-	</div>
-	{% call render_hls_notification(post.permalink[1..]) %}
-	{% endif %}
+		{% call render_video_html(post, "post") %}
 	{% else if post.post_type == "gallery" %}
 	<div class="gallery">
 	{% for image in post.gallery -%}
@@ -211,7 +191,7 @@
 
 {% macro post_in_list(post) -%}
 {% set post_should_be_blurred = (post.flags.nsfw && prefs.blur_nsfw=="on") || (post.flags.spoiler && prefs.blur_spoiler=="on") -%}
-<div class="post {% if post.flags.stickied %}stickied{% endif %}" id="{{ post.id }}">
+<div id="{{ post.id }}" class="post{% if post.flags.stickied %} stickied{% endif %}">
 	<p class="post_header">
 		{% let community -%}
 		{% if post.community.starts_with("u_") -%}
@@ -263,19 +243,7 @@
 		</a>
 	</div>
 	{% else if (prefs.layout.is_empty() || prefs.layout == "card") && (post.post_type == "gif" || post.post_type == "video") %}
-	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-	<div class="post_media_content">
-        <video class="post_media_video short {%if post_should_be_blurred %}post_nsfw_blur{% endif %} {% if prefs.autoplay_videos == "on" %}hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" controls preload="none">
-			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
-			<source src="{{ post.media.url }}" type="video/mp4" />
-		</video>
-	</div>
-	{% else %}
-	<div class="post_media_content">
-		<video class="post_media_video short {%if post_should_be_blurred %}post_nsfw_blur{% endif %}" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %}><a href={{ post.media.url }}>Video</a></video>
-	</div>
-	{% call render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) %}
-	{% endif %}
+		{% call render_video_html(post, "list") %}
 	{% else if post.post_type != "self" %}
 	<a class="post_thumbnail {% if post.thumbnail.url.is_empty() %}no_thumbnail{% endif %}" href="{% if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow">
 		{% if post.thumbnail.url.is_empty() %}
@@ -366,4 +334,69 @@
 			</div>
 		{% when None %}
 	{% endmatch %}
+{%- endmacro %}
+
+{% macro render_video_audio_notification(redirect_url) -%}
+{% if prefs.hide_hls_notification != "on" && redirect_url != "" %}
+<div class="post_notification">
+	<p>Enable <a href="/settings/update/?use_vjs=on&redirect={{ redirect_url }}">Video.js</a> (recommended) or <a href="/settings/update/?use_hls=on&redirect={{ redirect_url }}">HLS</a> to view with audio,
+	or <a href="/settings/update/?hide_hls_notification=on&redirect={{ redirect_url }}">disable this notification</a>
+	</p>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro render_video_js() -%}
+	{% if prefs.use_vjs == "on" -%}
+	<link href="/video-js.min.css" rel="stylesheet">
+	<link href="/videojs-player.css" rel="stylesheet">
+	<script src="/video.min.js" defer></script>
+	<script src="/videojs-contrib-quality-levels.js" defer></script>
+	<script src="/jb-videojs-hls-quality-selector.min.js" defer></script>
+	<script src="/videojs-player.js" defer></script>
+	{% else if prefs.use_hls == "on" -%}
+	<script src="/hls.min.js" defer></script>
+	<script src="/playHLSVideo.js" defer></script>
+	{% endif %}
+{%- endmacro %}
+
+{% macro render_video_html(post, view_type) -%}
+<br/>
+	{% if post.post_type == "video" || post.post_type == "gif" %}
+	{% set use_vjs = prefs.use_vjs == "on" && !post.media.dash_url.is_empty() %}
+	{% set use_hls = !use_vjs && prefs.use_hls == "on" && !post.media.hls_url.is_empty() %}
+	<div class="post_media_content">
+		<video
+			id="vid_{{ post.id }}"
+			class="post_media_video short{% if use_vjs %} video-js player-style-invidious{% endif %}{% if post_should_be_blurred %} post_nsfw_blur{% endif %}{% if prefs.autoplay_videos == "on" %} autoplay{% endif -%}"
+			poster="{{ post.media.poster }}"
+			preload="none"
+			{% if post.media.width > 0 && post.media.height > 0 -%}
+			width="{{ post.media.width }}"
+			height="{{ post.media.height }}"
+			{% endif -%}
+			{% if use_vjs -%}
+			{# dont show controls to hide switch from native player to video.js #}
+			data-dash="{{ post.media.dash_url }}"
+			data-hls="{{ post.media.hls_url }}"
+			{% else %}
+			controls
+			{% endif -%}
+		>
+			{% if use_hls -%}
+			<source src="{{ post.media.hls_url }}" type="application/vnd.apple.mpegurl" />
+			{% endif -%}
+			<source src="{{ post.media.url }}" type="video/mp4" />
+		</video>
+	</div>
+
+	{% if !use_vjs && !use_hls && prefs.hide_hls_notification != "on" %}
+	{% if  view_type == "list" %}
+	{% set post_id = post.id.clone() %}
+	{% call render_video_audio_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post_id)) %}
+	{% else if view_type == "post" %}
+	{% call render_video_audio_notification(post.permalink[1..]) %}
+	{% endif %}
+	{% endif %}
+	{% endif %}
 {%- endmacro %}

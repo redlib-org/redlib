@@ -397,6 +397,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `BLUR_SPOILER`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
+| `USE_VJS`                           | `["on", "off"]`                                                                                                                    | `off`         |
 | `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
 | `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
