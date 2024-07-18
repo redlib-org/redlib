@@ -1233,10 +1233,6 @@ a.search_subreddit:hover {
 	font-weight: bold;
 }
 
-.comment_subreddit {
-	font-weight: bold;
-}
-
 .comment_score {
 	color: var(--accent);
 	background: var(--foreground);
@@ -1344,6 +1340,15 @@ a.search_subreddit:hover {
 
 summary.comment_data {
 	cursor: pointer;
+}
+
+.user_comment_data_divider {
+	display: flex;
+	align-items: center;
+}
+
+.user_comment_data_divider .dot {
+	display: none;
 }
 
 .moderator, .admin { opacity: 1; }
@@ -1758,8 +1763,23 @@ td, th {
 	.comment_right { padding: 5px 0 10px 2px; }
 	.comment_author { margin-left: 12px; }
 	.comment_data { margin-left: 12px; }
+
+	.user-comment .comment_data {
+		flex-direction: column;
+		flex-wrap: wrap;
+		row-gap: 5px;
+	}
+
 	.comment_data::marker { font-size: 25px; }
-	.created { width: 100%; }
+	.user-comment .comment_data > .comment_link { order: 2 }
+	.user_comment_data_divider { order: 1; }
+
+	.user_comment_data_divider .dot {
+		display: unset;
+		margin-left: 5px;
+	}
+
+	.created-in { display: none; }
 
 	.comment_score {
 		min-width: 32px;
