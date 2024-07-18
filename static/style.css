@@ -652,7 +652,6 @@ button.submit:hover > svg { stroke: var(--accent); }
 }
 
 #sort_options + #timeframe:not(#search_sort > #timeframe) {
-	margin-left: 10px;
 	border-radius: 5px 0px 0px 5px;
 }
 
@@ -662,24 +661,17 @@ button.submit:hover > svg { stroke: var(--accent); }
 }
 
 #search_sort {
-	background: var(--highlighted);
 	border-radius: 5px;
 	overflow: auto;
 }
 
-#search_sort > #search {
-	border: 0;
-	background: transparent;
+#search_sort > *, .search_widget_divider_box > *, .search_widget_divider_box #sort_options {
+	background: var(--highlighted);
+	font-size: 15px;
 }
 
-#search_sort > *, #searchbox > * { font-size: 15px; }
-
-#search_sort > :not(:first-child), #search_sort > #sort_options {
-	margin: 0;
-	border-radius: 0;
-	border-right: 0;
-	border-left: 2px solid var(--background);
-	box-shadow: none;
+#search_sort > #search {
+	border: 0;
 	background: transparent;
 }
 
@@ -696,6 +688,66 @@ button.submit:hover > svg { stroke: var(--accent); }
 	display: flex;
 	align-items: center;
 	margin-bottom: 20px;
+}
+
+#search_sort > .search_widget_divider_box {
+	width: 100%;
+}
+
+.search_widget_divider_box > * {
+	border-right: 2px var(--outside) solid;
+	margin: 0;
+}
+
+.search_widget_divider_box {
+	display: flex;
+	align-items: center;
+	max-width: 100%;
+	border: 0;
+}
+
+.search_widget_divider_box > #sort_options {
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/* When screen size is smaller than 480px we switch to a design better suited for mobile devices */
+@media screen and (max-width: 480px) {
+	#search_sort {
+		align-items: unset;
+	}
+
+	.search_widget_divider_box > #search {
+		flex: 1;
+		min-width: unset;
+		border-right: 0;
+		border-bottom: 2px var(--outside) solid;
+	}
+
+	#search:focus {
+		outline: 0;
+	}
+
+	#search_sort > .search_widget_divider_box {
+		flex-wrap: wrap;
+	}
+
+	.search_widget_divider_box > * {
+		width: 100%;
+	}
+
+	#sort_options {
+		min-width: fit-content;
+	}
+
+	.search_widget_divider_box > select:last-child {
+		border-right: 0;
+	}
+
+	#sort_submit {
+		height: unset;
+		border-left: 2px var(--outside) solid;
+	}
 }
 
 #sort_options, #listing_options, main > * > footer > a {
