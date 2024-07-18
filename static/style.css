@@ -107,12 +107,18 @@
 	outline: 2px solid var(--accent);
 }
 
-html, body, div, h1, h2, h3, h4, h5, h6, ul, ol, dl, li, dt, dd, p, blockquote,
-pre, form, fieldset, table, th, td, select, input {
-	accent-color: var(--accent);
-	margin: 0;
+html, body {
 	color: var(--text);
 	font-family: "Inter", sans-serif;
+}
+
+html, body, div, h1, h2, h3, h4, h5, h6, ul, ol, dl, li, dt, dd, p, blockquote,
+pre, form, fieldset, table, th, td, select, input {
+	margin: 0;
+}
+
+input {
+	accent-color: var(--accent);
 }
 
 html.fixed_navbar {
@@ -499,7 +505,7 @@ aside {
 
 /* Feeds */
 
-#feeds {
+.feeds {
 	position: relative;
 	border-radius: 5px;
 	border: var(--panel-border);
@@ -510,11 +516,11 @@ aside {
 	display: inline-block;
 }
 
-#feeds > summary {
+.feeds > summary {
 	padding: 8px 15px;
 }
 
-#feed_list {
+.feed_list {
 	position: absolute;
 	display: flex;
 	min-width: 100%;
@@ -527,24 +533,24 @@ aside {
 	z-index: 1;
 }
 
-#feed_list > p {
+.feed_list > p {
 	font-size: 13px;
 	opacity: 0.5;
 	padding: 5px 20px;
 	margin-top: 10px;
 }
 
-#feed_list > a {
+.feed_list > a {
 	padding: 10px 20px;
 	transition: 0.2s background;
 }
 
-#feed_list > .selected {
+.feed_list > .selected {
 	background-color: var(--accent);
 	color: var(--foreground);
 }
 
-#feed_list > a:not(.selected):hover {
+.feed_list > a:not(.selected):hover {
 	background-color: var(--foreground);
 }
 
@@ -1002,15 +1008,18 @@ a.search_subreddit:hover {
 }
 
 .post_media_video {
-	width: auto;
-	height: auto;
 	max-width: 100%;
 	max-height: 512px;
 	display: block;
 	margin: auto;
 }
 
-.post_media_image.short svg, .post_media_image.short img{
+video.post_media_video:not(.video-dash) {
+	width: auto;
+	height: auto;
+}
+
+.post_media_image.short svg, .post_media_image.short img {
 	width: auto;
 	height: auto;
 	max-width: 100%;

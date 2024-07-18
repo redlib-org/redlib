@@ -60,6 +60,10 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_DEFAULT_BLUR_NSFW")]
 	pub(crate) default_blur_nsfw: Option<String>,
 
+	#[serde(rename = "REDLIB_DEFAULT_USE_DASH")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_USE_DASH")]
+	pub(crate) default_use_dash: Option<String>,
+
 	#[serde(rename = "REDLIB_DEFAULT_USE_HLS")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_USE_HLS")]
 	pub(crate) default_use_hls: Option<String>,
@@ -137,6 +141,7 @@ impl Config {
 			default_blur_spoiler: parse("REDLIB_DEFAULT_BLUR_SPOILER"),
 			default_show_nsfw: parse("REDLIB_DEFAULT_SHOW_NSFW"),
 			default_blur_nsfw: parse("REDLIB_DEFAULT_BLUR_NSFW"),
+			default_use_dash: parse("REDLIB_DEFAULT_USE_DASH"),
 			default_use_hls: parse("REDLIB_DEFAULT_USE_HLS"),
 			default_hide_hls_notification: parse("REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION"),
 			default_hide_awards: parse("REDLIB_DEFAULT_HIDE_AWARDS"),
@@ -163,6 +168,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_DEFAULT_BLUR_SPOILER" => config.default_blur_spoiler.clone(),
 		"REDLIB_DEFAULT_SHOW_NSFW" => config.default_show_nsfw.clone(),
 		"REDLIB_DEFAULT_BLUR_NSFW" => config.default_blur_nsfw.clone(),
+		"REDLIB_DEFAULT_USE_DASH" => config.default_use_dash.clone(),
 		"REDLIB_DEFAULT_USE_HLS" => config.default_use_hls.clone(),
 		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
 		"REDLIB_DEFAULT_WIDE" => config.default_wide.clone(),

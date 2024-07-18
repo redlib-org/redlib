@@ -165,7 +165,8 @@ pub struct Flags {
 #[derive(Debug)]
 pub struct Media {
 	pub url: String,
-	pub alt_url: String,
+	pub hls_url: String,
+	pub dash_url: String,
 	pub width: i64,
 	pub height: i64,
 	pub poster: String,
@@ -182,23 +183,26 @@ impl Media {
 		let crosspost_parent_media = &data["crosspost_parent_list"][0]["secure_media"]["reddit_video"];
 
 		// If post is a video, return the video
-		let (post_type, url_val, alt_url_val) = if data_preview["fallback_url"].is_string() {
+		let (post_type, url_val, hls_url_val, dash_url_val) = if data_preview["fallback_url"].is_string() {
 			(
 				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&data_preview["fallback_url"],
 				Some(&data_preview["hls_url"]),
+				Some(&data_preview["dash_url"]),
 			)
 		} else if secure_media["fallback_url"].is_string() {
 			(
 				if secure_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&secure_media["fallback_url"],
 				Some(&secure_media["hls_url"]),
+				Some(&secure_media["dash_url"]),
 			)
 		} else if crosspost_parent_media["fallback_url"].is_string() {
 			(
 				if crosspost_parent_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&crosspost_parent_media["fallback_url"],
 				Some(&crosspost_parent_media["hls_url"]),
+				Some(&crosspost_parent_media["dash_url"]),
 			)
 		} else if data["post_hint"].as_str().unwrap_or("") == "image" {
 			// Handle images, whether GIFs or pics
@@ -207,34 +211,35 @@ impl Media {
 
 			if mp4.is_object() {
 				// Return the mp4 if the media is a gif
-				("gif", &mp4["source"]["url"], None)
+				("gif", &mp4["source"]["url"], None, None)
 			} else {
 				// Return the picture if the media is an image
 				if data["domain"] == "i.redd.it" {
-					("image", &data["url"], None)
+					("image", &data["url"], None, None)
 				} else {
-					("image", &preview["source"]["url"], None)
+					("image", &preview["source"]["url"], None, None)
 				}
 			}
 		} else if data["is_self"].as_bool().unwrap_or_default() {
 			// If type is self, return permalink
-			("self", &data["permalink"], None)
+			("self", &data["permalink"], None, None)
 		} else if data["is_gallery"].as_bool().unwrap_or_default() {
 			// If this post contains a gallery of images
 			gallery = GalleryMedia::parse(&data["gallery_data"]["items"], &data["media_metadata"]);
 
-			("gallery", &data["url"], None)
+			("gallery", &data["url"], None, None)
 		} else if data["is_reddit_media_domain"].as_bool().unwrap_or_default() && data["domain"] == "i.redd.it" {
 			// If this post contains a reddit media (image) URL.
-			("image", &data["url"], None)
+			("image", &data["url"], None, None)
 		} else {
 			// If type can't be determined, return url
-			("link", &data["url"], None)
+			("link", &data["url"], None, None)
 		};
 
 		let source = &data["preview"]["images"][0]["source"];
 
-		let alt_url = alt_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
+		let hls_url = hls_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
+		let dash_url = dash_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
 
 		let download_name = if post_type == "image" || post_type == "gif" || post_type == "video" {
 			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
@@ -249,7 +254,8 @@ impl Media {
 			post_type.to_string(),
 			Self {
 				url: format_url(url_val.as_str().unwrap_or_default()),
-				alt_url,
+				hls_url,
+				dash_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
 				width: source["width"].as_i64().unwrap_or_default(),
@@ -396,7 +402,8 @@ impl Post {
 				post_type,
 				thumbnail: Media {
 					url: format_url(val(post, "thumbnail").as_str()),
-					alt_url: String::new(),
+					hls_url: String::new(),
+					dash_url: String::new(),
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
 					poster: String::new(),
@@ -598,6 +605,7 @@ pub struct Preferences {
 	pub blur_nsfw: String,
 	pub hide_hls_notification: String,
 	pub hide_sidebar_and_summary: String,
+	pub use_dash: String,
 	pub use_hls: String,
 	pub autoplay_videos: String,
 	pub fixed_navbar: String,
@@ -635,6 +643,7 @@ impl Preferences {
 			show_nsfw: setting(req, "show_nsfw"),
 			hide_sidebar_and_summary: setting(req, "hide_sidebar_and_summary"),
 			blur_nsfw: setting(req, "blur_nsfw"),
+			use_dash: setting(req, "use_dash"),
 			use_hls: setting(req, "use_hls"),
 			hide_hls_notification: setting(req, "hide_hls_notification"),
 			autoplay_videos: setting(req, "autoplay_videos"),
@@ -735,7 +744,8 @@ pub async fn parse_post(post: &Value) -> Post {
 		media,
 		thumbnail: Media {
 			url: format_url(val(post, "thumbnail").as_str()),
-			alt_url: String::new(),
+			hls_url: String::new(),
+			dash_url: String::new(),
 			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
 			poster: String::new(),
@@ -836,6 +846,7 @@ static REGEX_URL_NP: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://np\.reddit
 static REGEX_URL_PLAIN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
 static REGEX_URL_VIDEOS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
 static REGEX_URL_VIDEOS_HLS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
+static REGEX_URL_VIDEOS_DASH: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(DASHPlaylist\.mpd.*)$").unwrap());
 static REGEX_URL_IMAGES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
 static REGEX_URL_THUMBS_A: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
 static REGEX_URL_THUMBS_B: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
@@ -868,7 +879,7 @@ pub fn format_url(url: &str) -> String {
 					}
 				};
 
-				( $first_fn:expr, $($other_fns:expr), *) => {
+				( $first_fn:expr $(, $other_fns:expr)* $(,)?) => {
 					{
 						let result = $first_fn;
 						if result.is_empty() {
@@ -887,7 +898,11 @@ pub fn format_url(url: &str) -> String {
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"v.redd.it" => chain!(
+					capture(&REGEX_URL_VIDEOS, "/vid/", 2),
+					capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2),
+					capture(&REGEX_URL_VIDEOS_DASH, "/dash/", 2)
+				),
 				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
