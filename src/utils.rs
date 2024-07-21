@@ -1082,6 +1082,16 @@ pub fn sfw_only() -> bool {
 	}
 }
 
+/// Returns true if the config/env variable REDLIB_ENABLE_RSS is set to "on".
+/// If this variable is set as such, the instance will enable RSS feeds.
+/// Otherwise, the instance will not provide RSS feeds.
+pub fn enable_rss() -> bool {
+	match get_setting("REDLIB_ENABLE_RSS") {
+		Some(val) => val == "on",
+		None => false,
+	}
+}
+
 // Determines if a request shoud redirect to a nsfw landing gate.
 pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
 	let sfw_instance = sfw_only();
