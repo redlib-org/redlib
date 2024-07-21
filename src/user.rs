@@ -1,5 +1,6 @@
 // CRATES
 use crate::client::json;
+use crate::config;
 use crate::server::RequestExt;
 use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
 use askama::Template;
@@ -129,8 +130,10 @@ async fn user(name: &str) -> Result<User, String> {
 	})
 }
 
-#[cfg(feature = "enable_rss")]
 pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
+	if config::get_setting("REDLIB_ENABLE_RSS").is_none() {
+		return Ok(error(req, "RSS is disabled on this instance.").await.unwrap_or_default());
+	}
 	use crate::utils::rewrite_urls;
 	use hyper::header::CONTENT_TYPE;
 	use rss::{ChannelBuilder, Item};

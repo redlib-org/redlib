@@ -181,7 +181,8 @@ impl InstanceInfo {
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
                     Default subscriptions: {:?}\n
-                    Default filters: {:?}\n",
+                    Default filters: {:?}\n
+                    RSS enabled: {:?}\n",
 					self.package_name,
 					self.crate_version,
 					self.git_commit,
@@ -206,6 +207,7 @@ impl InstanceInfo {
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,
 					self.config.default_filters,
+					self.config.enable_rss,
 				)
 			}
 			StringType::Html => self.to_table(),
