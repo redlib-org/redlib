@@ -148,6 +148,7 @@ impl InstanceInfo {
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
 				["Filters", &convert(&self.config.default_filters)],
+				["RSS enabled", &convert(&self.config.enable_rss)],
 			])
 			.with_header_row(["Default preferences"]),
 		);
