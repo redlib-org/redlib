@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::config::get_setting;
+use crate::config::{self, get_setting};
 //
 // CRATES
 //
@@ -15,6 +15,7 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::str::FromStr;
+use std::string::ToString;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -327,6 +328,7 @@ pub struct Post {
 	pub gallery: Vec<GalleryMedia>,
 	pub awards: Awards,
 	pub nsfw: bool,
+	pub out_url: Option<String>,
 	pub ws_url: String,
 }
 
@@ -435,6 +437,7 @@ impl Post {
 				awards,
 				nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
 				ws_url: val(post, "websocket_url"),
+				out_url: post["data"]["url_overridden_by_dest"].as_str().map(|a| a.to_string()),
 			});
 		}
 		Ok((posts, res["data"]["after"].as_str().unwrap_or_default().to_string()))
@@ -770,6 +773,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		awards,
 		nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
 		ws_url: val(post, "websocket_url"),
+		out_url: post["data"]["url_overridden_by_dest"].as_str().map(|a| a.to_string()),
 	}
 }
 
@@ -1144,6 +1148,20 @@ pub fn url_path_basename(path: &str) -> String {
 		url.path_segments_mut().unwrap().pop_if_empty();
 
 		url.path_segments().unwrap().last().unwrap().to_string()
+	}
+}
+
+// Returns the URL of a post, as needed by RSS feeds
+pub fn get_post_url(post: &Post) -> String {
+	if let Some(out_url) = &post.out_url {
+		// Handle cross post
+		if out_url.starts_with("/r/") {
+			format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), out_url)
+		} else {
+			out_url.to_string()
+		}
+	} else {
+		format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), post.permalink)
 	}
 }
 

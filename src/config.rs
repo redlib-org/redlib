@@ -106,6 +106,9 @@ pub struct Config {
 
 	#[serde(rename = "REDLIB_ENABLE_RSS")]
 	pub(crate) enable_rss: Option<String>,
+
+	#[serde(rename = "REDLIB_FULL_URL")]
+	pub(crate) full_url: Option<String>,
 }
 
 impl Config {
@@ -152,6 +155,7 @@ impl Config {
 			robots_disable_indexing: parse("REDLIB_ROBOTS_DISABLE_INDEXING"),
 			pushshift: parse("REDLIB_PUSHSHIFT_FRONTEND"),
 			enable_rss: parse("REDLIB_ENABLE_RSS"),
+			full_url: parse("REDLIB_FULL_URL"),
 		}
 	}
 }
@@ -180,6 +184,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
 		"REDLIB_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
 		"REDLIB_ENABLE_RSS" => config.enable_rss.clone(),
+		"REDLIB_FULL_URL" => config.full_url.clone(),
 		_ => None,
 	}
 }

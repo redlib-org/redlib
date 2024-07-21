@@ -73,6 +73,9 @@
     },
     "REDLIB_ENABLE_RSS": {
       "required": false
+    },
+    "REDLIB_FULL_URL": {
+      "required": false
     }
   }
 }

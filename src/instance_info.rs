@@ -126,6 +126,8 @@ impl InstanceInfo {
 				["Compile mode", &self.compile_mode],
 				["SFW only", &convert(&self.config.sfw_only)],
 				["Pushshift frontend", &convert(&self.config.pushshift)],
+				["RSS enabled", &convert(&self.config.enable_rss)],
+				["Full URL", &convert(&self.config.full_url)],
 				//TODO: fallback to crate::config::DEFAULT_PUSHSHIFT_FRONTEND
 			])
 			.with_header_row(["Settings"]),
@@ -148,7 +150,6 @@ impl InstanceInfo {
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
 				["Filters", &convert(&self.config.default_filters)],
-				["RSS enabled", &convert(&self.config.enable_rss)],
 			])
 			.with_header_row(["Default preferences"]),
 		);
@@ -166,6 +167,8 @@ impl InstanceInfo {
                 Compile mode: {}\n
 				SFW only: {:?}\n
 				Pushshift frontend: {:?}\n
+				RSS enabled: {:?}\n
+				Full URL: {:?}\n
                 Config:\n
                     Banner: {:?}\n
                     Hide awards: {:?}\n
@@ -182,8 +185,7 @@ impl InstanceInfo {
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
                     Default subscriptions: {:?}\n
-                    Default filters: {:?}\n
-                    RSS enabled: {:?}\n",
+                    Default filters: {:?}\n",
 					self.package_name,
 					self.crate_version,
 					self.git_commit,
@@ -191,6 +193,8 @@ impl InstanceInfo {
 					self.deploy_unix_ts,
 					self.compile_mode,
 					self.config.sfw_only,
+					self.config.enable_rss,
+					self.config.full_url,
 					self.config.pushshift,
 					self.config.banner,
 					self.config.default_hide_awards,
@@ -208,7 +212,6 @@ impl InstanceInfo {
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,
 					self.config.default_filters,
-					self.config.enable_rss,
 				)
 			}
 			StringType::Html => self.to_table(),

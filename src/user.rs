@@ -1,8 +1,8 @@
 // CRATES
 use crate::client::json;
-use crate::config;
 use crate::server::RequestExt;
 use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
+use crate::{config, utils};
 use askama::Template;
 use hyper::{Body, Request, Response};
 use time::{macros::format_description, OffsetDateTime};
@@ -160,8 +160,8 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 			posts
 				.into_iter()
 				.map(|post| Item {
-					title: Some(post.title),
-					link: Some(post.permalink),
+					title: Some(post.title.to_string()),
+					link: Some(utils::get_post_url(&post)),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
 					..Default::default()

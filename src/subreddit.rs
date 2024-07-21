@@ -1,4 +1,4 @@
-use crate::config;
+use crate::{config, utils};
 // CRATES
 use crate::utils::{
 	catch_random, error, filter_posts, format_num, format_url, get_filters, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences, Subreddit,
@@ -490,8 +490,8 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 			posts
 				.into_iter()
 				.map(|post| Item {
-					title: Some(post.title),
-					link: Some(post.permalink),
+					title: Some(post.title.to_string()),
+					link: Some(utils::get_post_url(&post)),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
 					..Default::default()
