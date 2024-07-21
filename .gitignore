@@ -1,4 +1,10 @@
 /target
 .env
+redlib.toml
+
 # Idea Files
 .idea/
+
+# nix files
+.direnv/
+result

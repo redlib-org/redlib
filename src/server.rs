@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use brotli::enc::{BrotliCompress, BrotliEncoderParams};
 use cached::proc_macro::cached;
 use cookie::Cookie;
@@ -15,6 +17,7 @@ use libflate::gzip;
 use route_recognizer::{Params, Router};
 use std::{
 	cmp::Ordering,
+	fmt::Display,
 	io,
 	pin::Pin,
 	result::Result,
@@ -65,12 +68,12 @@ impl CompressionType {
 	}
 }
 
-impl ToString for CompressionType {
-	fn to_string(&self) -> String {
+impl Display for CompressionType {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Self::Gzip => "gzip".to_string(),
-			Self::Brotli => "br".to_string(),
-			Self::Passthrough => String::new(),
+			Self::Gzip => write!(f, "gzip"),
+			Self::Brotli => write!(f, "br"),
+			Self::Passthrough => Ok(()),
 		}
 	}
 }

@@ -135,7 +135,7 @@ async fn main() {
 				.long("address")
 				.value_name("ADDRESS")
 				.help("Sets address to listen on")
-				.default_value("0.0.0.0")
+				.default_value("[::]")
 				.num_args(1),
 		)
 		.arg(

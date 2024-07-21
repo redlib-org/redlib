@@ -141,11 +141,13 @@ impl InstanceInfo {
 				["Wide", &convert(&self.config.default_wide)],
 				["Comment sort", &convert(&self.config.default_comment_sort)],
 				["Post sort", &convert(&self.config.default_post_sort)],
+				["Blur Spoiler", &convert(&self.config.default_blur_spoiler)],
 				["Show NSFW", &convert(&self.config.default_show_nsfw)],
 				["Blur NSFW", &convert(&self.config.default_blur_nsfw)],
 				["Use HLS", &convert(&self.config.default_use_hls)],
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
+				["Filters", &convert(&self.config.default_filters)],
 			])
 			.with_header_row(["Default preferences"]),
 		);
@@ -173,11 +175,13 @@ impl InstanceInfo {
                     Default wide: {:?}\n
                     Default comment sort: {:?}\n
                     Default post sort: {:?}\n
+					Default blur Spoiler: {:?}\n
                     Default show NSFW: {:?}\n
                     Default blur NSFW: {:?}\n
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
-                    Default subscriptions: {:?}\n",
+                    Default subscriptions: {:?}\n
+                    Default filters: {:?}\n",
 					self.package_name,
 					self.crate_version,
 					self.git_commit,
@@ -195,11 +199,13 @@ impl InstanceInfo {
 					self.config.default_wide,
 					self.config.default_comment_sort,
 					self.config.default_post_sort,
+					self.config.default_blur_spoiler,
 					self.config.default_show_nsfw,
 					self.config.default_blur_nsfw,
 					self.config.default_use_hls,
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,
+					self.config.default_filters,
 				)
 			}
 			StringType::Html => self.to_table(),

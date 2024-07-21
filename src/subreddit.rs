@@ -8,6 +8,8 @@ use cookie::Cookie;
 use hyper::header::CONTENT_TYPE;
 use hyper::{Body, Request, Response};
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use time::{Duration, OffsetDateTime};
 
 // STRUCTS
@@ -51,10 +53,13 @@ struct WallTemplate {
 	url: String,
 }
 
+static GEO_FILTER_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"geo_filter=(?<region>\w+)").unwrap());
+
 // SERVICES
 pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
 	let root = req.uri().path() == "/";
+	let query = req.uri().query().unwrap_or_default().to_string();
 	let subscribed = setting(&req, "subscriptions");
 	let front_page = setting(&req, "front_page");
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
@@ -108,10 +113,14 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	let mut params = String::from("&raw_json=1");
 	if sub_name == "popular" {
-		params.push_str("&geo_filter=GLOBAL");
+		let geo_filter = match GEO_FILTER_MATCH.captures(&query) {
+			Some(geo_filter) => geo_filter["region"].to_string(),
+			None => "GLOBAL".to_owned(),
+		};
+		params.push_str(&format!("&geo_filter={geo_filter}"));
 	}
 
-	let path = format!("/r/{sub_name}/{sort}.json?{}{params}", req.uri().query().unwrap_or_default());
+	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);
@@ -137,6 +146,10 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 				let (_, all_posts_filtered) = filter_posts(&mut posts, &filters);
 				let no_posts = posts.is_empty();
 				let all_posts_hidden_nsfw = !no_posts && (posts.iter().all(|p| p.flags.nsfw) && setting(&req, "show_nsfw") != "on");
+				if sort == "new" {
+					posts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
+					posts.sort_by(|a, b| b.flags.stickied.cmp(&a.flags.stickied));
+				}
 				Ok(template(&SubredditTemplate {
 					sub,
 					posts,

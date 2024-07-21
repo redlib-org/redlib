@@ -1,17 +1,20 @@
+use arc_swap::ArcSwap;
 use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
+use hyper::header::HeaderValue;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
-use log::error;
+use log::{error, trace, warn};
 use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
+use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::{io, result::Result};
-use tokio::sync::RwLock;
 
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
@@ -19,6 +22,7 @@ use crate::server::RequestExt;
 use crate::utils::format_url;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
+const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
 	let https = hyper_rustls::HttpsConnectorBuilder::new()
@@ -30,11 +34,15 @@ pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
 	client::Client::builder().build(https)
 });
 
-pub static OAUTH_CLIENT: Lazy<RwLock<Oauth>> = Lazy::new(|| {
+pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());
 	tokio::spawn(token_daemon());
-	RwLock::new(client)
+	ArcSwap::new(client.into())
 });
+
+pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
+
+pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -171,7 +179,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let client: Client<_, Body> = CLIENT.clone();
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
-		let client = block_on(OAUTH_CLIENT.read());
+		let client = OAUTH_CLIENT.load_full();
 		(
 			client.token.clone(),
 			client.headers_map.get("Client-Vendor-Id").cloned().unwrap_or_default(),
@@ -180,6 +188,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 			client.headers_map.get("x-reddit-loid").cloned().unwrap_or_default(),
 		)
 	};
+
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
 	let builder = Request::builder()
@@ -214,12 +223,13 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 						if !redirect {
 							return Ok(response);
 						};
-
+						let location_header = response.headers().get(header::LOCATION);
+						if location_header == Some(&HeaderValue::from_static("https://www.reddit.com/")) {
+							return Err("Reddit response was invalid".to_string());
+						}
 						return request(
 							method,
-							response
-								.headers()
-								.get(header::LOCATION)
+							location_header
 								.map(|val| {
 									// We need to make adjustments to the URI
 									// we get back from Reddit. Namely, we
@@ -232,7 +242,11 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 									//     required.
 									//
 									//     2. Percent-encode the path.
-									let new_path = percent_encode(val.as_bytes(), CONTROLS).to_string().trim_start_matches(REDDIT_URL_BASE).to_string();
+									let new_path = percent_encode(val.as_bytes(), CONTROLS)
+										.to_string()
+										.trim_start_matches(REDDIT_URL_BASE)
+										.trim_start_matches(ALTERNATIVE_REDDIT_URL_BASE)
+										.to_string();
 									format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
 								})
 								.unwrap_or_default()
@@ -291,7 +305,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 					}
 				}
 				Err(e) => {
-					dbg_msg!("{} {}: {}", method, path, e);
+					dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
 
 					Err(e.to_string())
 				}
@@ -306,19 +320,56 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
-	let err = |msg: &str, e: String| -> Result<Value, String> {
+	let err = |msg: &str, e: String, path: String| -> Result<Value, String> {
 		// eprintln!("{} - {}: {}", url, msg, e);
-		Err(format!("{msg}: {e}"))
+		Err(format!("{msg}: {e} | {path}"))
 	};
+
+	// First, handle rolling over the OAUTH_CLIENT if need be.
+	let current_rate_limit = OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst);
+	let is_rolling_over = OAUTH_IS_ROLLING_OVER.load(Ordering::SeqCst);
+	if current_rate_limit < 10 && !is_rolling_over {
+		warn!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
+		tokio::spawn(force_refresh_token());
+	}
+	OAUTH_RATELIMIT_REMAINING.fetch_sub(1, Ordering::SeqCst);
 
 	// Fetch the url...
 	match reddit_get(path.clone(), quarantine).await {
 		Ok(response) => {
 			let status = response.status();
 
+			let reset: Option<String> = if let (Some(remaining), Some(reset), Some(used)) = (
+				response.headers().get("x-ratelimit-remaining").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+				response.headers().get("x-ratelimit-reset").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+				response.headers().get("x-ratelimit-used").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
+			) {
+				trace!(
+					"Ratelimit remaining: Header says {remaining}, we have {current_rate_limit}. Resets in {reset}. Rollover: {}. Ratelimit used: {used}",
+					if is_rolling_over { "yes" } else { "no" },
+				);
+				Some(reset)
+			} else {
+				None
+			};
+
 			// asynchronously aggregate the chunks of the body
 			match hyper::body::aggregate(response).await {
 				Ok(body) => {
+					let has_remaining = body.has_remaining();
+
+					if !has_remaining {
+						// Rate limited, so spawn a force_refresh_token()
+						tokio::spawn(force_refresh_token());
+						return match reset {
+							Some(val) => Err(format!(
+								"Reddit rate limit exceeded. Try refreshing in a few seconds.\
+								 Rate limit will reset in: {val}"
+							)),
+							None => Err("Reddit rate limit exceeded".to_string()),
+						};
+					}
+
 					// Parse the response from Reddit as JSON
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
@@ -331,7 +382,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 									let () = force_refresh_token().await;
 									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
-								Err(format!("Reddit error {} \"{}\": {}", json["error"], json["reason"], json["message"]))
+								Err(format!("Reddit error {} \"{}\": {} | {path}", json["error"], json["reason"], json["message"]))
 							} else {
 								Ok(json)
 							}
@@ -341,21 +392,24 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {
-								err("Failed to parse page JSON data", e.to_string())
+								err("Failed to parse page JSON data", e.to_string(), path)
 							}
 						}
 					}
 				}
-				Err(e) => err("Failed receiving body from Reddit", e.to_string()),
+				Err(e) => err("Failed receiving body from Reddit", e.to_string(), path),
 			}
 		}
-		Err(e) => err("Couldn't send request to Reddit", e),
+		Err(e) => err("Couldn't send request to Reddit", e, path),
 	}
 }
 
+#[cfg(test)]
+static POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+
 #[tokio::test(flavor = "multi_thread")]
 async fn test_localization_popular() {
-	let val = json("/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL".to_string(), false).await.unwrap();
+	let val = json(POPULAR_URL.to_string(), false).await.unwrap();
 	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());
 }
 

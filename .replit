@@ -1,2 +1,2 @@
-run = "while :; do set -ex; nix-env -iA nixpkgs.unzip; curl -o./redlib.zip -fsSL -- https://nightly.link/redlib-org/redlib/workflows/main-rust/main/redlib.zip; unzip -n redlib.zip; mv target/x86_64-unknown-linux-gnu/release/redlib .; chmod +x redlib; set +e; ./redlib -H 63115200; sleep 1; done"
+run = "while :; do set -ex; nix-env -iA nixpkgs.unzip; curl -o./redlib.zip -fsSL -- https://nightly.link/redlib-org/redlib/workflows/main-rust/main/redlib.zip; unzip -n redlib.zip; mv target/x86_64-unknown-linux-musl/release/redlib .; chmod +x redlib; set +e; ./redlib -H 63115200; sleep 1; done"
 language = "bash"

@@ -29,6 +29,9 @@
     "REDLIB_DEFAULT_POST_SORT": {
       "required": false
     },
+    "REDLIB_DEFAULT_BLUR_SPOILER": {
+      "required": false
+    },
     "REDLIB_DEFAULT_SHOW_NSFW": {
       "required": false
     },
@@ -57,6 +60,9 @@
         "required": false
     },
     "REDLIB_DEFAULT_SUBSCRIPTIONS": {
+      "required": false
+    },
+    "REDLIB_DEFAULT_FILTERS": {
       "required": false
     },
     "REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION": {

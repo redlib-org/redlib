@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::config::get_setting;
 //
 // CRATES
@@ -156,6 +157,7 @@ impl PollOption {
 
 // Post flags with nsfw and stickied
 pub struct Flags {
+	pub spoiler: bool,
 	pub nsfw: bool,
 	pub stickied: bool,
 }
@@ -167,6 +169,7 @@ pub struct Media {
 	pub width: i64,
 	pub height: i64,
 	pub poster: String,
+	pub download_name: String,
 }
 
 impl Media {
@@ -233,6 +236,15 @@ impl Media {
 
 		let alt_url = alt_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
 
+		let download_name = if post_type == "image" || post_type == "gif" || post_type == "video" {
+			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
+			let media_url_base = url_path_basename(url_val.as_str().unwrap_or_default());
+
+			format!("redlib_{permalink_base}_{media_url_base}")
+		} else {
+			String::new()
+		};
+
 		(
 			post_type.to_string(),
 			Self {
@@ -243,6 +255,7 @@ impl Media {
 				width: source["width"].as_i64().unwrap_or_default(),
 				height: source["height"].as_i64().unwrap_or_default(),
 				poster: format_url(source["url"].as_str().unwrap_or_default()),
+				download_name,
 			},
 			gallery,
 		)
@@ -296,6 +309,7 @@ pub struct Post {
 	pub body: String,
 	pub author: Author,
 	pub permalink: String,
+	pub link_title: String,
 	pub poll: Option<Poll>,
 	pub score: (String, String),
 	pub upvote_ratio: i64,
@@ -307,6 +321,7 @@ pub struct Post {
 	pub domain: String,
 	pub rel_time: String,
 	pub created: String,
+	pub created_ts: u64,
 	pub num_duplicates: u64,
 	pub comments: (String, String),
 	pub gallery: Vec<GalleryMedia>,
@@ -338,6 +353,7 @@ impl Post {
 			let data = &post["data"];
 
 			let (rel_time, created) = time(data["created_utc"].as_f64().unwrap_or_default());
+			let created_ts = data["created_utc"].as_f64().unwrap_or_default().round() as u64;
 			let score = data["score"].as_i64().unwrap_or_default();
 			let ratio: f64 = data["upvote_ratio"].as_f64().unwrap_or(1.0) * 100.0;
 			let title = val(post, "title");
@@ -384,6 +400,7 @@ impl Post {
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
 					poster: String::new(),
+					download_name: String::new(),
 				},
 				media,
 				domain: val(post, "domain"),
@@ -402,13 +419,16 @@ impl Post {
 					},
 				},
 				flags: Flags {
+					spoiler: data["spoiler"].as_bool().unwrap_or_default(),
 					nsfw: data["over_18"].as_bool().unwrap_or_default(),
 					stickied: data["stickied"].as_bool().unwrap_or_default() || data["pinned"].as_bool().unwrap_or_default(),
 				},
 				permalink: val(post, "permalink"),
+				link_title: val(post, "link_title"),
 				poll: Poll::parse(&data["poll_data"]),
 				rel_time,
 				created,
+				created_ts,
 				num_duplicates: post["data"]["num_duplicates"].as_u64().unwrap_or(0),
 				comments: format_num(data["num_comments"].as_i64().unwrap_or_default()),
 				gallery,
@@ -417,7 +437,6 @@ impl Post {
 				ws_url: val(post, "websocket_url"),
 			});
 		}
-
 		Ok((posts, res["data"]["after"].as_str().unwrap_or_default().to_string()))
 	}
 }
@@ -574,9 +593,11 @@ pub struct Preferences {
 	pub front_page: String,
 	pub layout: String,
 	pub wide: String,
+	pub blur_spoiler: String,
 	pub show_nsfw: String,
 	pub blur_nsfw: String,
 	pub hide_hls_notification: String,
+	pub hide_sidebar_and_summary: String,
 	pub use_hls: String,
 	pub autoplay_videos: String,
 	pub fixed_navbar: String,
@@ -610,7 +631,9 @@ impl Preferences {
 			front_page: setting(req, "front_page"),
 			layout: setting(req, "layout"),
 			wide: setting(req, "wide"),
+			blur_spoiler: setting(req, "blur_spoiler"),
 			show_nsfw: setting(req, "show_nsfw"),
+			hide_sidebar_and_summary: setting(req, "hide_sidebar_and_summary"),
 			blur_nsfw: setting(req, "blur_nsfw"),
 			use_hls: setting(req, "use_hls"),
 			hide_hls_notification: setting(req, "hide_hls_notification"),
@@ -666,6 +689,8 @@ pub async fn parse_post(post: &Value) -> Post {
 	// Determine the type of media along with the media URL
 	let (post_type, media, gallery) = Media::parse(&post["data"]).await;
 
+	let created_ts = post["data"]["created_utc"].as_f64().unwrap_or_default().round() as u64;
+
 	let awards: Awards = Awards::parse(&post["data"]["all_awardings"]);
 
 	let permalink = val(post, "permalink");
@@ -702,6 +727,7 @@ pub async fn parse_post(post: &Value) -> Post {
 			distinguished: val(post, "distinguished"),
 		},
 		permalink,
+		link_title: val(post, "link_title"),
 		poll,
 		score: format_num(score),
 		upvote_ratio: ratio as i64,
@@ -713,6 +739,7 @@ pub async fn parse_post(post: &Value) -> Post {
 			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
 			poster: String::new(),
+			download_name: String::new(),
 		},
 		flair: Flair {
 			flair_parts: FlairPart::parse(
@@ -729,12 +756,14 @@ pub async fn parse_post(post: &Value) -> Post {
 			},
 		},
 		flags: Flags {
+			spoiler: post["data"]["spoiler"].as_bool().unwrap_or_default(),
 			nsfw: post["data"]["over_18"].as_bool().unwrap_or_default(),
 			stickied: post["data"]["stickied"].as_bool().unwrap_or_default() || post["data"]["pinned"].as_bool().unwrap_or(false),
 		},
 		domain: val(post, "domain"),
 		rel_time,
 		created,
+		created_ts,
 		num_duplicates: post["data"]["num_duplicates"].as_u64().unwrap_or(0),
 		comments: format_num(post["data"]["num_comments"].as_i64().unwrap_or_default()),
 		gallery,
@@ -875,9 +904,9 @@ pub fn format_url(url: &str) -> String {
 
 // These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview)\.redd\.it(.*)[^?]").unwrap());
+static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)[^?]").unwrap());
 static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/preview/(pre|external-pre)/(.*?)>"#).unwrap());
+static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
 static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
 // Rewrite Reddit links to Redlib in body of text
@@ -901,14 +930,47 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
 			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			let image_text = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
 
-			let image_to_replace = format!("<a href=\"{image_url}{image_text}").replace(">>", ">");
-			let image_replacement = format!("<a href=\"{image_url}<img src=\"{image_url}</a>");
+			/* As long as image_caption isn't empty remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
+			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
+			if !image_caption.is_empty() {
+				image_caption = image_caption[1..image_caption.len() - 4].to_string();
+			}
+
+			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
+			let image_to_replace = format!("<a href=\"{image_url}{image_caption}</a>");
+
+			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
+			let mut _image_replacement = String::new();
+
+			/* We don't want to show a caption that's just the image's link, so we check if we find a Reddit preview link within the image's caption.
+			If we don't find one we must have actual text, so we include a <figcaption> block that contains it.
+			Otherwise we don't include the <figcaption> block as we don't need it. */
+			if REDDIT_PREVIEW_REGEX.find(&image_caption).is_none() {
+				// Without this " would show as \" instead. "\&quot;" is how the quotes are formatted within image_text beforehand
+				image_caption = image_caption.replace("\\&quot;", "\"");
+
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_caption}</figcaption></figure>");
+			} else {
+				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
+			}
+
+			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
+			if it's preview we're dealing with something that needs /preview/pre, external-preview is /preview/external-pre, and i is /img */
+			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str()).to_string();
+			let mut _preview_type = String::new();
+			if reddit_preview_regex_capture == "preview" {
+				_preview_type = "/preview/pre".to_string();
+			} else if reddit_preview_regex_capture == "external-preview" {
+				_preview_type = "/preview/external-pre".to_string();
+			} else {
+				_preview_type = "/img".to_string();
+			}
 
 			text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, formatted_url)
-				.replace(&image_to_replace, &image_replacement)
+				.replace(&text1, format!("{_preview_type}$2"))
+				.replace(&image_to_replace, &_image_replacement)
 				.to_string()
 		}
 	}
@@ -993,7 +1055,7 @@ pub fn redirect(path: &str) -> Response<Body> {
 
 /// Renders a generic error landing page.
 pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
-	error!("Error page rendered: {msg}");
+	error!("Error page rendered: {}", msg.split('|').next().unwrap_or_default());
 	let url = req.uri().to_string();
 	let body = ErrorTemplate {
 		msg: msg.to_string(),
@@ -1059,6 +1121,20 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	.unwrap_or_default();
 
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
+}
+
+// Returns the last (non-empty) segment of a path string
+pub fn url_path_basename(path: &str) -> String {
+	let url_result = Url::parse(format!("https://libredd.it/{path}").as_str());
+
+	if url_result.is_err() {
+		path.to_string()
+	} else {
+		let mut url = url_result.unwrap();
+		url.path_segments_mut().unwrap().pop_if_empty();
+
+		url.path_segments().unwrap().last().unwrap().to_string()
+	}
 }
 
 #[cfg(test)]
@@ -1164,11 +1240,24 @@ async fn test_fetching_ws() {
 
 #[test]
 fn test_rewriting_image_links() {
-	let input = r#"<p><a href="https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab">https://preview.redd.it/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab</a></p>
-	<p><a href="https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877">https://preview.redd.it/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877</a></p>
-	<p><a href="https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac">https://preview.redd.it/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac</a></p>
-	<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>
-	<p><a href="https://preview.redd.it/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f">caption 2</a></p>"#;
-	let output = r#"<p><a href="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"><img src="/preview/pre/zq21ggkj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=539d8050628ec1190cac26468fe99cc66b6071ab"></a></p>	<p><a href="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"><img src="/preview/pre/vty9ocij2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=fc7c7ef993a5e9ef656d5f5d9cf8290a0a1df877"></a></p>	<p><a href="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"><img src="/preview/pre/bdfdxkjj2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=d0fa420ece27605e882e89cb4711d75d774322ac"></a></p>	<p><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a></p>	<p><a href="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"><img src="/preview/pre/rbu2ca2b2xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=afb538cf784d2e339de9a91aba5dc9c92e47988f"></a></p>"#;
+	let input =
+		r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+	let output = r#"<p><figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure></p"#;
 	assert_eq!(rewrite_urls(input), output);
+}
+
+#[test]
+fn test_url_path_basename() {
+	// without trailing slash
+	assert_eq!(url_path_basename("/first/last"), "last");
+	// with trailing slash
+	assert_eq!(url_path_basename("/first/last/"), "last");
+	// with query parameters
+	assert_eq!(url_path_basename("/first/last/?some=query"), "last");
+	// file path
+	assert_eq!(url_path_basename("/cdn/image.jpg"), "image.jpg");
+	// when a full url is passed instead of just a path
+	assert_eq!(url_path_basename("https://doma.in/first/last"), "last");
+	// empty path
+	assert_eq!(url_path_basename("/"), "");
 }
