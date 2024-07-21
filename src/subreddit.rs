@@ -5,7 +5,6 @@ use crate::utils::{
 use crate::{client::json, server::ResponseExt, RequestExt};
 use askama::Template;
 use cookie::Cookie;
-use hyper::header::CONTENT_TYPE;
 use hyper::{Body, Request, Response};
 
 use once_cell::sync::Lazy;
@@ -460,9 +459,11 @@ async fn subreddit(sub: &str, quarantined: bool) -> Result<Subreddit, String> {
 	})
 }
 
-use rss::{ChannelBuilder, Item};
-
+#[cfg(feature = "enable_rss")]
 pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
+	use hyper::header::CONTENT_TYPE;
+	use rss::{ChannelBuilder, Item};
+
 	// Get subreddit
 	let sub = req.param("sub").unwrap_or_default();
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());

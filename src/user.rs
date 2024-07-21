@@ -1,9 +1,8 @@
 // CRATES
 use crate::client::json;
 use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, rewrite_urls, setting, template, Post, Preferences, User};
+use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
 use askama::Template;
-use hyper::header::CONTENT_TYPE;
 use hyper::{Body, Request, Response};
 use time::{macros::format_description, OffsetDateTime};
 
@@ -130,9 +129,12 @@ async fn user(name: &str) -> Result<User, String> {
 	})
 }
 
-use rss::{ChannelBuilder, Item};
-
+#[cfg(feature = "enable_rss")]
 pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
+	use crate::utils::rewrite_urls;
+	use hyper::header::CONTENT_TYPE;
+	use rss::{ChannelBuilder, Item};
+
 	// Get user
 	let user_str = req.param("name").unwrap_or_default();
 
