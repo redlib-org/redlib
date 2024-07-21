@@ -126,6 +126,8 @@ impl InstanceInfo {
 				["Compile mode", &self.compile_mode],
 				["SFW only", &convert(&self.config.sfw_only)],
 				["Pushshift frontend", &convert(&self.config.pushshift)],
+				["RSS enabled", &convert(&self.config.enable_rss)],
+				["Full URL", &convert(&self.config.full_url)],
 				//TODO: fallback to crate::config::DEFAULT_PUSHSHIFT_FRONTEND
 			])
 			.with_header_row(["Settings"]),
@@ -165,6 +167,8 @@ impl InstanceInfo {
                 Compile mode: {}\n
 				SFW only: {:?}\n
 				Pushshift frontend: {:?}\n
+				RSS enabled: {:?}\n
+				Full URL: {:?}\n
                 Config:\n
                     Banner: {:?}\n
                     Hide awards: {:?}\n
@@ -189,6 +193,8 @@ impl InstanceInfo {
 					self.deploy_unix_ts,
 					self.compile_mode,
 					self.config.sfw_only,
+					self.config.enable_rss,
+					self.config.full_url,
 					self.config.pushshift,
 					self.config.banner,
 					self.config.default_hide_awards,
