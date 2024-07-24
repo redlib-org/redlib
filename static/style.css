@@ -667,6 +667,8 @@ select {
     cursor: pointer;
 }
 
+#searchbox > * { font-size: 15px; }
+
 select,
 #search {
     border: none;
