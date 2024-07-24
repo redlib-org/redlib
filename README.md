@@ -405,4 +405,5 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
 | `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
+| `HIDE_SIDEBAR_AND_SUMMARY`          | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
