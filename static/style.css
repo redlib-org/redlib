@@ -2066,11 +2066,12 @@ th {
     }
 
     .comment_score {
-        min-width: 32px;
+        min-width: 34px;
         height: 20px;
-        font-size: 15px;
+        font-size: 12px;
         padding: 7px 0px;
         margin-right: -5px;
+        align-content: center;
     }
 
     #post_links > li {
