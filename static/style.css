@@ -358,7 +358,6 @@ main {
 
 #column_one {
     width: 100%;
-    max-width: 750px;
     border-radius: 5px;
     overflow: inherit;
 }
@@ -1893,9 +1892,9 @@ th {
 /* Mobile */
 
 @media screen and (max-width: 800px) {
-    body.fixed_navbar {
-        padding-top: 120px;
-    }
+    
+    
+    
 
     main {
         flex-direction: column-reverse;
@@ -1940,8 +1939,15 @@ th {
         margin: 0;
         max-width: 100%;
     }
+    #user { margin: 0 0 20px; }
+    
+    body.fixed_navbar {
+        #subreddit { margin: 49px 0 0; }
+        #user { margin: 49px 0 20px 0; }
+        #search_sort { margin-top: 11px; }
+        main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
+    }
 
-    #user,
     #sidebar {
         margin: 20px 0;
     }
@@ -1955,9 +1961,6 @@ th {
 }
 
 @media screen and (max-width: 480px) {
-    body.fixed_navbar {
-        padding-top: 100px;
-    }
     #version {
         display: none;
     }
