@@ -706,6 +706,7 @@ select,
 }
 @media screen and (max-width: 800px) {
     #search { width: 0; }
+    #search.commentQuery { width: unset; }
 }
 
 #inside {
@@ -1261,6 +1262,7 @@ a.search_subreddit:hover {
 #comment_count {
     font-weight: 500;
     opacity: 0.9;
+    align-self: center;
 }
 
 #comment_count > #sorted_by {
@@ -1945,7 +1947,10 @@ th {
         #subreddit { margin: 49px 0 0; }
         #user { margin: 49px 0 20px 0; }
         #search_sort { margin-top: 11px; }
+        #settings { margin-top: 40px; }
+        div.post.highlighted { margin-top: 49px; }
         main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
+        #column_one:has(div.post.highlighted + #commentQueryForms) { #sort { margin-top: 0 } }
     }
 
     #sidebar {
