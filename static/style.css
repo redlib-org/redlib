@@ -1892,10 +1892,6 @@ th {
 /* Mobile */
 
 @media screen and (max-width: 800px) {
-    
-    
-    
-
     main {
         flex-direction: column-reverse;
         padding: 10px;
