@@ -137,6 +137,7 @@ input {
     margin: 0;
     color: var(--text);
     font-family: "Inter", sans-serif;
+    word-wrap: anywhere;
 }
 
 html.fixed_navbar {
@@ -862,6 +863,7 @@ main > * > footer > a {
     text-align: center;
     cursor: pointer;
     transition: 0.2s background;
+    word-wrap: normal;
 }
 
 #sort_options > a.selected,
