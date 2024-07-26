@@ -829,10 +829,6 @@ button.submit:hover > svg {
         width: 100%;
     }
 
-    #sort_options {
-        min-width: fit-content;
-    }
-
     .search_widget_divider_box > select:last-child {
         border-right: 0;
     }
