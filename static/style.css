@@ -1286,7 +1286,7 @@ a.search_subreddit:hover {
     display: auto;
 }
 
-@media screen and (min-width: 481px) {
+@media screen and (min-width: 508px) {
     .mobile_item {
         display: none;
     }
@@ -1965,14 +1965,14 @@ th {
     }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 580px) {
     #commentQueryForms {
         display: initial;
         justify-content: initial;
     }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 507px) {
     #version {
         display: none;
     }
