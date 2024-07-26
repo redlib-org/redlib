@@ -167,10 +167,8 @@ body.fixed_navbar {
 }
 
 nav {
-    display: grid;
-    grid-template-areas: "logo searchbox links";
+    display: flex;
 
-    justify-content: space-between;
     align-items: center;
 
     color: var(--accent);
@@ -203,15 +201,18 @@ nav #code > svg {
 }
 
 nav #logo {
-    grid-area: logo;
     white-space: nowrap;
     margin-right: 5px;
+    flex-grow: 1;
+    flex-basis: 0;
 }
 
 nav #links {
-    grid-area: links;
     margin-left: 10px;
     display: flex;
+    flex-grow: 1;
+    flex-basis: 0;
+    justify-content: flex-end;
 }
 
 nav #links svg {
@@ -1907,6 +1908,7 @@ th {
     }
 
     nav {
+        display: grid;
         grid-template-areas: "logo links" "searchbox searchbox";
         padding: 10px;
         width: calc(100% - 20px);
