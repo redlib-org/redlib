@@ -359,7 +359,11 @@ main {
 #column_one {
     width: 100%;
     border-radius: 5px;
+    max-width: 750px;
     overflow: inherit;
+}
+@media screen and (max-width: 800px) {
+    #column_one { max-width: unset; }
 }
 
 /* Body footer. */
