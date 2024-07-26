@@ -1965,6 +1965,13 @@ th {
     }
 }
 
+@media screen and (max-width: 600px) {
+    #commentQueryForms {
+        display: initial;
+        justify-content: initial;
+    }
+}
+
 @media screen and (max-width: 480px) {
     #version {
         display: none;
@@ -2086,11 +2093,6 @@ th {
 
     .popup-inner {
         max-width: 80%;
-    }
-
-    #commentQueryForms {
-        display: initial;
-        justify-content: initial;
     }
 }
 
