@@ -137,7 +137,6 @@ input {
     margin: 0;
     color: var(--text);
     font-family: "Inter", sans-serif;
-    word-wrap: anywhere;
 }
 
 html.fixed_navbar {
