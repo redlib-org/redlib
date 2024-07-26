@@ -699,8 +699,10 @@ select,
 
 #search {
     border-right: 2px var(--outside) solid;
-    width: 0;
     flex-grow: 1;
+}
+@media screen and (max-width: 800px) {
+    #search { width: 0; }
 }
 
 #inside {
