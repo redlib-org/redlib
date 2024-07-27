@@ -1041,6 +1041,8 @@ a.search_subreddit:hover {
     border-radius: 5px;
     font-size: 12px;
     font-weight: bold;
+    vertical-align: text-top;
+    line-height: 1.6;
 }
 
 .awards {
