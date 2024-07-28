@@ -94,10 +94,21 @@
                 videoElement.parentNode.appendChild(qualitySelector);
             }
 
+            // IntersectionObserver to autoplay/pause video based on visibility
+            var autoplayObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        newVideo.play();
+                    } else {
+                        newVideo.pause();
+                    }
+                });
+            }, { threshold: 0.5 }); // Adjust the threshold as needed
+
             newVideo.addEventListener('play', initializeHls);
 
             if (autoplay) {
-                newVideo.play();
+                autoplayObserver.observe(newVideo);
             }
         });
     } else {
