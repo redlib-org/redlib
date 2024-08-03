@@ -71,12 +71,8 @@
 		<!-- FOOTER -->
 		{% block footer %}
 			<footer>
-				<p id="version">v{{ env!("CARGO_PKG_VERSION") }}</p>
-				<div class="footer-button">
-					<a href="/info" title="View instance information">ⓘ View instance info</a>
-				</div>
-				<div class="footer-button">
-					<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a>
+				<div class="footer-buttons">
+					<p><span id="version">v{{ env!("CARGO_PKG_VERSION") }}&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
 				</div>
 			</footer>
 		{% endblock %}

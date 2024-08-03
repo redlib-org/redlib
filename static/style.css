@@ -379,14 +379,13 @@ body > footer {
     bottom: 0;
 }
 
-.footer-button {
+.footer-buttons {
     align-items: center;
     border-radius: 0.25rem;
     box-sizing: border-box;
     color: var(--text);
     cursor: pointer;
     display: inline-flex;
-    padding-left: 1em;
     opacity: 0.8;
 }
 
