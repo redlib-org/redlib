@@ -694,6 +694,7 @@ select,
     display: flex;
     box-shadow: var(--shadow);
     border-radius: 5px;
+    margin-bottom: 0;
 }
 
 #searchbox > *,
@@ -1912,7 +1913,7 @@ th {
     nav {
         display: grid;
         grid-template-areas: "logo links" "searchbox searchbox";
-        padding: 10px;
+        padding: 5px 10px 0;
         width: calc(100% - 20px);
     }
 
@@ -1967,6 +1968,7 @@ th {
     }
     #searchbox {
         width: calc(100vw - 20px);
+        margin-bottom: 10px;
     }
 }
 
