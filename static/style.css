@@ -1955,7 +1955,6 @@ th {
         padding-top: 45px;
         #subreddit { margin: 49px 0 0; }
         #user { margin: 49px 0 20px 0; }
-        //#search_sort { margin-top: 11px; }
         #settings { margin-top: 48px; }
         div.post.highlighted { margin-top: 49px; }
         main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
