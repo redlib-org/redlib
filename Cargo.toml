@@ -1,7 +1,7 @@
 [package]
 name = "redlib"
 description = " Alternative private front-end to Reddit"
-license = "AGPL-3.0"
+license = "AGPL-3.0-only"
 repository = "https://github.com/redlib-org/redlib"
 version = "0.35.1"
 authors = [
