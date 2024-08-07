@@ -3,6 +3,10 @@
 
 {% block title %}Redlib Settings{% endblock %}
 
+{% block subscriptions %}
+	{% call utils::sub_list("") %}
+{% endblock %}
+
 {% block search %}
 	{% call utils::search("".to_owned(), "") %}
 {% endblock %}
