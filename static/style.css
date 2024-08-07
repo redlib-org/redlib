@@ -1915,6 +1915,7 @@ th {
         grid-template-areas: "logo links" "searchbox searchbox";
         padding: 5px 10px 0;
         width: calc(100% - 20px);
+        margin: 0;
     }
 
     nav #links {
@@ -1950,10 +1951,12 @@ th {
     #user { margin: 0 0 20px; }
     
     body.fixed_navbar {
+        min-height: calc(100vh - 75px);
+        padding-top: 45px;
         #subreddit { margin: 49px 0 0; }
         #user { margin: 49px 0 20px 0; }
-        #search_sort { margin-top: 11px; }
-        #settings { margin-top: 40px; }
+        //#search_sort { margin-top: 11px; }
+        #settings { margin-top: 48px; }
         div.post.highlighted { margin-top: 49px; }
         main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
         #column_one:has(div.post.highlighted + #commentQueryForms) { #sort { margin-top: 0 } }
