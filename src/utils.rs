@@ -919,12 +919,20 @@ pub fn rewrite_urls(input_text: &str) -> String {
 		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
 			.to_string();
-	text1 = REDDIT_EMOJI_REGEX
-		.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
-		.to_string()
-		// Remove (html-encoded) "\" from URLs.
-		.replace("%5C", "")
-		.replace("\\_", "_");
+	
+	loop {
+		if REDDIT_EMOJI_REGEX.find(&text1).is_none() {
+			break;
+		} else {
+			text1 = REDDIT_EMOJI_REGEX
+				.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
+				.to_string()
+				// Remove (html-encoded) "\" from URLs.
+				.replace("%5C", "")
+				.replace("\\_", "_");
+		}
+	}
+	
 
 	// Rewrite external media previews to Redlib
 	loop {
