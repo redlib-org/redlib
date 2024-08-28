@@ -928,12 +928,13 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			text1 = REDDIT_EMOJI_REGEX
 				.replace_all(&text1, format_url(REDDIT_EMOJI_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default()))
 				.to_string()
-				// Remove (html-encoded) "\" from URLs.
-				.replace("%5C", "")
-				.replace("\\_", "_");
 		}
 	}
 
+	// Remove (html-encoded) "\" from URLs.
+	text1 = text1
+		.replace("%5C", "")
+		.replace("\\_", "_");
 
 	// Rewrite external media previews to Redlib
 	loop {
@@ -1270,6 +1271,9 @@ mod tests {
 
 	#[test]
 	fn rewrite_urls_removes_backslashes_and_rewrites_url() {
+		println!("{}", rewrite_urls(
+			"<a href=\"https://new.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://new.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"
+		));
 		assert_eq!(
 			rewrite_urls(
 				"<a href=\"https://new.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://new.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"
