@@ -12,13 +12,13 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rust_embed::RustEmbed;
 use serde_json::Value;
+use serde_json_path::{JsonPath, JsonPathExt};
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::str::FromStr;
 use std::string::ToString;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
-use serde_json_path::{JsonPath, JsonPathExt};
 
 /// Write a message to stderr on debug mode. This function is a no-op on
 /// release code.
@@ -920,7 +920,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 		// Rewrite Reddit links to Redlib
 		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
 			.to_string();
-	
+
 	loop {
 		if REDDIT_EMOJI_REGEX.find(&text1).is_none() {
 			break;
@@ -932,9 +932,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	}
 
 	// Remove (html-encoded) "\" from URLs.
-	text1 = text1
-		.replace("%5C", "")
-		.replace("\\_", "_");
+	text1 = text1.replace("%5C", "").replace("\\_", "_");
 
 	// Rewrite external media previews to Redlib
 	loop {
@@ -1010,7 +1008,7 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	// Initialize our vectors
 	let mut id_vec = Vec::new();
 	let mut link_vec = Vec::new();
-	
+
 	// Add the relevant data to each of our vectors so we can access it by number later
 	for current_id in id_nodes {
 		id_vec.push(current_id)
@@ -1030,9 +1028,9 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	This also prevents us from trying to do anything on an empty vector */
 	while index != 0 {
 		/* Subtract 1 from index to get the real index we should be looking at.
-		Then continue on each subsequent loop to continue until we hit the last entry in the vector. 
+		Then continue on each subsequent loop to continue until we hit the last entry in the vector.
 		This is how we get this to deal with multiple emotes in a single message and properly replace each ID with it's link */
-		index = index - 1;
+		index -= 1;
 
 		// Convert our current index in id_vec into a string so we can search through it with regex
 		let current_id = id_vec[index].to_string();
@@ -1040,7 +1038,6 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 		/* The ID number can be multiple lengths, so we capture it with regex.
 		We also want to only attempt anything when we get matches to avoid panicking */
 		if let Some(id_capture) = REDDIT_EMOTE_ID_NUMBER_REGEX.captures(&current_id) {
-
 			// Format the ID to include the colons it has in the comment text
 			let id = format!(":{}:", &id_capture[1]);
 
@@ -1048,24 +1045,21 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 			let link = link_vec[index].to_string();
 
 			// Make sure we only do operations when we get matches, otherwise we panic when trying to access the first match
-			if let Some(link_capture) =  REDDIT_EMOTE_LINK_REGEX.captures(&link) {
-					
+			if let Some(link_capture) = REDDIT_EMOTE_LINK_REGEX.captures(&link) {
 				/* Reddit sends a size for the image based on whether it's alone or accompanied by text.
 				It's a good idea and makes everything look nicer, so we'll do the same. */
 				let size = media_metadata.json_path(&size_path).first().unwrap().to_string();
 
 				// Replace the ID we found earlier in the comment with the respective image and it's link from the regex capture
-				let to_replace_with = format!("<img loading=\"lazy\" src=\"/emote/{} width=\"{size}\" height=\"{size}\" style=\"vertical-align:text-bottom\">", &link_capture[1]);
+				let to_replace_with = format!(
+					"<img loading=\"lazy\" src=\"/emote/{} width=\"{size}\" height=\"{size}\" style=\"vertical-align:text-bottom\">",
+					&link_capture[1]
+				);
 
 				// Inside the comment replace the ID we found with the string that will embed the image
-				comment = comment.replace(&id,&to_replace_with).to_string();
+				comment = comment.replace(&id, &to_replace_with).to_string();
 			}
 		}
-		// http://127.0.0.1:8080/r/OMORI/comments/xbwck8/which_omori_emoji_describes_your_day_so_far/
-		// http://127.0.0.1:8080/r/OMORI/comments/xbwck8/which_omori_emoji_describes_your_day_so_far/io1zgnj/?context=3
-		// Remember to write test aswell
-
-			
 	}
 	// Call rewrite_urls() to transform any other Reddit links
 	rewrite_urls(&comment)
@@ -1271,9 +1265,6 @@ mod tests {
 
 	#[test]
 	fn rewrite_urls_removes_backslashes_and_rewrites_url() {
-		println!("{}", rewrite_urls(
-			"<a href=\"https://new.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://new.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"
-		));
 		assert_eq!(
 			rewrite_urls(
 				"<a href=\"https://new.reddit.com/r/linux%5C_gaming/comments/x/just%5C_a%5C_test%5C/\">https://new.reddit.com/r/linux\\_gaming/comments/x/just\\_a\\_test/</a>"
@@ -1387,7 +1378,7 @@ fn test_url_path_basename() {
 #[test]
 fn test_rewriting_emotes() {
 	let json_input = serde_json::from_str(r#"{"emote|t5_31hpy|2028":{"e":"Image","id":"emote|t5_31hpy|2028","m":"image/png","s":{"u":"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/t5_31hpy/PW6WsOaLcd.png","x":60,"y":60},"status":"valid","t":"sticker"}}"#).expect("Valid JSON");
-		let comment_input = r#"<div class="comment_body "><div class="md"><p>:2028:</p></div></div>"#;
+	let comment_input = r#"<div class="comment_body "><div class="md"><p>:2028:</p></div></div>"#;
 	let output = r#"<div class="comment_body "><div class="md"><p><img loading="lazy" src="/emote/t5_31hpy/PW6WsOaLcd.png" width="60" height="60" style="vertical-align:text-bottom"></p></div></div>"#;
 	assert_eq!(rewrite_emotes(&json_input, comment_input.to_string()), output);
 }
