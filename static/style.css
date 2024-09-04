@@ -1018,6 +1018,10 @@ a.search_subreddit:hover {
 
 }
 
+.post_title .post_flair{
+    display: inline
+}
+
 .post:not(.highlighted) .post_title a:visited {
     color: var(--visited);
 }
