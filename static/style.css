@@ -1012,6 +1012,12 @@ a.search_subreddit:hover {
     grid-area: post_title;
 }
 
+.post_title a{
+
+    display: block
+
+}
+
 .post:not(.highlighted) .post_title a:visited {
     color: var(--visited);
 }
