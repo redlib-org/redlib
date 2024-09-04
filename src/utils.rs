@@ -1096,6 +1096,18 @@ pub fn enable_rss() -> bool {
 	}
 }
 
+/// Returns true if the config/env variable `REDLIB_ROBOTS_DISABLE_INDEXING` carries the
+/// value `on`.
+///
+/// If this variable is set as such, the instance will block all robots in robots.txt and
+/// insert the noindex, nofollow meta tag on every page.
+pub fn disable_indexing() -> bool {
+	match get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
+		Some(val) => val == "on",
+		None => false,
+	}
+}
+
 // Determines if a request shoud redirect to a nsfw landing gate.
 pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
 	let sfw_instance = sfw_only();
