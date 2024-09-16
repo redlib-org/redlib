@@ -4,6 +4,7 @@ use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
+use hyper::StatusCode;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
@@ -60,10 +61,9 @@ pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
 pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 	let res = reddit_head(path.clone(), true).await?;
 	let status = res.status().as_u16();
+	let policy_error = res.headers().get(header::RETRY_AFTER).is_some();
 
 	match status {
-		429 => Err("Too many requests.".to_string()),
-
 		// If Reddit responds with a 2xx, then the path is already canonical.
 		200..=299 => Ok(Some(path)),
 
@@ -93,6 +93,12 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 		// If Reddit responds with anything other than 3xx (except for the 2xx and 301
 		// as above), return a None.
 		300..=399 => Ok(None),
+
+		// Rate limiting
+		429 => Err("Too many requests.".to_string()),
+
+		// Special condition rate limiting - https://github.com/redlib-org/redlib/issues/229
+		403 if policy_error => Err("Too many requests.".to_string()),
 
 		_ => Ok(
 			res
@@ -256,6 +262,12 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 						)
 						.await;
 					};
+
+					// Special condition rate limiting - https://github.com/redlib-org/redlib/issues/229
+					if response.status() == StatusCode::FORBIDDEN && response.headers().get("retry-after").unwrap_or(&HeaderValue::from_static("0")).to_str().unwrap_or("0") == "0" {
+						force_refresh_token().await;
+						return Err("Rate limit - try refreshing soon".to_string());
+					}
 
 					match response.headers().get(header::CONTENT_ENCODING) {
 						// Content not compressed.
