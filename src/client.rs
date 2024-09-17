@@ -265,7 +265,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 
 					// Special condition rate limiting - https://github.com/redlib-org/redlib/issues/229
 					if response.status() == StatusCode::FORBIDDEN && response.headers().get("retry-after").unwrap_or(&HeaderValue::from_static("0")).to_str().unwrap_or("0") == "0" {
-						force_refresh_token().await;
+						tokio::spawn(force_refresh_token());
 						return Err("Rate limit - try refreshing soon".to_string());
 					}
 
