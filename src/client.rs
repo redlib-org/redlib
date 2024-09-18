@@ -26,12 +26,7 @@ const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	let https = hyper_rustls::HttpsConnectorBuilder::new()
-		.with_native_roots()
-		.expect("No native root certificates found")
-		.https_only()
-		.enable_http1()
-		.build();
+	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
 	client::Client::builder().build(https)
 });
 
