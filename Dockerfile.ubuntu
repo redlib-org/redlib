@@ -1,0 +1,48 @@
+# supported versions here: https://github.com/rust-lang/docker-rust/tree/9f287282d513a84cb7c7f38f197838f15d37b6a9/1.81.0
+ARG RUST_BUILDER_VERSION=bookworm
+ARG UBUNTU_RELEASE_VERSION=jammy
+
+########################
+## builder image
+########################
+FROM rust:${RUST_BUILDER_VERSION} AS builder
+
+WORKDIR /redlib
+
+# download (most) dependencies in their own layer
+COPY Cargo.lock Cargo.toml ./
+RUN mkdir src && echo "fn main() { panic!(\"why am i running?\") }" > src/main.rs
+RUN cargo fetch
+RUN rm ./src/main.rs && rmdir ./src
+
+# copy the source and build the redlib binary
+COPY . ./
+RUN cargo install --path .
+RUN echo "finished building redlib!"
+
+########################
+## release image
+########################
+FROM ubuntu:${UBUNTU_RELEASE_VERSION} AS release
+
+# Import ca-certificates from builder
+COPY --from=builder /usr/share/ca-certificates /usr/share/ca-certificates
+COPY --from=builder /etc/ssl/certs /etc/ssl/certs
+
+# Import redlib binary from builder
+COPY --from=builder /usr/local/cargo/bin/redlib /usr/local/bin/redlib
+
+# Add non-root user for running redlib
+RUN adduser --no-create-home --disabled-password redlib
+USER redlib
+
+# Document that we intend to expose port 8080 to whoever runs the container
+EXPOSE 8080
+
+# Run a healthcheck every minute to make sure redlib is functional
+HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
+
+# Add container metadata
+MAINTAINER sigaloid
+
+CMD ["redlib"]
