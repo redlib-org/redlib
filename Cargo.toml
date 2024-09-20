@@ -10,6 +10,9 @@ authors = [
 ]
 edition = "2021"
 
+[features]
+no-https-verification = []
+
 [dependencies]
 askama = { version = "0.12.1", default-features = false }
 cached = { version = "0.51.3", features = ["async"] }

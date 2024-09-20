@@ -26,35 +26,41 @@ const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	// let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+	// Use native certificates to verify requests to reddit
+	#[cfg(not(feature = "no-https-verification"))]
+	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
 
-	use rustls::ClientConfig;
-	use std::sync::Arc;
+	// If https verification is disabled for debug purposes, create a custom ClientConfig
+	#[cfg(feature = "no-https-verification")]
+	let https = {
+		use rustls::ClientConfig;
+		use std::sync::Arc;
 
-	// A custom certificate verifier that does nothing.
-	struct NoCertificateVerification;
+		// A custom certificate verifier that does nothing.
+		struct NoCertificateVerification;
 
-	impl rustls::client::ServerCertVerifier for NoCertificateVerification {
-		fn verify_server_cert(
-			&self,
-			_: &rustls::Certificate,
-			_: &[rustls::Certificate],
-			_: &rustls::ServerName,
-			_: &mut dyn Iterator<Item = &[u8]>,
-			_: &[u8],
-			_: std::time::SystemTime,
-		) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
-			Ok(rustls::client::ServerCertVerified::assertion())
+		impl rustls::client::ServerCertVerifier for NoCertificateVerification {
+			fn verify_server_cert(
+				&self,
+				_: &rustls::Certificate,
+				_: &[rustls::Certificate],
+				_: &rustls::ServerName,
+				_: &mut dyn Iterator<Item = &[u8]>,
+				_: &[u8],
+				_: std::time::SystemTime,
+			) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
+				Ok(rustls::client::ServerCertVerified::assertion())
+			}
 		}
-	}
 
-	let mut config = ClientConfig::builder()
-		.with_safe_defaults()
-		.with_root_certificates(rustls::RootCertStore::empty())
-		.with_no_client_auth();
+		let mut config = ClientConfig::builder()
+			.with_safe_defaults()
+			.with_root_certificates(rustls::RootCertStore::empty())
+			.with_no_client_auth();
 
-	config.dangerous().set_certificate_verifier(Arc::new(NoCertificateVerification));
-	let https = hyper_rustls::HttpsConnectorBuilder::new().with_tls_config(config).https_only().enable_http1().build();
+		config.dangerous().set_certificate_verifier(Arc::new(NoCertificateVerification));
+		hyper_rustls::HttpsConnectorBuilder::new().with_tls_config(config).https_only().enable_http1().build()
+	};
 	client::Client::builder().build(https)
 });
 
