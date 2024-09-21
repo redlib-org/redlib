@@ -119,7 +119,7 @@ async fn main() {
 	// Initialize logger
 	pretty_env_logger::init();
 
-	let matches = Command::new("Redlib")
+	let mut cmd = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
 		.arg(
@@ -158,7 +158,23 @@ async fn main() {
 				.default_value("604800")
 				.num_args(1),
 		)
-		.get_matches();
+		.arg(
+			Arg::new("no-https-verification")
+				.long("no-https-verification")
+				.help("Disables HTTPS certificate verification between the instance and reddit. This can be useful to debug the HTTPS connection with an HTTPS sniffer. Only works when the 'no-https-verification' feature is enabled at compile time.")
+				.num_args(0),
+		);
+	let matches = cmd.get_matches_mut();
+
+	#[cfg(not(feature = "no-https-verification"))]
+	if matches.contains_id("no-https-verification") {
+		cmd
+			.error(
+				clap::error::ErrorKind::InvalidValue,
+				"`--no-https-verification` can only be enabled if the `no-https-verification` feature is enabled",
+			)
+			.exit()
+	}
 
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
