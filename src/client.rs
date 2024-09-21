@@ -64,6 +64,7 @@ static URL_PAIRS: [(&str, &str); 2] = [
 /// `Location` header. An `Err(String)` is returned if Reddit responds with a
 /// 429, or if we were unable to decode the value in the `Location` header.
 #[cached(size = 1024, time = 600, result = true)]
+#[async_recursion::async_recursion]
 pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, String> {
 	if tries == 0 {
 		return Ok(None);
@@ -113,7 +114,7 @@ pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, S
 				let uri = format_url(stripped_uri);
 
 				// Decrement tries and try again
-				Box::pin(canonical_path(uri, tries - 1)).await
+				canonical_path(uri, tries - 1).await
 			}
 			None => Ok(None),
 		},
