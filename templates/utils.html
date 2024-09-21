@@ -153,7 +153,10 @@
 	{% endif %}
 
 	<!-- POST BODY -->
-	<div class="post_body">{{ post.body|safe }}</div>
+	<div class="post_body">
+		{{ post.body|safe }}
+		{% call poll(post) %}
+	</div>
 	<div class="post_score" title="{{ post.score.1 }}">
     {% if prefs.hide_score != "on" %}
     {{ post.score.0 }}

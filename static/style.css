@@ -1242,6 +1242,10 @@ a.search_subreddit:hover {
     width: 100%;
 }
 
+.highlighted .post_poll {
+    padding: 15px 0 5px;
+}
+
 /* Used only for text post preview */
 .post_preview {
     -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
