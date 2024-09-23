@@ -161,8 +161,7 @@ async fn main() {
 		.arg(
 			Arg::new("no-https-verification")
 				.long("no-https-verification")
-				.help("Disables HTTPS certificate verification between the instance and reddit. This can be useful to debug the HTTPS connection with an HTTPS sniffer. Only works when the 'no-https-verification' feature is enabled at compile time.")
-				.num_args(0),
+				.help("Disables HTTPS certificate verification between the instance and reddit. This can be useful to debug the HTTPS connection with an HTTPS sniffer. Only works when the 'no-https-verification' feature is enabled at compile time."),
 		);
 	let matches = cmd.get_matches_mut();
 
