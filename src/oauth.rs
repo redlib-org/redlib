@@ -70,7 +70,7 @@ impl Oauth {
 		let request = builder.body(body).unwrap();
 
 		// Send request
-		let client: client::Client<_, Body> = CLIENT.clone();
+		let client: client::Client<_, Body> = CLIENT.get().unwrap().clone();
 		let resp = client.request(request).await.ok()?;
 
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.

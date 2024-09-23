@@ -15,6 +15,7 @@ use serde_json::Value;
 
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::OnceLock;
 use std::{io, result::Result};
 
 use crate::dbg_msg;
@@ -25,14 +26,28 @@ use crate::utils::format_url;
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 
-pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
+pub static CLIENT: OnceLock<Client<HttpsConnector<HttpConnector>>> = OnceLock::new();
+
+pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
+	let client = block_on(Oauth::new());
+	tokio::spawn(token_daemon());
+	ArcSwap::new(client.into())
+});
+
+pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
+
+pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
+
+/// Generate a client given a flag.
+#[allow(unused_variables)]
+pub fn generate_client(no_https_verification: bool) -> Client<HttpsConnector<HttpConnector>> {
 	// Use native certificates to verify requests to reddit
 	#[cfg(not(feature = "no-https-verification"))]
 	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
 
 	// If https verification is disabled for debug purposes, create a custom ClientConfig
 	#[cfg(feature = "no-https-verification")]
-	let https = {
+	let https = if no_https_verification {
 		use rustls::ClientConfig;
 		use std::sync::Arc;
 
@@ -60,19 +75,11 @@ pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
 
 		config.dangerous().set_certificate_verifier(Arc::new(NoCertificateVerification));
 		hyper_rustls::HttpsConnectorBuilder::new().with_tls_config(config).https_only().enable_http1().build()
+	} else {
+		hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build()
 	};
 	client::Client::builder().build(https)
-});
-
-pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
-	let client = block_on(Oauth::new());
-	tokio::spawn(token_daemon());
-	ArcSwap::new(client.into())
-});
-
-pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
-
-pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
+}
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -155,7 +162,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.get().unwrap().clone();
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -211,7 +218,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{REDDIT_URL_BASE}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.get().unwrap().clone();
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = OAUTH_CLIENT.load_full();

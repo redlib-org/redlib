@@ -22,7 +22,7 @@ use futures_lite::FutureExt;
 use hyper::{header::HeaderValue, Body, Request, Response};
 
 mod client;
-use client::{canonical_path, proxy};
+use client::{canonical_path, generate_client, proxy, CLIENT};
 use log::info;
 use once_cell::sync::Lazy;
 use server::RequestExt;
@@ -179,6 +179,7 @@ async fn main() {
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
+	let no_https_verification = matches.contains_id("no-https-verification");
 
 	let listener = [address, ":", port].concat();
 
@@ -199,6 +200,8 @@ async fn main() {
 	Lazy::force(&instance_info::INSTANCE_INFO);
 	info!("Creating OAUTH client.");
 	Lazy::force(&OAUTH_CLIENT);
+	info!("Creating HTTP client.");
+	CLIENT.set(generate_client(no_https_verification)).unwrap();
 
 	// Define default headers (added to all responses)
 	app.default_headers = headers! {
