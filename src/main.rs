@@ -194,14 +194,14 @@ async fn main() {
 	// in OAUTH case, we need to retrieve the token to avoid paying penalty
 	// at first request
 
+	info!("Creating HTTP client.");
+	CLIENT.set(generate_client(no_https_verification)).unwrap();
 	info!("Evaluating config.");
 	Lazy::force(&config::CONFIG);
 	info!("Evaluating instance info.");
 	Lazy::force(&instance_info::INSTANCE_INFO);
 	info!("Creating OAUTH client.");
 	Lazy::force(&OAUTH_CLIENT);
-	info!("Creating HTTP client.");
-	CLIENT.set(generate_client(no_https_verification)).unwrap();
 
 	// Define default headers (added to all responses)
 	app.default_headers = headers! {

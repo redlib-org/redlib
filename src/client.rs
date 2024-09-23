@@ -48,6 +48,7 @@ pub fn generate_client(no_https_verification: bool) -> Client<HttpsConnector<Htt
 	// If https verification is disabled for debug purposes, create a custom ClientConfig
 	#[cfg(feature = "no-https-verification")]
 	let https = if no_https_verification {
+		log::warn!("HTTPS verification is disabled.");
 		use rustls::ClientConfig;
 		use std::sync::Arc;
 
