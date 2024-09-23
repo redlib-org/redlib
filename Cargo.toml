@@ -47,6 +47,7 @@ dotenvy = "0.15.7"
 rss = "2.0.7"
 arc-swap = "1.7.1"
 rustls = { version = "0.21.12", features = ["dangerous_configuration"] }
+ctor = "0.2.8"
 
 
 [dev-dependencies]

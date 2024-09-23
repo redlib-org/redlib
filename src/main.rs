@@ -405,3 +405,9 @@ async fn main() {
 		eprintln!("Server error: {e}");
 	}
 }
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+	CLIENT.set(generate_client(false)).unwrap();
+}
