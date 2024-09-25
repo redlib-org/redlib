@@ -889,6 +889,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "inventory"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f958d3d68f4167080a18141e10381e7634563984a537f2a49a30fd8e53ac5767"
+
+[[package]]
 name = "is-terminal"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1255,6 +1261,7 @@ dependencies = [
  "sealed_test",
  "serde",
  "serde_json",
+ "serde_json_path",
  "serde_yaml",
  "time",
  "tokio",
@@ -1563,6 +1570,59 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_json_path"
+version = "0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bc0207b6351893eafa1e39aa9aea452abb6425ca7b02dd64faf29109e7a33ba"
+dependencies = [
+ "inventory",
+ "nom",
+ "once_cell",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_json_path_core",
+ "serde_json_path_macros",
+ "thiserror",
+]
+
+[[package]]
+name = "serde_json_path_core"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d64fe53ce1aaa31bea2b2b46d3b6ab6a37e61854bedcbd9f174e188f3f7d79"
+dependencies = [
+ "inventory",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "serde_json_path_macros"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a31e8177a443fd3e94917f12946ae7891dfb656e6d4c5e79b8c5d202fbcb723"
+dependencies = [
+ "inventory",
+ "once_cell",
+ "serde_json_path_core",
+ "serde_json_path_macros_internal",
+]
+
+[[package]]
+name = "serde_json_path_macros_internal"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75dde5a1d2ed78dfc411fc45592f72d3694436524d3353683ecb3d22009731dc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.68",
 ]
 
 [[package]]

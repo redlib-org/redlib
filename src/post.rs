@@ -4,7 +4,7 @@ use crate::config::get_setting;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_urls, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
+	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
 };
 use hyper::{Body, Request, Response};
 
@@ -178,7 +178,7 @@ fn build_comment(
 			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
-		rewrite_urls(&val(comment, "body_html"))
+		rewrite_emotes(&data["media_metadata"], val(comment, "body_html"))
 	};
 	let kind = comment["kind"].as_str().unwrap_or_default().to_string();
 
