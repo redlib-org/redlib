@@ -79,7 +79,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 			let query_string = format!("q={query_body}&type=comment");
 			let form = url::form_urlencoded::parse(query_string.as_bytes()).collect::<HashMap<_, _>>();
-			let query = form.get("q").unwrap().to_owned().to_string();
+			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
 				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
