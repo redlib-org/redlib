@@ -13,7 +13,7 @@ use tokio::time::{error::Elapsed, timeout};
 
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
 
-static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
+static AUTH_ENDPOINT: &str = "https://www.reddit.com";
 
 // Spoofed client for Android devices
 #[derive(Debug, Clone, Default)]
@@ -68,7 +68,7 @@ impl Oauth {
 	}
 	async fn login(&mut self) -> Option<()> {
 		// Construct URL for OAuth token
-		let url = format!("{AUTH_ENDPOINT}/api/access_token");
+		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
 		let mut builder = Request::builder().method(Method::POST).uri(&url);
 
 		// Add headers from spoofed client
@@ -98,6 +98,8 @@ impl Oauth {
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
 		// Technically it's not needed, but it's easy for Reddit API to check for this.
 		// It's some kind of header that uniquely identifies the device.
+		// Not worried about the privacy implications, since this is randomly changed
+		// and really only as privacy-concerning as the OAuth token itself.
 		if let Some(header) = resp.headers().get("x-reddit-loid") {
 			self.headers_map.insert("x-reddit-loid".to_owned(), header.to_str().ok()?.to_string());
 		}
