@@ -6,9 +6,10 @@ use crate::{
 };
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
-use log::{info, trace};
+use log::{error, info, trace};
 
 use serde_json::json;
+use tokio::time::{error::Elapsed, timeout};
 
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
 
@@ -25,11 +26,32 @@ pub struct Oauth {
 }
 
 impl Oauth {
+	/// Create a new OAuth client
 	pub(crate) async fn new() -> Self {
-		let mut oauth = Self::default();
-		oauth.login().await;
-		oauth
+		// Call new_internal until it succeeds
+		loop {
+			let attempt = Self::new_with_timeout().await;
+			match attempt {
+				Ok(Some(oauth)) => {
+					info!("[✅] Successfully created OAuth client");
+					return oauth;
+				}
+				Ok(None) => {
+					error!("Failed to create OAuth client. Retrying in 5 seconds...");
+					continue;
+				}
+				Err(duration) => {
+					error!("Failed to create OAuth client in {duration:?}. Retrying in 5 seconds...");
+				}
+			}
+		}
 	}
+
+	async fn new_with_timeout() -> Result<Option<Self>, Elapsed> {
+		let mut oauth = Self::default();
+		timeout(Duration::from_secs(5), oauth.login()).await.map(|result| result.map(|_| oauth))
+	}
+
 	pub(crate) fn default() -> Self {
 		// Generate a device to spoof
 		let device = Device::new();
