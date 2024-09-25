@@ -6,13 +6,14 @@ use crate::{
 };
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
-use log::{info, trace};
+use log::{error, info, trace};
 
 use serde_json::json;
+use tokio::time::{error::Elapsed, timeout};
 
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
 
-static AUTH_ENDPOINT: &str = "https://accounts.reddit.com";
+static AUTH_ENDPOINT: &str = "https://www.reddit.com";
 
 // Spoofed client for Android devices
 #[derive(Debug, Clone, Default)]
@@ -25,11 +26,32 @@ pub struct Oauth {
 }
 
 impl Oauth {
+	/// Create a new OAuth client
 	pub(crate) async fn new() -> Self {
-		let mut oauth = Self::default();
-		oauth.login().await;
-		oauth
+		// Call new_internal until it succeeds
+		loop {
+			let attempt = Self::new_with_timeout().await;
+			match attempt {
+				Ok(Some(oauth)) => {
+					info!("[✅] Successfully created OAuth client");
+					return oauth;
+				}
+				Ok(None) => {
+					error!("Failed to create OAuth client. Retrying in 5 seconds...");
+					continue;
+				}
+				Err(duration) => {
+					error!("Failed to create OAuth client in {duration:?}. Retrying in 5 seconds...");
+				}
+			}
+		}
 	}
+
+	async fn new_with_timeout() -> Result<Option<Self>, Elapsed> {
+		let mut oauth = Self::default();
+		timeout(Duration::from_secs(5), oauth.login()).await.map(|result| result.map(|_| oauth))
+	}
+
 	pub(crate) fn default() -> Self {
 		// Generate a device to spoof
 		let device = Device::new();
@@ -46,7 +68,7 @@ impl Oauth {
 	}
 	async fn login(&mut self) -> Option<()> {
 		// Construct URL for OAuth token
-		let url = format!("{AUTH_ENDPOINT}/api/access_token");
+		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
 		let mut builder = Request::builder().method(Method::POST).uri(&url);
 
 		// Add headers from spoofed client
@@ -76,6 +98,8 @@ impl Oauth {
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
 		// Technically it's not needed, but it's easy for Reddit API to check for this.
 		// It's some kind of header that uniquely identifies the device.
+		// Not worried about the privacy implications, since this is randomly changed
+		// and really only as privacy-concerning as the OAuth token itself.
 		if let Some(header) = resp.headers().get("x-reddit-loid") {
 			self.headers_map.insert("x-reddit-loid".to_owned(), header.to_str().ok()?.to_string());
 		}

@@ -87,12 +87,12 @@
 		{% endif %}
 	</p>
 	<h1 class="post_title">
-		{{ post.title }}
 		{% if post.flair.flair_parts.len() > 0 %}
 			<a href="/r/{{ post.community }}/search?q=flair_name%3A%22{{ post.flair.text }}%22&restrict_sr=on"
 				class="post_flair"
 				style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};">{% call render_flair(post.flair.flair_parts) %}</a>
 		{% endif %}
+		{{ post.title }}
 		{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}
 		{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
 	</h1>
@@ -153,7 +153,10 @@
 	{% endif %}
 
 	<!-- POST BODY -->
-	<div class="post_body">{{ post.body|safe }}</div>
+	<div class="post_body">
+		{{ post.body|safe }}
+		{% call poll(post) %}
+	</div>
 	<div class="post_score" title="{{ post.score.1 }}">
     {% if prefs.hide_score != "on" %}
     {{ post.score.0 }}
@@ -174,6 +177,10 @@
 					dup<span class="desktop_item">licat</span>es
 				</a>
 			</li>
+			{% endif %}
+			{% if post.post_type == "link" %}
+			<li class="desktop_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive.is</a></li>
+			<li class="mobile_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive</a></li>
 			{% endif %}
 			{% call external_reddit_link(post.permalink) %}
 

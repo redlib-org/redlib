@@ -137,6 +137,7 @@ input {
     margin: 0;
     color: var(--text);
     font-family: "Inter", sans-serif;
+    word-wrap: anywhere;
 }
 
 html.fixed_navbar {
@@ -166,10 +167,8 @@ body.fixed_navbar {
 }
 
 nav {
-    display: grid;
-    grid-template-areas: "logo searchbox links";
+    display: flex;
 
-    justify-content: space-between;
     align-items: center;
 
     color: var(--accent);
@@ -202,15 +201,18 @@ nav #code > svg {
 }
 
 nav #logo {
-    grid-area: logo;
     white-space: nowrap;
     margin-right: 5px;
+    flex-grow: 1;
+    flex-basis: 0;
 }
 
 nav #links {
-    grid-area: links;
     margin-left: 10px;
     display: flex;
+    flex-grow: 1;
+    flex-basis: 0;
+    justify-content: flex-end;
 }
 
 nav #links svg {
@@ -358,9 +360,12 @@ main {
 
 #column_one {
     width: 100%;
-    max-width: 750px;
     border-radius: 5px;
+    max-width: 750px;
     overflow: inherit;
+}
+@media screen and (max-width: 800px) {
+    #column_one { max-width: unset; }
 }
 
 /* Body footer. */
@@ -374,14 +379,13 @@ body > footer {
     bottom: 0;
 }
 
-.footer-button {
+.footer-buttons {
     align-items: center;
     border-radius: 0.25rem;
     box-sizing: border-box;
     color: var(--text);
     cursor: pointer;
     display: inline-flex;
-    padding-left: 1em;
     opacity: 0.8;
 }
 
@@ -458,9 +462,8 @@ aside {
     border-radius: 5px;
     overflow: hidden;
 }
-#subreddit,
-#sidebar {
-    min-width: 350px;
+@media screen and (min-width: 800px) {
+    #subreddit, #sidebar { min-width: 350px; }
 }
 
 #user *,
@@ -522,7 +525,9 @@ aside {
 #user_actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-column-gap: 20px;
+}
+@media screen and (max-width: 279px) {
+    #sub_actions { display: unset; }
 }
 
 #user_details > label,
@@ -689,6 +694,7 @@ select,
     display: flex;
     box-shadow: var(--shadow);
     border-radius: 5px;
+    margin-bottom: 0;
 }
 
 #searchbox > *,
@@ -698,8 +704,11 @@ select,
 
 #search {
     border-right: 2px var(--outside) solid;
-    min-width: 0;
     flex-grow: 1;
+}
+@media screen and (max-width: 800px) {
+    #search { width: 0; }
+    #search.commentQuery { width: unset; }
 }
 
 #inside {
@@ -779,7 +788,7 @@ button.submit:hover > svg {
 #sort,
 #search_sort {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     margin-bottom: 20px;
 }
 
@@ -806,10 +815,6 @@ button.submit:hover > svg {
 
 /* When screen size is smaller than 480px we switch to a design better suited for mobile devices */
 @media screen and (max-width: 480px) {
-    #search_sort {
-        align-items: unset;
-    }
-
     .search_widget_divider_box > #search {
         flex: 1;
         min-width: unset;
@@ -834,7 +839,7 @@ button.submit:hover > svg {
     }
 
     #sort_submit {
-        height: unset;
+        height: auto;
         border-left: 2px var(--outside) solid;
     }
 }
@@ -858,6 +863,7 @@ main > * > footer > a {
     text-align: center;
     cursor: pointer;
     transition: 0.2s background;
+    word-wrap: normal;
 }
 
 #sort_options > a.selected,
@@ -1035,6 +1041,8 @@ a.search_subreddit:hover {
     border-radius: 5px;
     font-size: 12px;
     font-weight: bold;
+    vertical-align: text-top;
+    line-height: 1.6;
 }
 
 .awards {
@@ -1103,6 +1111,8 @@ a.search_subreddit:hover {
 }
 
 .post_media_video {
+    min-width: 100px;
+    max-width: 100px;
     width: auto;
     height: auto;
     max-width: 100%;
@@ -1121,9 +1131,7 @@ a.search_subreddit:hover {
     margin: auto;
 }
 
-.post_blurred img,
-.post_blurred svg,
-.post_blurred video {
+.post_blurred .post_media_content * {
     filter: blur(1.5rem);
 }
 
@@ -1131,16 +1139,16 @@ a.search_subreddit:hover {
     filter: blur(0.25rem);
 }
 
-.post_blurred .post_thumbnail svg {
+.post_blurred .post_thumbnail * {
     filter: blur(0.3rem);
 }
 
-.post_blurred img:hover,
-.post_blurred svg:hover,
-.post_blurred video:hover,
+.post_blurred .post_media_content:hover *,
+.post_blurred .post_media_content:hover ~ .post_body,
+.post_blurred .post_media_content:has(~ .post_body:hover) *,
 .post_blurred .post_body:hover,
-.post_blurred .post_thumbnail:hover svg {
-    filter: none;
+.post_blurred .post_thumbnail:hover * {
+	filter: none;
 }
 
 .post_media_image svg {
@@ -1234,6 +1242,10 @@ a.search_subreddit:hover {
     width: 100%;
 }
 
+.highlighted .post_poll {
+    padding: 15px 0 5px;
+}
+
 /* Used only for text post preview */
 .post_preview {
     -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
@@ -1259,6 +1271,7 @@ a.search_subreddit:hover {
 #comment_count {
     font-weight: 500;
     opacity: 0.9;
+    align-self: center;
 }
 
 #comment_count > #sorted_by {
@@ -1282,7 +1295,7 @@ a.search_subreddit:hover {
     display: auto;
 }
 
-@media screen and (min-width: 481px) {
+@media screen and (min-width: 508px) {
     .mobile_item {
         display: none;
     }
@@ -1894,10 +1907,6 @@ th {
 /* Mobile */
 
 @media screen and (max-width: 800px) {
-    body.fixed_navbar {
-        padding-top: 120px;
-    }
-
     main {
         flex-direction: column-reverse;
         padding: 10px;
@@ -1906,9 +1915,11 @@ th {
     }
 
     nav {
+        display: grid;
         grid-template-areas: "logo links" "searchbox searchbox";
-        padding: 10px;
+        padding: 5px 10px 0;
         width: calc(100% - 20px);
+        margin: 0;
     }
 
     nav #links {
@@ -1941,8 +1952,19 @@ th {
         margin: 0;
         max-width: 100%;
     }
+    #user { margin: 0 0 20px; }
+    
+    body.fixed_navbar {
+        min-height: calc(100vh - 75px);
+        padding-top: 45px;
+        #subreddit { margin: 49px 0 0; }
+        #user { margin: 49px 0 20px 0; }
+        #settings { margin-top: 48px; }
+        div.post.highlighted { margin-top: 49px; }
+        main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
+        #column_one:has(div.post.highlighted + #commentQueryForms) { #sort { margin-top: 0 } }
+    }
 
-    #user,
     #sidebar {
         margin: 20px 0;
     }
@@ -1951,14 +1973,19 @@ th {
         margin-bottom: 5px;
     }
     #searchbox {
-        width: calc(100vw - 35px);
+        width: calc(100vw - 20px);
+        margin-bottom: 10px;
     }
 }
 
-@media screen and (max-width: 480px) {
-    body.fixed_navbar {
-        padding-top: 100px;
+@media screen and (max-width: 580px) {
+    #commentQueryForms {
+        display: initial;
+        justify-content: initial;
     }
+}
+
+@media screen and (max-width: 507px) {
     #version {
         display: none;
     }
@@ -2052,11 +2079,12 @@ th {
     }
 
     .comment_score {
-        min-width: 32px;
+        min-width: 34px;
         height: 20px;
-        font-size: 15px;
+        font-size: 12px;
         padding: 7px 0px;
         margin-right: -5px;
+        align-content: center;
     }
 
     #post_links > li {
@@ -2079,11 +2107,6 @@ th {
 
     .popup-inner {
         max-width: 80%;
-    }
-
-    #commentQueryForms {
-        display: initial;
-        justify-content: initial;
     }
 }
 

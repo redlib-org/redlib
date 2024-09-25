@@ -22,15 +22,16 @@ use crate::server::RequestExt;
 use crate::utils::format_url;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
+const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
+
+const REDDIT_SHORT_URL_BASE: &str = "https://redd.it";
+const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
+
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
+const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	let https = hyper_rustls::HttpsConnectorBuilder::new()
-		.with_native_roots()
-		.expect("No native root certificates found")
-		.https_only()
-		.enable_http1()
-		.build();
+	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
 	client::Client::builder().build(https)
 });
 
@@ -43,6 +44,11 @@ pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
 
 pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
+
+static URL_PAIRS: [(&str, &str); 2] = [
+	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
+	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
+];
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -57,13 +63,32 @@ pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
 /// `Location` header. An `Err(String)` is returned if Reddit responds with a
 /// 429, or if we were unable to decode the value in the `Location` header.
 #[cached(size = 1024, time = 600, result = true)]
-pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
-	let res = reddit_head(path.clone(), true).await?;
+#[async_recursion::async_recursion]
+pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, String> {
+	if tries == 0 {
+		return Ok(None);
+	}
+
+	// for each URL pair, try the HEAD request
+	let res = {
+		// for url base and host in URL_PAIRS, try reddit_short_head(path.clone(), true, url_base, url_base_host) and if it succeeds, set res. else, res = None
+		let mut res = None;
+		for (url_base, url_base_host) in URL_PAIRS {
+			res = reddit_short_head(path.clone(), true, url_base, url_base_host).await.ok();
+			if let Some(res) = &res {
+				if !res.status().is_client_error() {
+					break;
+				}
+			}
+		}
+		res
+	};
+
+	let res = res.ok_or_else(|| "Unable to make HEAD request to Reddit.".to_string())?;
 	let status = res.status().as_u16();
+	let policy_error = res.headers().get(header::RETRY_AFTER).is_some();
 
 	match status {
-		429 => Err("Too many requests.".to_string()),
-
 		// If Reddit responds with a 2xx, then the path is already canonical.
 		200..=299 => Ok(Some(path)),
 
@@ -73,6 +98,7 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 				let Ok(original) = val.to_str() else {
 					return Err("Unable to decode Location header.".to_string());
 				};
+
 				// We need to strip the .json suffix from the original path.
 				// In addition, we want to remove share parameters.
 				// Cut it off here instead of letting it propagate all the way
@@ -85,7 +111,9 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 				// also remove all Reddit domain parts with format_url.
 				// Otherwise, it will literally redirect to Reddit.com.
 				let uri = format_url(stripped_uri);
-				Ok(Some(uri))
+
+				// Decrement tries and try again
+				canonical_path(uri, tries - 1).await
 			}
 			None => Ok(None),
 		},
@@ -93,6 +121,12 @@ pub async fn canonical_path(path: String) -> Result<Option<String>, String> {
 		// If Reddit responds with anything other than 3xx (except for the 2xx and 301
 		// as above), return a None.
 		300..=399 => Ok(None),
+
+		// Rate limiting
+		429 => Err("Too many requests.".to_string()),
+
+		// Special condition rate limiting - https://github.com/redlib-org/redlib/issues/229
+		403 if policy_error => Err("Too many requests.".to_string()),
 
 		_ => Ok(
 			res
@@ -160,20 +194,26 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 /// Makes a GET request to Reddit at `path`. By default, this will honor HTTP
 /// 3xx codes Reddit returns and will automatically redirect.
 fn reddit_get(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
-	request(&Method::GET, path, true, quarantine)
+	request(&Method::GET, path, true, quarantine, REDDIT_URL_BASE, REDDIT_URL_BASE_HOST)
 }
 
-/// Makes a HEAD request to Reddit at `path`. This will not follow redirects.
-fn reddit_head(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
-	request(&Method::HEAD, path, false, quarantine)
+/// Makes a HEAD request to Reddit at `path, using the short URL base. This will not follow redirects.
+fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<Response<Body>, String>> {
+	request(&Method::HEAD, path, false, quarantine, base_path, host)
 }
+
+// /// Makes a HEAD request to Reddit at `path`. This will not follow redirects.
+// fn reddit_head(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
+// 	request(&Method::HEAD, path, false, quarantine, false)
+// }
+// Unused - reddit_head is only ever called in the context of a short URL
 
 /// Makes a request to Reddit. If `redirect` is `true`, `request_with_redirect`
 /// will recurse on the URL that Reddit provides in the Location HTTP header
 /// in its response.
-fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
+fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<Response<Body>, String>> {
 	// Build Reddit URL from path.
-	let url = format!("{REDDIT_URL_BASE}{path}");
+	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
 	let client: Client<_, Body> = CLIENT.clone();
@@ -198,7 +238,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		.header("Client-Vendor-Id", vendor_id)
 		.header("X-Reddit-Device-Id", device_id)
 		.header("x-reddit-loid", loid)
-		.header("Host", "oauth.reddit.com")
+		.header("Host", host)
 		.header("Authorization", &format!("Bearer {token}"))
 		.header("Accept-Encoding", if method == Method::GET { "gzip" } else { "identity" })
 		.header("Accept-Language", "en-US,en;q=0.5")
@@ -253,6 +293,8 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 								.to_string(),
 							true,
 							quarantine,
+							base_path,
+							host,
 						)
 						.await;
 					};
@@ -374,6 +416,16 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
 							let json: Value = value;
+
+							// If user is suspended
+							if let Some(data) = json.get("data") {
+								if let Some(is_suspended) = data.get("is_suspended").and_then(Value::as_bool) {
+									if is_suspended {
+										return Err("suspended".into());
+									}
+								}
+							}
+
 							// If Reddit returned an error
 							if json["error"].is_i64() {
 								// OAuth token has expired; http status 401
@@ -382,6 +434,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 									let () = force_refresh_token().await;
 									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
+
 								// Handle quarantined
 								if json["reason"] == "quarantined" {
 									return Err("quarantined".into());
@@ -390,6 +443,15 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 								if json["reason"] == "gated" {
 									return Err("gated".into());
 								}
+								// Handle private subs
+								if json["reason"] == "private" {
+									return Err("private".into());
+								}
+								// Handle banned subs
+								if json["reason"] == "banned" {
+									return Err("banned".into());
+								}
+
 								Err(format!("Reddit error {} \"{}\": {} | {path}", json["error"], json["reason"], json["message"]))
 							} else {
 								Ok(json)
@@ -425,13 +487,34 @@ async fn test_localization_popular() {
 async fn test_obfuscated_share_link() {
 	let share_link = "/r/rust/s/kPgq8WNHRK".into();
 	// Correct link without share parameters
-	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc".into();
-	assert_eq!(canonical_path(share_link).await, Ok(Some(canonical_link)));
+	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc/".into();
+	assert_eq!(canonical_path(share_link, 3).await, Ok(Some(canonical_link)));
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_share_link_strip_json() {
 	let link = "/17krzvz".into();
-	let canonical_link = "/r/nfl/comments/17krzvz/rapoport_sources_former_no_2_overall_pick/".into();
-	assert_eq!(canonical_path(link).await, Ok(Some(canonical_link)));
+	let canonical_link = "/comments/17krzvz".into();
+	assert_eq!(canonical_path(link, 3).await, Ok(Some(canonical_link)));
+}
+#[tokio::test(flavor = "multi_thread")]
+async fn test_private_sub() {
+	let link = json("/r/suicide/about.json?raw_json=1".into(), true).await;
+	assert!(link.is_err());
+	assert_eq!(link, Err("private".into()));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_banned_sub() {
+	let link = json("/r/aaa/about.json?raw_json=1".into(), true).await;
+	assert!(link.is_err());
+	assert_eq!(link, Err("banned".into()));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_gated_sub() {
+	// quarantine to false to specifically catch when we _don't_ catch it
+	let link = json("/r/drugs/about.json?raw_json=1".into(), false).await;
+	assert!(link.is_err());
+	assert_eq!(link, Err("gated".into()));
 }

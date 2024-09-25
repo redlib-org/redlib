@@ -494,6 +494,11 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 					link: Some(utils::get_post_url(&post)),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
+					description: Some(format!(
+						"<a href='{}{}'>Comments</a>",
+						config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
+						post.permalink
+					)),
 					..Default::default()
 				})
 				.collect::<Vec<_>>(),

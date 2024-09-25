@@ -11,7 +11,7 @@ use hyper::{Body, Request, Response};
 use askama::Template;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 // STRUCTS
 #[derive(Template)]
@@ -72,10 +72,14 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 			}
 
-			let query = match COMMENT_SEARCH_CAPTURE.captures(&url) {
+			let query_body = match COMMENT_SEARCH_CAPTURE.captures(&url) {
 				Some(captures) => captures.get(1).unwrap().as_str().replace("%20", " ").replace('+', " "),
 				None => String::new(),
 			};
+
+			let query_string = format!("q={query_body}&type=comment");
+			let form = url::form_urlencoded::parse(query_string.as_bytes()).collect::<HashMap<_, _>>();
+			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
 				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
