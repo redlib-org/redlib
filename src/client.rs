@@ -416,11 +416,14 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
 							let json: Value = value;
-							println!("{json:?}");
 
 							// If user is suspended
-							if json["data"]["is_suspended"].as_bool().unwrap_or_default() {
-								return Err("suspended".into());
+							if let Some(data) = json.get("data") {
+								if let Some(is_suspended) = data.get("is_suspended").and_then(Value::as_bool) {
+									if is_suspended {
+										return Err("suspended".into());
+									}
+								}
 							}
 
 							// If Reddit returned an error
