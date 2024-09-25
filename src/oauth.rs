@@ -34,8 +34,8 @@ impl Oauth {
 			match attempt {
 				Ok(Some(oauth)) => {
 					info!("[✅] Successfully created OAuth client");
-					return oauth
-				},
+					return oauth;
+				}
 				Ok(None) => {
 					error!("Failed to create OAuth client. Retrying in 5 seconds...");
 					continue;
