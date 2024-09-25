@@ -419,7 +419,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							println!("{json:?}");
 
 							// If user is suspended
-							if json["data"]["is_suspended"].as_bool().unwrap_or_default() { 
+							if json["data"]["is_suspended"].as_bool().unwrap_or_default() {
 								return Err("suspended".into());
 							}
 
