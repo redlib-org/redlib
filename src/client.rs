@@ -4,7 +4,6 @@ use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
-use hyper::StatusCode;
 use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
@@ -425,7 +424,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 									let () = force_refresh_token().await;
 									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
-								
+
 								// Handle suspended user
 								if json["message"] == "Forbidden" {
 									return Err("suspended".into());
