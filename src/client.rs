@@ -416,6 +416,16 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
 							let json: Value = value;
+
+							// If user is suspended
+							if let Some(data) = json.get("data") {
+								if let Some(is_suspended) = data.get("is_suspended").and_then(Value::as_bool) {
+									if is_suspended {
+										return Err("suspended".into());
+									}
+								}
+							}
+
 							// If Reddit returned an error
 							if json["error"].is_i64() {
 								// OAuth token has expired; http status 401
@@ -424,6 +434,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 									let () = force_refresh_token().await;
 									return Err("OAuth token has expired. Please refresh the page!".to_string());
 								}
+
 								// Handle quarantined
 								if json["reason"] == "quarantined" {
 									return Err("quarantined".into());
