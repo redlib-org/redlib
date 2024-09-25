@@ -60,7 +60,8 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 	} else {
 		""
 	};
-	let path = format!("{}.json?{}{}&raw_json=1", req.uri().path(), req.uri().query().unwrap_or_default(), nsfw_results);
+	let uri_path = req.uri().path().replace("+", "%2B");
+	let path = format!("{}.json?{}{}&raw_json=1", uri_path, req.uri().query().unwrap_or_default(), nsfw_results);
 	let mut query = param(&path, "q").unwrap_or_default();
 	query = REDDIT_URL_MATCH.replace(&query, "").to_string();
 
