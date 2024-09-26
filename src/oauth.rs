@@ -91,6 +91,8 @@ impl Oauth {
 		// Build request
 		let request = builder.body(body).unwrap();
 
+		trace!("Sending token request...");
+
 		// Send request
 		let client: client::Client<_, Body> = CLIENT.clone();
 		let resp = client.request(request).await.ok()?;
@@ -109,9 +111,13 @@ impl Oauth {
 			self.headers_map.insert("x-reddit-session".to_owned(), header.to_str().ok()?.to_string());
 		}
 
+		trace!("Serializing response...");
+
 		// Serialize response
 		let body_bytes = hyper::body::to_bytes(resp.into_body()).await.ok()?;
 		let json: serde_json::Value = serde_json::from_slice(&body_bytes).ok()?;
+
+		trace!("Accessing relevant fields...");
 
 		// Save token and expiry
 		self.token = json.get("access_token")?.as_str()?.to_string();
