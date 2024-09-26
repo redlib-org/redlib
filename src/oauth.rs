@@ -97,6 +97,8 @@ impl Oauth {
 		let client: client::Client<_, Body> = CLIENT.clone();
 		let resp = client.request(request).await.ok()?;
 
+		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
+
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
 		// Technically it's not needed, but it's easy for Reddit API to check for this.
 		// It's some kind of header that uniquely identifies the device.
