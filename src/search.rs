@@ -69,8 +69,12 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 		return Ok(redirect("/"));
 	}
 
-	if query.starts_with("r/") {
+	if query.starts_with("r/") || query.starts_with("user/") {
 		return Ok(redirect(&format!("/{query}")));
+	}
+
+	if query.starts_with("u/") {
+		return Ok(redirect(&format!("/user{}", &query[1..])));
 	}
 
 	let sub = req.param("sub").unwrap_or_default();
