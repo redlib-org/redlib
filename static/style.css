@@ -1731,7 +1731,7 @@ input[type="submit"] {
     width: 100%;
 }
 
-.md > p:not(:first-child):not(:last-child) {
+.md > p:not(:first-child) {
     margin-top: 20px;
 }
 
