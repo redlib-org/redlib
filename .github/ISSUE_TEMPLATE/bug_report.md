@@ -38,4 +38,4 @@ Steps to reproduce the behavior:
 
 
 <!-- Mandatory -->
-[ ] I checked that the instance that this was reported on is running the latest git commit, or I can reproduce it locally on the latest git commit
+- [ ] I checked that the instance that this was reported on is running the latest git commit, or I can reproduce it locally on the latest git commit
