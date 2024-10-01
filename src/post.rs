@@ -8,9 +8,9 @@ use crate::utils::{
 };
 use hyper::{Body, Request, Response};
 
-use askama::Template;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use rinja::Template;
 use std::collections::{HashMap, HashSet};
 
 // STRUCTS
