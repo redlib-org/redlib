@@ -30,7 +30,8 @@ RestrictNamespaces=yes
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 SystemCallArchitectures=native
-SystemCallFilter=@system-service ~@privileged ~@resources
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
 UMask=0077
 
 [Install]
