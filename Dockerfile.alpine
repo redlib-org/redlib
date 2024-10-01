@@ -1,4 +1,4 @@
-# supported versions here: https://github.com/rust-lang/docker-rust/tree/9f287282d513a84cb7c7f38f197838f15d37b6a9/1.81.0
+# supported versions here: https://hub.docker.com/_/rust
 ARG ALPINE_VERSION=3.20
 
 ########################
