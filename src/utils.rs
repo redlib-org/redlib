@@ -4,12 +4,12 @@ use crate::config::{self, get_setting};
 // CRATES
 //
 use crate::{client::json, server::RequestExt};
-use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use rinja::Template;
 use rust_embed::RustEmbed;
 use serde_json::Value;
 use serde_json_path::{JsonPath, JsonPathExt};

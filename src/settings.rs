@@ -3,10 +3,10 @@ use std::collections::HashMap;
 // CRATES
 use crate::server::ResponseExt;
 use crate::utils::{redirect, template, Preferences};
-use askama::Template;
 use cookie::Cookie;
 use futures_lite::StreamExt;
 use hyper::{Body, Request, Response};
+use rinja::Template;
 use time::{Duration, OffsetDateTime};
 
 // STRUCTS

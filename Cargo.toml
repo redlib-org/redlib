@@ -11,7 +11,7 @@ authors = [
 edition = "2021"
 
 [dependencies]
-askama = { version = "0.12.1", default-features = false }
+rinja = { version = "0.3.4", default-features = false }
 cached = { version = "0.51.3", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
