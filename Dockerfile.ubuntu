@@ -12,7 +12,7 @@ WORKDIR /redlib
 # download (most) dependencies in their own layer
 COPY Cargo.lock Cargo.toml ./
 RUN mkdir src && echo "fn main() { panic!(\"why am i running?\") }" > src/main.rs
-RUN cargo build --release --locked --bin redlib
+RUN cargo build --release --locked
 RUN rm ./src/main.rs && rmdir ./src
 
 # copy the source and build the redlib binary
