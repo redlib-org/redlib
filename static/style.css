@@ -41,7 +41,7 @@
 :root,
 .dark {
     /* Default & fallback theme (dark) */
-    --accent: red;
+    --accent: #d74253;
     --green: #5cff85;
     --text: white;
     --foreground: #222;
@@ -62,7 +62,7 @@
 /* Browser-defined light theme */
 @media (prefers-color-scheme: light) {
     :root {
-        --accent: #9a0000;
+        --accent: #aa2434;
         --green: #00a229;
         --text: black;
         --foreground: #f5f5f5;
@@ -616,6 +616,7 @@ aside {
 #feed_list > .selected {
     background-color: var(--accent);
     color: var(--foreground);
+    font-weight: 500;
 }
 
 #feed_list > a:not(.selected):hover {
@@ -870,6 +871,7 @@ main > * > footer > a {
 #listing_options > a.selected {
     background: var(--accent);
     color: var(--foreground);
+    font-weight: 500;
 }
 
 #sort_options > a:not(.selected):hover,
