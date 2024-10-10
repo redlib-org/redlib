@@ -1,6 +1,6 @@
-/* Dark theme setting */
-.dark{
-	--accent: #d74253;
+/* Libreddit dark theme setting */
+.libredditDark{
+	--accent: aqua;
 	--green: #5cff85;
 	--text: white;
 	--foreground: #222;
