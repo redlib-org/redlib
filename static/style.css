@@ -220,7 +220,12 @@ nav #links svg {
 }
 
 nav #redlib {
-    vertical-align: -2px;
+    margin-right: 10px;
+}
+
+nav #redlib img {
+    width: 38px;
+    vertical-align: middle;
 }
 
 figcaption {
