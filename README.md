@@ -389,7 +389,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 
 | Name                                | Possible values                                                                                                                    | Default value |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight", "tokyoNight", "icebergDark"]` | `system`      |
+| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight", "tokyoNight", "icebergDark", "doomone", "libredditBlack", "libredditDark", "libredditLight"]` | `system`      |
 | `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
 | `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
 | `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
