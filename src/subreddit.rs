@@ -336,7 +336,6 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	// Delete cookie if empty, else set
 	if sub_list.is_empty() {
-	
 		// Start with first subscriptions cookie
 		let mut subscriptions_number = 1;
 
@@ -350,7 +349,7 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 		}
 	} else {
 		let mut subscriptions_number = 1;
-		
+
 		for list in join_until_size_limit(&sub_list) {
 			response.insert_cookie(
 				Cookie::build((format!("subscriptions{}", subscriptions_number), list))
