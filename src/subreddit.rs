@@ -6,6 +6,7 @@ use crate::utils::{
 use crate::{client::json, server::ResponseExt, RequestExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
+use rinja::filters::format;
 use rinja::Template;
 
 use once_cell::sync::Lazy;
@@ -209,6 +210,39 @@ pub fn can_access_quarantine(req: &Request<Body>, sub: &str) -> bool {
 	setting(req, &format!("allow_quaran_{}", sub.to_lowercase())).parse().unwrap_or_default()
 }
 
+// Join items in chunks of 3500 bytes in length for cookies
+fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
+	let mut result = Vec::new();
+    let mut list = String::new();
+    let mut current_size = 0;
+
+    for item in vec {
+		// Size in bytes
+        let item_size = item.to_string().len();
+		// Use 3500 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
+        if current_size + item_size > 3500 {
+			// Push current list to result vector
+			result.push(list);
+
+			// Do a reset of the variables required to continue
+            list = String::new();
+			current_size = 0;
+        }
+		// Add separator if not the first item
+        if !list.is_empty() {
+            list.push_str("+");
+        }
+		// Add current item to list
+        list.push_str(&item.to_string());
+        current_size += item_size;
+    }
+	// Make sure to push whatever the remaining subreddits are there into the result vector
+	result.push(list);
+
+	// Return resulting vector
+    result
+}
+
 // Sub, filter, unfilter, or unsub by setting subscription cookie using response "Set-Cookie" header
 pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>, String> {
 	let sub = req.param("sub").unwrap_or_default();
@@ -303,26 +337,54 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	// Delete cookie if empty, else set
 	if sub_list.is_empty() {
-		response.remove_cookie("subscriptions".to_string());
+		// Start with first subcriptions cookie
+		let mut subcriptions_number = 1;
+
+		// While whatever subcriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subcriptions{}", subcriptions_number)).is_some() {
+			// Remove that subcriptions cookie
+			response.remove_cookie(format!("subcriptions{}", subcriptions_number));
+
+			// Increment subcriptions cookie number
+			subcriptions_number += 1;
+		}
 	} else {
-		response.insert_cookie(
-			Cookie::build(("subscriptions", sub_list.join("+")))
-				.path("/")
-				.http_only(true)
-				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.into(),
-		);
+		let mut subcriptions_number = 1;
+		for list in join_until_size_limit(&sub_list) {
+			response.insert_cookie(
+				Cookie::build((format!("subscriptions{}", subcriptions_number), list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+			subcriptions_number += 1;
+		}
 	}
 	if filters.is_empty() {
-		response.remove_cookie("filters".to_string());
+		// Start with first filters cookie
+		let mut filters_number = 1;
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{}", filters_number));
+
+			// Increment filters cookie number
+			filters_number += 1;
+		}
 	} else {
-		response.insert_cookie(
-			Cookie::build(("filters", filters.join("+")))
-				.path("/")
-				.http_only(true)
-				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.into(),
-		);
+		let mut filters_number = 1;
+		for list in join_until_size_limit(&filters) {
+			response.insert_cookie(
+				Cookie::build((format!("filters{}", filters_number), list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+			filters_number += 1;
+		}
 	}
 
 	Ok(response)

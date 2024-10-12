@@ -9,6 +9,7 @@ use hyper::{Body, Request, Response};
 use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use rinja::filters::format;
 use rinja::Template;
 use rust_embed::RustEmbed;
 use serde_json::Value;
@@ -798,18 +799,58 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 // Retrieve the value of a setting by name
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
-	req
-		.cookie(name)
-		.unwrap_or_else(|| {
-			// If there is no cookie for this setting, try receiving a default from the config
-			if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
-				Cookie::new(name, default)
-			} else {
-				Cookie::from(name)
-			}
-		})
-		.value()
-		.to_string()
+
+	// If this was called with "subscriptions" and the "subscriptions1" cookie has a value
+	if name == "subscriptions" && req.cookie("subscriptions1").is_some() {
+		// Create subscriptions string
+		let mut subscriptions = String::new();
+
+		// Start with first subscription cookie
+		let mut subscriptions_number = 1;
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
+			subscriptions.push_str(&req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value().to_string());
+			// Increment subscription cookie number
+			subscriptions_number += 1;
+		}
+
+		// Return the subscriptions cookies as one large string
+		subscriptions
+	} else if name == "filters" && req.cookie("filters1").is_some() { // If this was called with "filters" and the "filters1" cookie has a value
+		// Create filters string
+		let mut filters = String::new();
+
+		// Start with first filters cookie
+		let mut filters_number = 1;
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+			// Push whatever filtersNUMBER cookie we're looking at into the filters string
+			filters.push_str(&req.cookie(&format!("filters{}", filters_number)).unwrap().value().to_string());
+			// Increment filters cookie number
+			filters_number += 1;
+		}
+
+		// Return the filters cookies as one large string
+		filters
+	} else { // The above two still come to this if there was no existing value
+		req
+			.cookie(name)
+			.unwrap_or_else(|| {
+				// If there is no cookie for this setting, try receiving a default from the config
+				if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
+					Cookie::new(name, default)
+				} else {
+					Cookie::from(name)
+				}
+			})
+			.value()
+			.to_string()
+	}
+
+	
 }
 
 // Retrieve the value of a setting by name or the default value
