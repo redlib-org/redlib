@@ -335,7 +335,10 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	// Delete cookie if empty, else set
 	if sub_list.is_empty() {
-		// Start with first subscriptions cookie
+		// Remove subscriptions cookie
+		response.remove_cookie("subscriptions".to_string());
+
+		// Start with first numbered subscriptions cookie
 		let mut subscriptions_number = 1;
 
 		// While whatever subscriptionsNUMBER cookie we're looking at has a value
@@ -347,21 +350,28 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 			subscriptions_number += 1;
 		}
 	} else {
-		let mut subscriptions_number = 1;
+		// Starting at 0 so we handle the subscription cookie without a number first
+		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
+			let subcriptions_cookie = if subscriptions_number == 0 {
+				"subscriptions".to_string()
+			} else {
+				format!("subscriptions{}", subscriptions_number)
+			};
 
-		for list in join_until_size_limit(&sub_list) {
 			response.insert_cookie(
-				Cookie::build((format!("subscriptions{}", subscriptions_number), list))
+				Cookie::build((subcriptions_cookie, list))
 					.path("/")
 					.http_only(true)
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
 					.into(),
 			);
-			subscriptions_number += 1;
 		}
 	}
 	if filters.is_empty() {
-		// Start with first filters cookie
+		// Remove filters cookie
+		response.remove_cookie("filters".to_string());
+
+		// Start with first numbered filters cookie
 		let mut filters_number = 1;
 
 		// While whatever filtersNUMBER cookie we're looking at has a value
@@ -373,16 +383,20 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 			filters_number += 1;
 		}
 	} else {
-		let mut filters_number = 1;
-		for list in join_until_size_limit(&filters) {
+		for (filters_number, list) in join_until_size_limit(&filters).into_iter().enumerate() {
+			let filters_cookie = if filters_number == 0 {
+				"filters".to_string()
+			} else {
+				format!("filters{}", filters_number)
+			};
+
 			response.insert_cookie(
-				Cookie::build((format!("filters{}", filters_number), list))
+				Cookie::build((filters_cookie, list))
 					.path("/")
 					.http_only(true)
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
 					.into(),
 			);
-			filters_number += 1;
 		}
 	}
 

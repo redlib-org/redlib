@@ -799,12 +799,17 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
 
-	// If this was called with "subscriptions" and the "subscriptions1" cookie has a value
-	if name == "subscriptions" && req.cookie("subscriptions1").is_some() {
+	// If this was called with "subscriptions" and the "subscriptions" cookie has a value
+	if name == "subscriptions" && req.cookie("subscriptions").is_some() {
 		// Create subscriptions string
 		let mut subscriptions = String::new();
 
-		// Start with first subscription cookie
+		// Default subscriptions cookie
+		if req.cookie("subscriptions").is_some() {
+			subscriptions.push_str(req.cookie("subscriptions").unwrap().value());
+		}
+
+		// Start with first numbered subscription cookie
 		let mut subscriptions_number = 1;
 
 		// While whatever subscriptionsNUMBER cookie we're looking at has a value
@@ -825,12 +830,17 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		// Return the subscriptions cookies as one large string
 		subscriptions
 	}
-	// If this was called with "filters" and the "filters1" cookie has a value
-	else if name == "filters" && req.cookie("filters1").is_some() {
+	// If this was called with "filters" and the "filters" cookie has a value
+	else if name == "filters" && req.cookie("filters").is_some() {
 		// Create filters string
 		let mut filters = String::new();
 
-		// Start with first filters cookie
+		// Default filters cookie
+		if req.cookie("filters").is_some() {
+			filters.push_str(req.cookie("filters").unwrap().value());
+		}
+
+		// Start with first numbered filters cookie
 		let mut filters_number = 1;
 
 		// While whatever filtersNUMBER cookie we're looking at has a value
