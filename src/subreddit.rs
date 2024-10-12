@@ -209,7 +209,7 @@ pub fn can_access_quarantine(req: &Request<Body>, sub: &str) -> bool {
 	setting(req, &format!("allow_quaran_{}", sub.to_lowercase())).parse().unwrap_or_default()
 }
 
-// Join items in chunks of 3500 bytes in length for cookies
+// Join items in chunks of 4000 bytes in length for cookies
 fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
 	let mut result = Vec::new();
 	let mut list = String::new();
@@ -218,14 +218,13 @@ fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::St
 	for item in vec {
 		// Size in bytes
 		let item_size = item.to_string().len();
-		// Use 3500 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
-		if current_size + item_size > 3500 {
+		// Use 4000 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
+		if current_size + item_size > 4000 {
 			// Push current list to result vector
 			result.push(list);
 
-			// Do a reset of the variables required to continue
+			// Reset the list variable so we can continue with only new items
 			list = String::new();
-			current_size = 0;
 		}
 		// Add separator if not the first item
 		if !list.is_empty() {
@@ -233,7 +232,7 @@ fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::St
 		}
 		// Add current item to list
 		list.push_str(&item.to_string());
-		current_size += item_size;
+		current_size = list.len() + item_size;
 	}
 	// Make sure to push whatever the remaining subreddits are there into the result vector
 	result.push(list);
