@@ -337,29 +337,29 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 	// Delete cookie if empty, else set
 	if sub_list.is_empty() {
 	
-		// Start with first subcriptions cookie
-		let mut subcriptions_number = 1;
+		// Start with first subscriptions cookie
+		let mut subscriptions_number = 1;
 
-		// While whatever subcriptionsNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("subscriptions{}", subcriptions_number)).is_some() {
-			// Remove that subcriptions cookie
-			response.remove_cookie(format!("subscriptions{}", subcriptions_number));
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{}", subscriptions_number));
 
-			// Increment subcriptions cookie number
-			subcriptions_number += 1;
+			// Increment subscriptions cookie number
+			subscriptions_number += 1;
 		}
 	} else {
-		let mut subcriptions_number = 1;
+		let mut subscriptions_number = 1;
 		
 		for list in join_until_size_limit(&sub_list) {
 			response.insert_cookie(
-				Cookie::build((format!("subscriptions{}", subcriptions_number), list))
+				Cookie::build((format!("subscriptions{}", subscriptions_number), list))
 					.path("/")
 					.http_only(true)
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
 					.into(),
 			);
-			subcriptions_number += 1;
+			subscriptions_number += 1;
 		}
 	}
 	if filters.is_empty() {
