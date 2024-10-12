@@ -9,7 +9,6 @@ use hyper::{Body, Request, Response};
 use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rinja::filters::format;
 use rinja::Template;
 use rust_embed::RustEmbed;
 use serde_json::Value;
@@ -811,14 +810,16 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		// While whatever subscriptionsNUMBER cookie we're looking at has a value
 		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
 			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
-			subscriptions.push_str(&req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value().to_string());
+			subscriptions.push_str(req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value());
 			// Increment subscription cookie number
 			subscriptions_number += 1;
 		}
 
 		// Return the subscriptions cookies as one large string
 		subscriptions
-	} else if name == "filters" && req.cookie("filters1").is_some() { // If this was called with "filters" and the "filters1" cookie has a value
+	}
+	// If this was called with "filters" and the "filters1" cookie has a value
+	else if name == "filters" && req.cookie("filters1").is_some() {
 		// Create filters string
 		let mut filters = String::new();
 
@@ -828,14 +829,16 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		// While whatever filtersNUMBER cookie we're looking at has a value
 		while req.cookie(&format!("filters{}", filters_number)).is_some() {
 			// Push whatever filtersNUMBER cookie we're looking at into the filters string
-			filters.push_str(&req.cookie(&format!("filters{}", filters_number)).unwrap().value().to_string());
+			filters.push_str(req.cookie(&format!("filters{}", filters_number)).unwrap().value());
 			// Increment filters cookie number
 			filters_number += 1;
 		}
 
 		// Return the filters cookies as one large string
 		filters
-	} else { // The above two still come to this if there was no existing value
+	}
+	// The above two still come to this if there was no existing value
+	else {
 		req
 			.cookie(name)
 			.unwrap_or_else(|| {
@@ -849,8 +852,6 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 			.value()
 			.to_string()
 	}
-
-	
 }
 
 // Retrieve the value of a setting by name or the default value

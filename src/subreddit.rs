@@ -6,7 +6,6 @@ use crate::utils::{
 use crate::{client::json, server::ResponseExt, RequestExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
-use rinja::filters::format;
 use rinja::Template;
 
 use once_cell::sync::Lazy;
@@ -213,34 +212,34 @@ pub fn can_access_quarantine(req: &Request<Body>, sub: &str) -> bool {
 // Join items in chunks of 3500 bytes in length for cookies
 fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
 	let mut result = Vec::new();
-    let mut list = String::new();
-    let mut current_size = 0;
+	let mut list = String::new();
+	let mut current_size = 0;
 
-    for item in vec {
+	for item in vec {
 		// Size in bytes
-        let item_size = item.to_string().len();
+		let item_size = item.to_string().len();
 		// Use 3500 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
-        if current_size + item_size > 3500 {
+		if current_size + item_size > 3500 {
 			// Push current list to result vector
 			result.push(list);
 
 			// Do a reset of the variables required to continue
-            list = String::new();
+			list = String::new();
 			current_size = 0;
-        }
+		}
 		// Add separator if not the first item
-        if !list.is_empty() {
-            list.push_str("+");
-        }
+		if !list.is_empty() {
+			list.push('+');
+		}
 		// Add current item to list
-        list.push_str(&item.to_string());
-        current_size += item_size;
-    }
+		list.push_str(&item.to_string());
+		current_size += item_size;
+	}
 	// Make sure to push whatever the remaining subreddits are there into the result vector
 	result.push(list);
 
 	// Return resulting vector
-    result
+	result
 }
 
 // Sub, filter, unfilter, or unsub by setting subscription cookie using response "Set-Cookie" header

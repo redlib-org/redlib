@@ -169,10 +169,7 @@ impl ResponseExt for Response<Body> {
 	}
 
 	fn remove_cookie(&mut self, name: String) {
-		let removal_cookie = Cookie::build(name)
-			.path("/")
-			.http_only(true)
-			.expires(OffsetDateTime::now_utc());
+		let removal_cookie = Cookie::build(name).path("/").http_only(true).expires(OffsetDateTime::now_utc());
 		if let Ok(val) = header::HeaderValue::from_str(&removal_cookie.to_string()) {
 			self.headers_mut().append("Set-Cookie", val);
 		}
