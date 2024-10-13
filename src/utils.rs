@@ -814,12 +814,6 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 
 		// While whatever subscriptionsNUMBER cookie we're looking at has a value
 		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
-			/* If we're pushing something other than the first subscription cookie add a + between them
-			to make sure we don't merge the last item of the last list and the first item of the next list */
-			if subscriptions_number != 1 {
-				subscriptions.push('+');
-			}
-
 			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
 			subscriptions.push_str(req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value());
 
@@ -845,12 +839,6 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 
 		// While whatever filtersNUMBER cookie we're looking at has a value
 		while req.cookie(&format!("filters{}", filters_number)).is_some() {
-			/* If we're pushing something other than the first filters cookie add a + between them
-			to make sure we don't merge the last item of the last list and the first item of the next list */
-			if filters_number != 1 {
-				filters.push('+');
-			}
-
 			// Push whatever filtersNUMBER cookie we're looking at into the filters string
 			filters.push_str(req.cookie(&format!("filters{}", filters_number)).unwrap().value());
 

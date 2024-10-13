@@ -220,6 +220,9 @@ fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::St
 		let item_size = item.to_string().len();
 		// Use 4000 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
 		if current_size + item_size > 4000 {
+			// If last item add a seperator on the end of the list so it's interpreted properly in tanden with the next cookie
+			list.push('+');
+
 			// Push current list to result vector
 			result.push(list);
 
@@ -236,7 +239,7 @@ fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::St
 	}
 	// Make sure to push whatever the remaining subreddits are there into the result vector
 	result.push(list);
-
+	
 	// Return resulting vector
 	result
 }
@@ -333,23 +336,24 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	let mut response = redirect(&path);
 
-	// Delete cookie if empty, else set
-	if sub_list.is_empty() {
-		// Remove subscriptions cookie
-		response.remove_cookie("subscriptions".to_string());
+	// Cookies always need to be removed, either the sub list is already empty, or we're setting new ones and need to start with a clean slate.
 
-		// Start with first numbered subscriptions cookie
-		let mut subscriptions_number = 1;
+	// Remove subscriptions cookie
+	response.remove_cookie("subscriptions".to_string());
 
-		// While whatever subscriptionsNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
-			// Remove that subscriptions cookie
-			response.remove_cookie(format!("subscriptions{}", subscriptions_number));
+	// Start with first numbered subscriptions cookie
+	let mut subscriptions_number = 1;
 
-			// Increment subscriptions cookie number
-			subscriptions_number += 1;
-		}
-	} else {
+	// While whatever subscriptionsNUMBER cookie we're looking at has a value
+	while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+		// Remove that subscriptions cookie
+		response.remove_cookie(format!("subscriptions{}", subscriptions_number));
+
+		// Increment subscriptions cookie number
+		subscriptions_number += 1;
+	}
+	// Subscribe to subs if list isn't empty
+	if !sub_list.is_empty() {
 		// Starting at 0 so we handle the subscription cookie without a number first
 		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
 			let subcriptions_cookie = if subscriptions_number == 0 {
@@ -367,22 +371,23 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 			);
 		}
 	}
-	if filters.is_empty() {
-		// Remove filters cookie
-		response.remove_cookie("filters".to_string());
 
-		// Start with first numbered filters cookie
-		let mut filters_number = 1;
+	// Remove filters cookie
+	response.remove_cookie("filters".to_string());
 
-		// While whatever filtersNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("filters{}", filters_number)).is_some() {
-			// Remove that filters cookie
-			response.remove_cookie(format!("filters{}", filters_number));
+	// Start with first numbered filters cookie
+	let mut filters_number = 1;
 
-			// Increment filters cookie number
-			filters_number += 1;
-		}
-	} else {
+	// While whatever filtersNUMBER cookie we're looking at has a value
+	while req.cookie(&format!("filters{}", filters_number)).is_some() {
+		// Remove that filters cookie
+		response.remove_cookie(format!("filters{}", filters_number));
+
+		// Increment filters cookie number
+		filters_number += 1;
+	}
+	// Add filters if the list isn't empty
+	if !filters.is_empty() {
 		for (filters_number, list) in join_until_size_limit(&filters).into_iter().enumerate() {
 			let filters_cookie = if filters_number == 0 {
 				"filters".to_string()
