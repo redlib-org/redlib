@@ -338,22 +338,27 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	// Cookies always need to be removed, either the sub list is already empty, or we're setting new ones and need to start with a clean slate.
 
-	// Remove subscriptions cookie
-	response.remove_cookie("subscriptions".to_string());
-
-	// Start with first numbered subscriptions cookie
-	let mut subscriptions_number = 1;
-
-	// While whatever subscriptionsNUMBER cookie we're looking at has a value
-	while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
-		// Remove that subscriptions cookie
-		response.remove_cookie(format!("subscriptions{}", subscriptions_number));
-
-		// Increment subscriptions cookie number
-		subscriptions_number += 1;
-	}
+	
 	// Subscribe to subs if list isn't empty
-	if !sub_list.is_empty() {
+	if sub_list.is_empty() {
+		// Remove subscriptions cookie
+		response.remove_cookie("subscriptions".to_string());
+
+		// Start with first numbered subscriptions cookie
+		let mut subscriptions_number = 1;
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{}", subscriptions_number));
+
+			// Increment subscriptions cookie number
+			subscriptions_number += 1;
+		}
+	} else {
+		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
+		let mut subscriptions_number_to_delete_from = 0;
+
 		// Starting at 0 so we handle the subscription cookie without a number first
 		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
 			let subcriptions_cookie = if subscriptions_number == 0 {
@@ -369,25 +374,41 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
 					.into(),
 			);
+
+			subscriptions_number_to_delete_from += 1;
+		}
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number_to_delete_from)).is_some() {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{}", subscriptions_number_to_delete_from));
+
+			// Increment subscriptions cookie number
+			subscriptions_number_to_delete_from += 1;
 		}
 	}
 
-	// Remove filters cookie
-	response.remove_cookie("filters".to_string());
-
-	// Start with first numbered filters cookie
-	let mut filters_number = 1;
-
-	// While whatever filtersNUMBER cookie we're looking at has a value
-	while req.cookie(&format!("filters{}", filters_number)).is_some() {
-		// Remove that filters cookie
-		response.remove_cookie(format!("filters{}", filters_number));
-
-		// Increment filters cookie number
-		filters_number += 1;
-	}
+	
 	// Add filters if the list isn't empty
-	if !filters.is_empty() {
+	if filters.is_empty() {
+		// Remove filters cookie
+		response.remove_cookie("filters".to_string());
+
+		// Start with first numbered filters cookie
+		let mut filters_number = 1;
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{}", filters_number));
+
+			// Increment filters cookie number
+			filters_number += 1;
+		}
+	} else {
+		// Start at 0 to keep track of what number we need to start deleting old filters cookies from
+		let mut filters_number_to_delete_from = 0;
+
 		for (filters_number, list) in join_until_size_limit(&filters).into_iter().enumerate() {
 			let filters_cookie = if filters_number == 0 {
 				"filters".to_string()
@@ -402,6 +423,17 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
 					.into(),
 			);
+
+			filters_number_to_delete_from += 1;
+		}
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number_to_delete_from)).is_some() {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{}", filters_number_to_delete_from));
+
+			// Increment filters cookie number
+			filters_number_to_delete_from += 1;
 		}
 	}
 
