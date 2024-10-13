@@ -239,7 +239,7 @@ fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::St
 	}
 	// Make sure to push whatever the remaining subreddits are there into the result vector
 	result.push(list);
-	
+
 	// Return resulting vector
 	result
 }
@@ -336,10 +336,7 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	let mut response = redirect(&path);
 
-	// Cookies always need to be removed, either the sub list is already empty, or we're setting new ones and need to start with a clean slate.
-
-	
-	// Subscribe to subs if list isn't empty
+	// If sub_list is empty remove all subscriptions cookies, otherwise update them and remove old ones
 	if sub_list.is_empty() {
 		// Remove subscriptions cookie
 		response.remove_cookie("subscriptions".to_string());
@@ -388,8 +385,7 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 		}
 	}
 
-	
-	// Add filters if the list isn't empty
+	// If filters is empty remove all filters cookies, otherwise update them and remove old ones
 	if filters.is_empty() {
 		// Remove filters cookie
 		response.remove_cookie("filters".to_string());
