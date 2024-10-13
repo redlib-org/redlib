@@ -210,7 +210,7 @@ pub fn can_access_quarantine(req: &Request<Body>, sub: &str) -> bool {
 }
 
 // Join items in chunks of 4000 bytes in length for cookies
-fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
+pub fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
 	let mut result = Vec::new();
 	let mut list = String::new();
 	let mut current_size = 0;
