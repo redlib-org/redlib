@@ -99,9 +99,8 @@
 
 	<!-- POST MEDIA -->
 	<!-- post_type: {{ post.post_type }} -->
-	{% if post.post_type == "image" || post.post_type == "video" || post.post_type == "gif" %}
+	{% if post.post_type == "image" %}
 	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
-		{% if post.post_type == "image" %}
 		<a href="{{ post.media.url }}" class="post_media_image" >
 			{% if post.media.height == 0 || post.media.width == 0 %}
 			<!-- i.redd.it images special case -->
@@ -118,20 +117,23 @@
 			</svg>
 			{% endif %}
 		</a>
-		{% else %}
-		{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-		<script src="/hls.min.js"></script>
+	</div>
+	{% else if post.post_type == "video" || post.post_type == "gif" %}
+	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
+	<script src="/hls.min.js"></script>
+	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
 		<video class="post_media_video short {% if prefs.autoplay_videos == "on" %}hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls>
 			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
 			<source src="{{ post.media.url }}" type="video/mp4" />
 		</video>
-		<script src="/playHLSVideo.js"></script>
-		{% else %}
-		<video class="post_media_video" src="{{ post.media.url }}" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %} loop><a href={{ post.media.url }}>Video</a></video>
-		{% call render_hls_notification(post.permalink[1..]) %}
-		{% endif %}
-		{% endif %}
 	</div>
+	<script src="/playHLSVideo.js"></script>
+	{% else %}
+	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
+		<video class="post_media_video" src="{{ post.media.url }}" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %} loop><a href={{ post.media.url }}>Video</a></video>
+	</div>
+	{% call render_hls_notification(post.permalink[1..]) %}
+	{% endif %}
 	{% else if post.post_type == "gallery" %}
 	<div class="gallery">
 	{% for image in post.gallery -%}
@@ -246,9 +248,8 @@
 		<a href="{{ post.permalink }}">{{ post.title }}</a>{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
 	</h2>
 	<!-- POST MEDIA/THUMBNAIL -->
-	{% if (prefs.layout.is_empty() || prefs.layout == "card") && (post.post_type == "image" || post.post_type == "gif" || post.post_type == "video") %}
+	{% if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "image" %}
 	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
-		{% if post.post_type == "image" %}
 		<a href="{{ post.media.url }}" class="post_media_image {% if post.media.height < post.media.width*2 %}short{% endif %}" >
 			{% if post.media.height == 0 || post.media.width == 0 %}
 			<!-- i.redd.it images speical case -->
@@ -265,18 +266,21 @@
 			</svg>
 			{% endif %}
 		</a>
-		{% else %}
-		{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-		<video class="post_media_video short{% if prefs.autoplay_videos == "on" %} hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" controls preload="none">
+	</div>
+	{% else if (prefs.layout.is_empty() || prefs.layout == "card") && (post.post_type == "gif" || post.post_type == "video") %}
+	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
+	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
+        <video class="post_media_video short{% if prefs.autoplay_videos == "on" %} hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" controls preload="none">
 			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
 			<source src="{{ post.media.url }}" type="video/mp4" />
 		</video>
-		{% else %}
-		<video class="post_media_video short" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %}><a href={{ post.media.url }}>Video</a></video>
-		{% call render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) %}
-		{% endif %}
-		{% endif %}
 	</div>
+	{% else %}
+	<div class="post_media_content"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
+		<video class="post_media_video short" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %}><a href={{ post.media.url }}>Video</a></video>
+	</div>
+	{% call render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) %}
+	{% endif %}
 	{% else if post.post_type != "self" %}
 	<div class="post_thumbnail{% if post.thumbnail.url.is_empty() %} no_thumbnail{% endif %}"{% if post_should_be_blurred %} tabindex="-1"{% endif %}>
 		<a href="{% if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow">
