@@ -1146,35 +1146,54 @@ a.search_subreddit:hover {
 }
 
 /* Unblur on hover */
-.post_blurred .post_media_content:hover *,
-.post_blurred .post_media_content:hover ~ .post_body,
-.post_blurred .post_media_content:has(~ .post_body:hover) *,
-.post_blurred .post_body:hover,
-.post_blurred .post_thumbnail:hover * {
+.post_blurred .post_media_content:not([tabindex]):hover *,
+.post_blurred .post_media_content:not([tabindex]):hover ~ .post_body,
+.post_blurred .post_media_content:not([tabindex]):has(~ .post_body:hover) *,
+.post_blurred .post_body:not([tabindex]):hover,
+.post_blurred .post_thumbnail:not([tabindex]):hover a * {
 	filter: none;
 }
 
 /* Unblur on click */
-.post_blurred .post_media_content a,
-.post_blurred .post_body a,
-.post_blurred .post_thumbnail a {
-	pointer-events: none;
-}
+.post_blurred {
+    .post_media_content[tabindex],
+    .post_body[tabindex],
+    .post_thumbnail[tabindex] {
+        cursor: pointer;
+        /* Disable links when link is not focused */
+        a:not(:focus) {
+            pointer-events: none;
+        }
+    }
+    
+    /* Enable links when content is focused */
+    .post_media_content:focus a,
+    .post_media_content:focus ~ .post_body a,
+    .post_media_content:has(~ .post_body:focus) a,
+    .post_body:focus a,
+    .post_thumbnail:focus a,
+    /* Keep enabling links when a link is focused */
+    .post_media_content:has(*:focus) a,
+    .post_media_content:has(*:focus) ~ .post_body a,
+    .post_media_content:has(~ .post_body a:focus) a,
+    .post_body:has(a:focus) a {
+        pointer-events: auto !important;
+    }
 
-.post_blurred .post_media_content:focus a,
-.post_blurred .post_media_content:focus ~ .post_body a,
-.post_blurred .post_media_content:has(~ .post_body:focus) a,
-.post_blurred .post_body:focus a,
-.post_blurred .post_thumbnail:focus a {
-	pointer-events: auto;
-}
-
-.post_blurred .post_media_content:focus *,
-.post_blurred .post_media_content:focus ~ .post_body,
-.post_blurred .post_media_content:has(~ .post_body:focus) *,
-.post_blurred .post_body:focus,
-.post_blurred .post_thumbnail:focus * {
-	filter: none;
+    /* Unblur when content is focused */
+    .post_media_content:focus *,
+    .post_media_content:focus ~ .post_body,
+    .post_media_content:has(~ .post_body:focus) *,
+    .post_body:focus,
+    .post_thumbnail:focus a *,
+    /* Keep unblurring when link or video is focused */
+    .post_media_content:has(*:focus) *,
+    .post_media_content:has(*:focus) ~ .post_body,
+    .post_media_content:has(~ .post_body a:focus) *,
+    .post_body:has(a:focus),
+    .post_thumbnail a:focus * {
+        filter: none;
+    }
 }
 
 .post_media_image svg {
