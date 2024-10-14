@@ -1141,16 +1141,33 @@ a.search_subreddit:hover {
     filter: blur(0.25rem);
 }
 
-.post_blurred .post_thumbnail * {
+.post_blurred .post_thumbnail a * {
     filter: blur(0.3rem);
 }
 
+/* Unblur on hover */
 .post_blurred .post_media_content:hover *,
 .post_blurred .post_media_content:hover ~ .post_body,
 .post_blurred .post_media_content:has(~ .post_body:hover) *,
 .post_blurred .post_body:hover,
 .post_blurred .post_thumbnail:hover * {
 	filter: none;
+}
+
+/* Unblur on click */
+.post_blurred .post_media_content a,
+.post_blurred .post_body a,
+.post_blurred .post_thumbnail a {
+	pointer-events: none;
+}
+
+.post_blurred .post_media_content:focus *,
+.post_blurred .post_media_content:focus ~ .post_body,
+.post_blurred .post_media_content:has(~ .post_body:focus) *,
+.post_blurred .post_body:focus,
+.post_blurred .post_thumbnail:focus * {
+	filter: none;
+	pointer-events: auto;
 }
 
 .post_media_image svg {
@@ -1306,11 +1323,14 @@ a.search_subreddit:hover {
 .post_thumbnail {
     border-radius: 5px;
     border: var(--panel-border);
-    display: grid;
     overflow: hidden;
     background-color: var(--background);
     grid-area: post_thumbnail;
     margin: 5px;
+}
+
+.post_thumbnail a {
+    display: grid;
 }
 
 .post_thumbnail div {
@@ -1332,6 +1352,10 @@ a.search_subreddit:hover {
 
 .post_thumbnail.no_thumbnail {
     background-color: var(--highlighted);
+}
+
+.post_thumbnail.no_thumbnail a {
+    height: 100%;
 }
 
 .post_thumbnail.no_thumbnail svg {
