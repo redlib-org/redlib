@@ -1161,13 +1161,20 @@ a.search_subreddit:hover {
 	pointer-events: none;
 }
 
+.post_blurred .post_media_content:focus a,
+.post_blurred .post_media_content:focus ~ .post_body a,
+.post_blurred .post_media_content:has(~ .post_body:focus) a,
+.post_blurred .post_body:focus a,
+.post_blurred .post_thumbnail:focus a {
+	pointer-events: auto;
+}
+
 .post_blurred .post_media_content:focus *,
 .post_blurred .post_media_content:focus ~ .post_body,
 .post_blurred .post_media_content:has(~ .post_body:focus) *,
 .post_blurred .post_body:focus,
 .post_blurred .post_thumbnail:focus * {
 	filter: none;
-	pointer-events: auto;
 }
 
 .post_media_image svg {
