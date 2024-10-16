@@ -1146,49 +1146,35 @@ a.search_subreddit:hover {
 }
 
 /* Unblur on hover */
-.post_blurred .post_media_content:not([tabindex]):hover *,
-.post_blurred .post_media_content:not([tabindex]):hover ~ .post_body,
-.post_blurred .post_media_content:not([tabindex]):has(~ .post_body:hover) *,
-.post_blurred .post_body:not([tabindex]):hover,
-.post_blurred .post_thumbnail:not([tabindex]):hover * {
-	filter: none;
+.post_blurred:has(:is(.post_media_content, .post_body, .post_thumbnail):hover) {
+    .post_media_content:not([tabindex]) *,
+    .post_body:not([tabindex]),
+    .post_thumbnail:not([tabindex]) * {
+        filter: none;
+    }
 }
 
 /* Unblur on click */
-.post_blurred .post_media_content[tabindex]:not(:focus-within) *,
-.post_blurred .post_body[tabindex]:not(:focus-within) a,
-.post_blurred .post_thumbnail[tabindex]:not(:focus-within) a {
-    pointer-events: none;
+.post_blurred:not(:has(:is(.post_media_content, .post_body, .post_thumbnail):focus-within)) {
+    .post_media_content[tabindex] *,
+    .post_body[tabindex] a,
+    .post_thumbnail[tabindex] a {
+        pointer-events: none;
+    }
+    
+    .post_media_content[tabindex],
+    .post_body[tabindex],
+    .post_thumbnail[tabindex] {
+        cursor: pointer;
+    }
 }
 
-.post_blurred .post_media_content[tabindex]:not(:focus-within),
-.post_blurred .post_body[tabindex]:not(:focus-within),
-.post_blurred .post_thumbnail[tabindex]:not(:focus-within) {
-    cursor: pointer;
-}
-
-.post_blurred .post_media_content:focus-within *,
-.post_blurred .post_media_content:focus-within ~ .post_body,
-.post_blurred .post_media_content:has(~ .post_body:focus-within) *,
-.post_blurred .post_body:focus-within,
-.post_blurred .post_thumbnail:focus-within * {
-    filter: none;
-}
-
-.post_blurred .post_media_content:focus-within *,
-.post_blurred .post_media_content:focus-within ~ .post_body a,
-.post_blurred .post_media_content:has(~ .post_body:focus-within) *,
-.post_blurred .post_body:focus-within a,
-.post_blurred .post_thumbnail:focus-within a {
-    pointer-events: unset !important;
-}
-
-.post_blurred .post_media_content:focus-within,
-.post_blurred .post_media_content:focus-within ~ .post_body,
-.post_blurred .post_media_content:has(~ .post_body:focus-within),
-.post_blurred .post_body:focus-within,
-.post_blurred .post_thumbnail:focus-within {
-    cursor: unset !important;
+.post_blurred:has(:is(.post_media_content, .post_body, .post_thumbnail):focus-within) {
+    .post_media_content[tabindex] *,
+    .post_body[tabindex],
+    .post_thumbnail[tabindex] * {
+        filter: none;
+    }
 }
 
 .post_media_image svg {

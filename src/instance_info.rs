@@ -146,6 +146,7 @@ impl InstanceInfo {
 				["Blur Spoiler", &convert(&self.config.default_blur_spoiler)],
 				["Show NSFW", &convert(&self.config.default_show_nsfw)],
 				["Blur NSFW", &convert(&self.config.default_blur_nsfw)],
+				["Unblur on hover", &convert(&self.config.default_unblur_on_hover)],
 				["Use HLS", &convert(&self.config.default_use_hls)],
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
@@ -182,6 +183,7 @@ impl InstanceInfo {
 					Default blur Spoiler: {:?}\n
                     Default show NSFW: {:?}\n
                     Default blur NSFW: {:?}\n
+					Default unblur on hover: {:?}\n
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
                     Default subscriptions: {:?}\n
@@ -208,6 +210,7 @@ impl InstanceInfo {
 					self.config.default_blur_spoiler,
 					self.config.default_show_nsfw,
 					self.config.default_blur_nsfw,
+					self.config.default_unblur_on_hover,
 					self.config.default_use_hls,
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,

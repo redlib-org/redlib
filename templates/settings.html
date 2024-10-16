@@ -76,6 +76,11 @@
 				</div>
         {% endif %}
 				<div class="prefs-group">
+					<label for="unblur_on_hover">Unblur posts on hover:</label>
+					<input type="hidden" value="off" name="unblur_on_hover">
+					<input type="checkbox" name="unblur_on_hover" id="unblur_on_hover" {% if prefs.unblur_on_hover == "on" %}checked{% endif %}>
+				</div>
+				<div class="prefs-group">
 					<label for="autoplay_videos">Autoplay videos</label>
 					<input type="hidden" value="off" name="autoplay_videos">
 					<input type="checkbox" name="autoplay_videos" id="autoplay_videos" {% if prefs.autoplay_videos == "on" %}checked{% endif %}>
