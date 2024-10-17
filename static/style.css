@@ -1170,9 +1170,9 @@ a.search_subreddit:hover {
 }
 
 .post_blurred:has(:is(.post_media_content, .post_body, .post_thumbnail):focus-within) {
-    .post_media_content[tabindex] *,
-    .post_body[tabindex],
-    .post_thumbnail[tabindex] * {
+    .post_media_content *,
+    .post_body,
+    .post_thumbnail * {
         filter: none;
     }
 }
