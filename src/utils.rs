@@ -951,7 +951,7 @@ pub fn rewrite_urls(input_text: &str) -> String {
 			}
 
 			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
-			let image_to_replace = format!("<a href=\"{image_url}{image_caption}</a>");
+			let image_to_replace = format!("<p><a href=\"{image_url}{image_caption}</a></p>");
 
 			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
 			let mut _image_replacement = String::new();
