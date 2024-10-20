@@ -94,7 +94,7 @@ impl Oauth {
 		trace!("Sending token request...");
 
 		// Send request
-		let client: client::Client<_, Body> = CLIENT.clone();
+		let client: client::Client<_, Body> = CLIENT.get().unwrap().clone();
 		let resp = client.request(request).await.ok()?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));

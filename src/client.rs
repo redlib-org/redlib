@@ -14,6 +14,7 @@ use serde_json::Value;
 
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::OnceLock;
 use std::{io, result::Result};
 
 use crate::dbg_msg;
@@ -30,10 +31,9 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-	client::Client::builder().build(https)
-});
+// CLIENT and VERIFY_HTTPS are initialised in main.rs
+pub static CLIENT: OnceLock<Client<HttpsConnector<HttpConnector>>> = OnceLock::new();
+pub static VERIFY_HTTPS: OnceLock<bool> = OnceLock::new();
 
 pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());
@@ -49,6 +49,50 @@ static URL_PAIRS: [(&str, &str); 2] = [
 	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
 	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
 ];
+
+/// Generate a client given a flag.
+#[allow(unused_variables)]
+pub fn generate_client(https_verification: bool) -> Client<HttpsConnector<HttpConnector>> {
+	// Use native certificates to verify requests to reddit
+	#[cfg(not(feature = "no-https-verification"))]
+	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+
+	// If https verification is disabled for debug purposes, create a custom ClientConfig
+	#[cfg(feature = "no-https-verification")]
+	let https = if !https_verification {
+		log::warn!("HTTPS verification is disabled.");
+		use rustls::ClientConfig;
+		use std::sync::Arc;
+
+		// A custom certificate verifier that does nothing.
+		struct NoCertificateVerification;
+
+		impl rustls::client::ServerCertVerifier for NoCertificateVerification {
+			fn verify_server_cert(
+				&self,
+				_: &rustls::Certificate,
+				_: &[rustls::Certificate],
+				_: &rustls::ServerName,
+				_: &mut dyn Iterator<Item = &[u8]>,
+				_: &[u8],
+				_: std::time::SystemTime,
+			) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
+				Ok(rustls::client::ServerCertVerified::assertion())
+			}
+		}
+
+		let mut config = ClientConfig::builder()
+			.with_safe_defaults()
+			.with_root_certificates(rustls::RootCertStore::empty())
+			.with_no_client_auth();
+
+		config.dangerous().set_certificate_verifier(Arc::new(NoCertificateVerification));
+		hyper_rustls::HttpsConnectorBuilder::new().with_tls_config(config).https_only().enable_http1().build()
+	} else {
+		hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build()
+	};
+	client::Client::builder().build(https)
+}
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -154,7 +198,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.get().unwrap().clone();
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -216,7 +260,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = CLIENT.get().unwrap().clone();
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = OAUTH_CLIENT.load_full();

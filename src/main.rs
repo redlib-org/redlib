@@ -22,13 +22,13 @@ use futures_lite::FutureExt;
 use hyper::{header::HeaderValue, Body, Request, Response};
 
 mod client;
-use client::{canonical_path, proxy};
+use client::{canonical_path, generate_client, proxy, CLIENT};
 use log::info;
 use once_cell::sync::Lazy;
 use server::RequestExt;
 use utils::{error, redirect, ThemeAssets};
 
-use crate::client::OAUTH_CLIENT;
+use crate::client::{OAUTH_CLIENT, VERIFY_HTTPS};
 
 mod server;
 
@@ -119,7 +119,7 @@ async fn main() {
 	// Initialize logger
 	pretty_env_logger::init();
 
-	let matches = Command::new("Redlib")
+	let mut cmd = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
 		.arg(
@@ -158,11 +158,28 @@ async fn main() {
 				.default_value("604800")
 				.num_args(1),
 		)
-		.get_matches();
+		.arg(
+			Arg::new("no-https-verification")
+				.long("no-https-verification")
+				.help("Disables HTTPS certificate verification between the instance and reddit. This can be useful to debug the HTTPS connection with an HTTPS sniffer. Only works when the 'no-https-verification' feature is enabled at compile time.")
+				.action(ArgAction::SetFalse)
+		);
+	let matches = cmd.get_matches_mut();
+
+	#[cfg(not(feature = "no-https-verification"))]
+	if !matches.get_flag("no-https-verification") {
+		cmd
+			.error(
+				clap::error::ErrorKind::InvalidValue,
+				"`--no-https-verification` can only be enabled if the `no-https-verification` feature is enabled",
+			)
+			.exit()
+	}
 
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
+	VERIFY_HTTPS.set(matches.get_flag("no-https-verification")).unwrap();
 
 	let listener = [address, ":", port].concat();
 
@@ -177,6 +194,8 @@ async fn main() {
 	// in OAUTH case, we need to retrieve the token to avoid paying penalty
 	// at first request
 
+	info!("Creating HTTP client.");
+	CLIENT.set(generate_client(*VERIFY_HTTPS.get().unwrap())).unwrap();
 	info!("Evaluating config.");
 	Lazy::force(&config::CONFIG);
 	info!("Evaluating instance info.");
@@ -388,4 +407,10 @@ async fn main() {
 	if let Err(e) = server.await {
 		eprintln!("Server error: {e}");
 	}
+}
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+	CLIENT.set(generate_client(false)).unwrap();
 }
