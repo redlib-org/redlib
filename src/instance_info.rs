@@ -1,8 +1,8 @@
 use crate::{
+	client::VERIFY_HTTPS,
 	config::{Config, CONFIG},
 	server::RequestExt,
 	utils::{ErrorTemplate, Preferences},
-	client::VERIFY_HTTPS,
 };
 use build_html::{Container, Html, HtmlContainer, Table};
 use hyper::{http::Error, Body, Request, Response};

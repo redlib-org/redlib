@@ -31,6 +31,7 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
+// CLIENT and VERIFY_HTTPS are initialised in main.rs
 pub static CLIENT: OnceLock<Client<HttpsConnector<HttpConnector>>> = OnceLock::new();
 pub static VERIFY_HTTPS: OnceLock<bool> = OnceLock::new();
 
@@ -58,7 +59,7 @@ pub fn generate_client(https_verification: bool) -> Client<HttpsConnector<HttpCo
 
 	// If https verification is disabled for debug purposes, create a custom ClientConfig
 	#[cfg(feature = "no-https-verification")]
-	let https = if ! https_verification {
+	let https = if !https_verification {
 		log::warn!("HTTPS verification is disabled.");
 		use rustls::ClientConfig;
 		use std::sync::Arc;

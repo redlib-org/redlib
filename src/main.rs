@@ -167,7 +167,7 @@ async fn main() {
 	let matches = cmd.get_matches_mut();
 
 	#[cfg(not(feature = "no-https-verification"))]
-	if ! matches.get_flag("no-https-verification") {
+	if !matches.get_flag("no-https-verification") {
 		cmd
 			.error(
 				clap::error::ErrorKind::InvalidValue,
