@@ -162,12 +162,12 @@ async fn main() {
 			Arg::new("no-https-verification")
 				.long("no-https-verification")
 				.help("Disables HTTPS certificate verification between the instance and reddit. This can be useful to debug the HTTPS connection with an HTTPS sniffer. Only works when the 'no-https-verification' feature is enabled at compile time.")
-				.num_args(0),
+				.action(ArgAction::SetFalse)
 		);
 	let matches = cmd.get_matches_mut();
 
 	#[cfg(not(feature = "no-https-verification"))]
-	if matches.contains_id("no-https-verification") {
+	if ! matches.get_flag("no-https-verification") {
 		cmd
 			.error(
 				clap::error::ErrorKind::InvalidValue,
@@ -179,7 +179,7 @@ async fn main() {
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
-	VERIFY_HTTPS.set(! matches.contains_id("no-https-verification")).unwrap();
+	VERIFY_HTTPS.set(matches.get_flag("no-https-verification")).unwrap();
 
 	let listener = [address, ":", port].concat();
 
