@@ -28,7 +28,7 @@ use once_cell::sync::Lazy;
 use server::RequestExt;
 use utils::{error, redirect, ThemeAssets};
 
-use crate::client::OAUTH_CLIENT;
+use crate::client::{OAUTH_CLIENT, VERIFY_HTTPS};
 
 mod server;
 
@@ -179,7 +179,7 @@ async fn main() {
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
-	let no_https_verification = matches.contains_id("no-https-verification");
+	VERIFY_HTTPS.set(! matches.contains_id("no-https-verification")).unwrap();
 
 	let listener = [address, ":", port].concat();
 
@@ -195,7 +195,7 @@ async fn main() {
 	// at first request
 
 	info!("Creating HTTP client.");
-	CLIENT.set(generate_client(no_https_verification)).unwrap();
+	CLIENT.set(generate_client(*VERIFY_HTTPS.get().unwrap())).unwrap();
 	info!("Evaluating config.");
 	Lazy::force(&config::CONFIG);
 	info!("Evaluating instance info.");
