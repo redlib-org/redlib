@@ -4,9 +4,9 @@ use crate::utils::{
 	catch_random, error, filter_posts, format_num, format_url, get_filters, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences, Subreddit,
 };
 use crate::{client::json, server::ResponseExt, RequestExt};
-use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
+use rinja::Template;
 
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -494,6 +494,11 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 					link: Some(utils::get_post_url(&post)),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
+					description: Some(format!(
+						"<a href='{}{}'>Comments</a>",
+						config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
+						post.permalink
+					)),
 					..Default::default()
 				})
 				.collect::<Vec<_>>(),

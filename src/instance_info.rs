@@ -3,10 +3,10 @@ use crate::{
 	server::RequestExt,
 	utils::{ErrorTemplate, Preferences},
 };
-use askama::Template;
 use build_html::{Container, Html, HtmlContainer, Table};
 use hyper::{http::Error, Body, Request, Response};
 use once_cell::sync::Lazy;
+use rinja::Template;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 

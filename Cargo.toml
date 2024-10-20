@@ -14,7 +14,7 @@ edition = "2021"
 no-https-verification = []
 
 [dependencies]
-askama = { version = "0.12.1", default-features = false }
+rinja = { version = "0.3.4", default-features = false }
 cached = { version = "0.51.3", features = ["async"] }
 clap = { version = "4.4.11", features = [
     "env"
@@ -33,7 +33,7 @@ time = { version = "0.3.31", features = ["local-offset"] }
 url = "2.5.0"
 rust-embed = { version = "8.1.0", features = ["include-exclude"] }
 libflate = "2.0.0"
-brotli = { version = "6.0.0", features = ["std"] }
+brotli = { version = "7.0.0", features = ["std"] }
 toml = "0.8.8"
 once_cell = "1.19.0"
 serde_yaml = "0.9.29"
@@ -48,6 +48,8 @@ rss = "2.0.7"
 arc-swap = "1.7.1"
 rustls = { version = "0.21.12", features = ["dangerous_configuration"] }
 ctor = "0.2.8"
+serde_json_path = "0.6.7"
+async-recursion = "1.1.1"
 
 
 [dev-dependencies]

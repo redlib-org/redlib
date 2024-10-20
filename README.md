@@ -2,7 +2,7 @@
 
 > An alternative private front-end to Reddit, with its origins in [Libreddit](https://github.com/libreddit/libreddit).
 
-![screenshot](https://i.ibb.co/QYbqTQt/libreddit-rust.png)
+![screenshot](https://i.ibb.co/18vrdxk/redlib-rust.png)
 
 ---
 
@@ -72,7 +72,7 @@ Redlib currently implements most of Reddit's (signed-out) functionalities but st
 
 - [Rust](https://www.rust-lang.org/) - Programming language
 - [Hyper](https://github.com/hyperium/hyper) - HTTP server and client
-- [Askama](https://github.com/djc/askama) - Templating engine
+- [Rinja](https://github.com/rinja-rs/rinja) - Templating engine
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
 ## How is it different from other Reddit front ends?
@@ -389,7 +389,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 
 | Name                                | Possible values                                                                                                                    | Default value |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight", "tokyoNight", "icebergDark"]` | `system`      |
+| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight", "tokyoNight", "icebergDark", "doomone", "libredditBlack", "libredditDark", "libredditLight"]` | `system`      |
 | `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
 | `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
 | `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |

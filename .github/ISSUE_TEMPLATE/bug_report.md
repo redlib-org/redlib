@@ -7,6 +7,10 @@ assignees: ''
 
 ---
 
+<!-- 
+  BEFORE FILING A BUG REPORT: Ensure that you are running the latest git commit. Visit /info on your instance, and ensure the git commit listed is the same commit listed on the home page.
+-->
+
 ## Describe the bug
 <!--
   A clear and concise description of what the bug is.
@@ -31,3 +35,7 @@ Steps to reproduce the behavior:
 <!--
   Add any other context about the problem here.
 -->
+
+
+<!-- Mandatory -->
+- [ ] I checked that the instance that this was reported on is running the latest git commit, or I can reproduce it locally on the latest git commit
