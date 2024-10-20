@@ -2,6 +2,7 @@ use crate::{
 	config::{Config, CONFIG},
 	server::RequestExt,
 	utils::{ErrorTemplate, Preferences},
+	client::VERIFY_HTTPS,
 };
 use build_html::{Container, Html, HtmlContainer, Table};
 use hyper::{http::Error, Body, Request, Response};
@@ -88,6 +89,7 @@ pub struct InstanceInfo {
 	git_commit: String,
 	deploy_date: String,
 	compile_mode: String,
+	verify_https: bool,
 	deploy_unix_ts: i64,
 	config: Config,
 }
@@ -103,6 +105,7 @@ impl InstanceInfo {
 			compile_mode: "Debug".into(),
 			#[cfg(not(debug_assertions))]
 			compile_mode: "Release".into(),
+			verify_https: *VERIFY_HTTPS.get().unwrap(),
 			deploy_unix_ts: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()).unix_timestamp(),
 			config: CONFIG.clone(),
 		}
@@ -127,6 +130,7 @@ impl InstanceInfo {
 				["SFW only", &convert(&self.config.sfw_only)],
 				["Pushshift frontend", &convert(&self.config.pushshift)],
 				["RSS enabled", &convert(&self.config.enable_rss)],
+				["Reddit HTTPS verification", &self.verify_https.to_string()],
 				["Full URL", &convert(&self.config.full_url)],
 				//TODO: fallback to crate::config::DEFAULT_PUSHSHIFT_FRONTEND
 			])
@@ -168,6 +172,7 @@ impl InstanceInfo {
 				SFW only: {:?}\n
 				Pushshift frontend: {:?}\n
 				RSS enabled: {:?}\n
+				Reddit HTTPS Verification: {:?}\n
 				Full URL: {:?}\n
                 Config:\n
                     Banner: {:?}\n
@@ -194,6 +199,7 @@ impl InstanceInfo {
 					self.compile_mode,
 					self.config.sfw_only,
 					self.config.enable_rss,
+					self.verify_https,
 					self.config.full_url,
 					self.config.pushshift,
 					self.config.banner,
