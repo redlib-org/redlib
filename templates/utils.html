@@ -136,17 +136,20 @@
 	{% endif %}
 	{% else if post.post_type == "gallery" %}
 	<div class="gallery">
-	{% for image in post.gallery -%}
+		{% for image in post.gallery -%}
 		<figure>
 			<a href="{{ image.url }}" ><img loading="lazy" alt="Gallery image" src="{{ image.url }}"/></a>
 			<figcaption>
+				{% if !image.caption.is_empty() %}
 				<p>{{ image.caption }}</p>
+				{% endif %}
 				{% if image.outbound_url.len() > 0 %}
 				<p><a class="outbound_url" href="{{ image.outbound_url }}" rel="nofollow">{{ image.outbound_url }}</a>
 				{% endif %}
 			</figcaption>
 		</figure>
-	{%- endfor %}
+		{%- endfor %}
+		<div class="gallery_length" tabindex="-1">gallery<br>({{ post.len() }} images)</div>
 	</div>
 	{% else if post.post_type == "link" %}
 	<a id="post_url" href="{{ post.media.url }}" rel="nofollow">{{ post.media.url }}</a>

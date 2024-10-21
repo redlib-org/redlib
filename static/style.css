@@ -223,8 +223,8 @@ nav #redlib {
     vertical-align: -2px;
 }
 
-figcaption {
-    margin-top: 5px;
+figcaption p {
+    margin: 5px 0;
     text-align: center;
 }
 
@@ -1112,6 +1112,13 @@ a.search_subreddit:hover {
     overflow: hidden;
 }
 
+.post_media_content:not(:has(.post_media_video)),
+.post_media_video,
+.gallery {
+    border: var(--panel-border);
+    border-radius: 5px;
+}
+
 .post_media_video {
     min-width: 100px;
     max-width: 100px;
@@ -1169,9 +1176,51 @@ a.search_subreddit:hover {
     vertical-align: bottom;
 }
 
+.gallery {
+    display: flex;
+    flex-flow: row nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    align-items: center;
+    background: var(--background);
+    transition: background 0.2s;
+}
+
+.post:hover .gallery {
+    background: var(--post);
+}
+
+.gallery figure {
+    flex: 1 0 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    margin: 0;
+}
+
+.gallery_length {
+    position: sticky;
+    flex-shrink: 0;
+    align-self: start;
+    right: 2%;
+    top: 2%;
+    width: 6em;
+    padding: 10px 5px;
+    margin-left: calc(-6em - 5px*2);
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 5px;
+    transition: opacity 0.2s;
+}
+
+.gallery_length:focus {
+    opacity: 0;
+}
+
 .gallery img {
+    display: block;
+    margin: auto;
     max-width: 100%;
-    vertical-align: bottom;
+    border-radius: 5px;
 }
 
 .gallery .outbound_url {
