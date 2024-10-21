@@ -149,7 +149,7 @@
 			</figcaption>
 		</figure>
 		{%- endfor %}
-		<div class="gallery_length" tabindex="-1">gallery<br>({{ post.len() }} images)</div>
+		<div class="gallery_length" tabindex="-1">gallery<br>({{ post.gallery.len() }} images)</div>
 	</div>
 	{% else if post.post_type == "link" %}
 	<a id="post_url" href="{{ post.media.url }}" rel="nofollow">{{ post.media.url }}</a>
