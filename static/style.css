@@ -1237,9 +1237,9 @@ a.search_subreddit:hover {
 .gallery_progress {
     position: absolute;
     bottom: 10px;
-    padding: 10px;
     background-color: rgba(0, 0, 0, 0.8);
-    border-radius: 20px;
+    border: 10px solid transparent;
+    border-radius: 15px;
     display: flex;
     gap: 10px;
 }
@@ -1263,11 +1263,11 @@ a.search_subreddit:hover {
 
 @keyframes galleryDotIndicatorScroll {
     from {
-        left: 10px;
+        left: 0;
     }
 
     to {
-        left: calc(100% - 10px);
+        left: 100%;
         transform: translateX(-100%);
     }
 }
