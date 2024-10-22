@@ -139,7 +139,7 @@
 		<div class="gallery_overlay" title="Hide overlay">
 			<div class="gallery_length" tabindex="-1">gallery<br>({{ post.gallery.len() }} images)</div>
 			<div class="gallery_progress" tabindex="-1">
-				{% for _ in post.gallery %}
+				{% for _ in 0..post.gallery.len() %}
 				<div class="gallery_dot"></div>
 				{% endfor %}
 				<div class="gallery_dot_indicator"></div>
