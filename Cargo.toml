@@ -9,6 +9,7 @@ authors = [
     "spikecodes <19519553+spikecodes@users.noreply.github.com>",
 ]
 edition = "2021"
+default-run = "redlib"
 
 [dependencies]
 rinja = { version = "0.3.4", default-features = false }
@@ -16,6 +17,7 @@ cached = { version = "0.51.3", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
     "env",
+    "derive",
 ] }
 regex = "1.10.2"
 serde = { version = "1.0.193", features = ["derive"] }
@@ -56,3 +58,11 @@ sealed_test = "1.0.0"
 codegen-units = 1
 lto = true
 strip = "symbols"
+
+[[bin]]
+name = "redlib"
+path = "src/main.rs"
+
+[[bin]]
+name = "scraper"
+path = "src/scraper/main.rs"
