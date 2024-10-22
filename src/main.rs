@@ -2,35 +2,20 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::cmp_owned)]
 
-// Reference local files
-mod config;
-mod duplicates;
-mod instance_info;
-mod oauth;
-mod oauth_resources;
-mod post;
-mod search;
-mod settings;
-mod subreddit;
-mod user;
-mod utils;
-
 // Import Crates
 use clap::{Arg, ArgAction, Command};
 
 use futures_lite::FutureExt;
 use hyper::{header::HeaderValue, Body, Request, Response};
 
-mod client;
-use client::{canonical_path, proxy};
 use log::info;
 use once_cell::sync::Lazy;
-use server::RequestExt;
-use utils::{error, redirect, ThemeAssets};
+use redlib::client::{canonical_path, proxy};
+use redlib::server::{self, RequestExt};
+use redlib::utils::{error, redirect, ThemeAssets};
+use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
 
-use crate::client::OAUTH_CLIENT;
-
-mod server;
+use redlib::client::OAUTH_CLIENT;
 
 // Create Services
 

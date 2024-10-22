@@ -3,7 +3,7 @@ use crate::{config, utils};
 use crate::utils::{
 	catch_random, error, filter_posts, format_num, format_url, get_filters, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences, Subreddit,
 };
-use crate::{client::json, server::ResponseExt, RequestExt};
+use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use rinja::Template;
