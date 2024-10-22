@@ -136,6 +136,15 @@
 	{% endif %}
 	{% else if post.post_type == "gallery" %}
 	<div class="gallery">
+		<div class="gallery_overlay" title="Hide overlay">
+			<div class="gallery_length" tabindex="-1">gallery<br>({{ post.gallery.len() }} images)</div>
+			<div class="gallery_progress" tabindex="-1">
+				{% for _ in post.gallery %}
+				<div class="gallery_dot"></div>
+				{% endfor %}
+				<div class="gallery_dot_indicator"></div>
+			</div>
+		</div>
 		{% for image in post.gallery -%}
 		<figure>
 			<a href="{{ image.url }}" ><img loading="lazy" alt="Gallery image" src="{{ image.url }}"/></a>
@@ -149,7 +158,6 @@
 			</figcaption>
 		</figure>
 		{%- endfor %}
-		<div class="gallery_length" tabindex="-1">gallery<br>({{ post.gallery.len() }} images)</div>
 	</div>
 	{% else if post.post_type == "link" %}
 	<a id="post_url" href="{{ post.media.url }}" rel="nofollow">{{ post.media.url }}</a>
