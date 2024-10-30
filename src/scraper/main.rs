@@ -18,6 +18,8 @@ struct Cli {
 
 	#[arg(short = 'f', long = "format", value_enum)]
 	format: Format,
+	#[arg(short = 'o', long = "output")]
+	output: Option<String>,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -49,7 +51,7 @@ enum Format {
 #[tokio::main]
 async fn main() {
 	let cli = Cli::parse();
-	let (sub, final_count, sort, format) = (cli.sub, cli.count, cli.sort, cli.format);
+	let (sub, final_count, sort, format, output) = (cli.sub, cli.count, cli.sort, cli.format, cli.output);
 	let initial = format!("/r/{sub}/{sort}.json?&raw_json=1");
 	let (mut posts, mut after) = Post::fetch(&initial, false).await.unwrap();
 	while posts.len() < final_count {
@@ -65,7 +67,7 @@ async fn main() {
 
 	match format {
 		Format::Json => {
-			let filename: String = format!("{sub}.json");
+			let filename: String = output.unwrap_or_else(|| format!("{sub}.json"));
 			let json = serde_json::to_string(&posts).unwrap();
 			std::fs::write(filename, json).unwrap();
 		}
