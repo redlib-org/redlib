@@ -94,7 +94,10 @@ impl Oauth {
 		trace!("Sending token request...");
 
 		// Send request
-		let client: client::Client<_, Body> = CLIENT.clone();
+		let client: client::Client<_, Body> = {
+			let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+			client::Client::builder().pool_max_idle_per_host(0).build(https)
+		};
 		let resp = client.request(request).await.ok()?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));

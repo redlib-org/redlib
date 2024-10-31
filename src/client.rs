@@ -154,7 +154,10 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = {
+		let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+		client::Client::builder().pool_max_idle_per_host(0).build(https)
+	};
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -216,7 +219,10 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = CLIENT.clone();
+	let client: Client<_, Body> = {
+		let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
+		client::Client::builder().pool_max_idle_per_host(0).build(https)
+	};
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = OAUTH_CLIENT.load_full();
