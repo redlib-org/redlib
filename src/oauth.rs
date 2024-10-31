@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 
 use crate::{
-	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
+	client::{OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
@@ -96,7 +96,7 @@ impl Oauth {
 		// Send request
 		let client: client::Client<_, Body> = {
 			let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-			client::Client::builder().pool_max_idle_per_host(0).build(https)
+			client::Client::builder().build(https)
 		};
 		let resp = client.request(request).await.ok()?;
 
