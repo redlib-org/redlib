@@ -4,7 +4,7 @@ use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
-use hyper::{body, body::Buf, client, header, Body, Client, Method, Request, Response, Uri};
+use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
 use log::{error, trace, warn};
@@ -30,9 +30,12 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
+pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> = Lazy::new(|| {
+	hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build()
+});
+
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| {
-	let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-	client::Client::builder().build(https)
+    Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone())
 });
 
 pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
@@ -154,10 +157,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = {
-		let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-		client::Client::builder().build(https)
-	};
+	let client: &Lazy<Client<_, Body>> = &CLIENT;
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -219,10 +219,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: Client<_, Body> = {
-		let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-		client::Client::builder().build(https)
-	};
+	let client: &Lazy<Client<_, Body>> = &CLIENT;
 
 	let (token, vendor_id, device_id, user_agent, loid) = {
 		let client = OAUTH_CLIENT.load_full();

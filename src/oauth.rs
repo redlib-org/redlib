@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 
 use crate::{
-	client::{OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
+	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
@@ -94,10 +94,7 @@ impl Oauth {
 		trace!("Sending token request...");
 
 		// Send request
-		let client: client::Client<_, Body> = {
-			let https = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http1().build();
-			client::Client::builder().build(https)
-		};
+		let client: &once_cell::sync::Lazy<client::Client<_, Body>> = &CLIENT;
 		let resp = client.request(request).await.ok()?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
