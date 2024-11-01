@@ -290,6 +290,14 @@ git clone https://github.com/redlib-org/redlib && cd redlib
 cargo run
 ```
 
+Note that the above command will compile a debug build with logging and run the binary automatically. Use the following command to compile a release build with no logging.
+
+```
+cargo build --release
+```
+
+The compiled release binary can be found in `target/release/redlib`.
+
 ## Replit/Heroku
 
 > [!WARNING]
