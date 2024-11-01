@@ -500,7 +500,7 @@ async fn test_obfuscated_share_link() {
 #[tokio::test(flavor = "multi_thread")]
 async fn test_share_link_strip_json() {
 	let link = "/17krzvz".into();
-	let canonical_link = "/17krzvz".into();
+	let canonical_link = "/comments/17krzvz".into();
 	assert_eq!(canonical_path(link, 3).await, Ok(Some(canonical_link)));
 }
 #[tokio::test(flavor = "multi_thread")]
