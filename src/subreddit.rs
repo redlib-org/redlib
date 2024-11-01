@@ -1,3 +1,5 @@
+#![allow(clippy::cmp_owned)]
+
 use crate::{config, utils};
 // CRATES
 use crate::utils::{

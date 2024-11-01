@@ -1,3 +1,5 @@
+#![allow(clippy::cmp_owned)]
+
 // CRATES
 use crate::client::json;
 use crate::config::get_setting;

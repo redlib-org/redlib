@@ -1,3 +1,5 @@
+#![allow(clippy::cmp_owned)]
+
 // CRATES
 use crate::utils::{self, catch_random, error, filter_posts, format_num, format_url, get_filters, param, redirect, setting, template, val, Post, Preferences};
 use crate::{

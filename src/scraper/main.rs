@@ -55,14 +55,14 @@ async fn main() {
 	let initial = format!("/r/{sub}/{sort}.json?&raw_json=1");
 	let (mut posts, mut after) = Post::fetch(&initial, false).await.unwrap();
 	while posts.len() < final_count {
-        print!("\r");
+		print!("\r");
 		let path = format!("/r/{sub}/{sort}.json?sort={sort}&t=&after={after}&raw_json=1");
 		let (new_posts, new_after) = Post::fetch(&path, false).await.unwrap();
 		posts.extend(new_posts);
 		after = new_after;
 		// Print number of posts fetched
 		print!("Fetched {} posts", posts.len());
-        std::io::stdout().flush().unwrap();
+		std::io::stdout().flush().unwrap();
 	}
 
 	match format {

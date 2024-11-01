@@ -1,3 +1,5 @@
+#![allow(clippy::cmp_owned)]
+
 use std::collections::HashMap;
 
 // CRATES
