@@ -1,5 +1,7 @@
 // @license http://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
 (function () {
+    const configElement = document.getElementById('video_quality');
+    const qualitySetting = configElement.getAttribute('data-value');
     if (Hls.isSupported()) {
         var videoSources = document.querySelectorAll("video source[type='application/vnd.apple.mpegurl']");
         videoSources.forEach(function (source) {
@@ -28,13 +30,26 @@
 
             oldVideo.parentNode.replaceChild(newVideo, oldVideo);
 
+            function getIndexOfDefault(length) {
+                switch (qualitySetting) {
+                    case 'best':
+                        return length - 1;
+                    case 'medium':
+                        return Math.floor(length / 2);
+                    case 'worst':
+                        return 0;
+                    default:
+                        return length - 1;
+                }
+            }
+
             function initializeHls() {
                 newVideo.removeEventListener('play', initializeHls);
                 var hls = new Hls({ autoStartLoad: false });
                 hls.loadSource(playlist);
                 hls.attachMedia(newVideo);
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    hls.loadLevel = hls.levels.length - 1;
+                    hls.loadLevel = getIndexOfDefault(hls.levels.length);
                     var availableLevels = hls.levels.map(function(level) {
                         return {
                             height: level.height,
@@ -73,18 +88,18 @@
             function addQualitySelector(videoElement, hlsInstance, availableLevels) {
                 var qualitySelector = document.createElement('select');
                 qualitySelector.classList.add('quality-selector');
-                var last = availableLevels.length - 1;
+                var defaultIndex = getIndexOfDefault(availableLevels.length);
                 availableLevels.forEach(function (level, index) {
                     var option = document.createElement('option');
                     option.value = index.toString();
                     var bitrate = (level.bitrate / 1_000).toFixed(0);
                     option.text = level.height + 'p (' + bitrate + ' kbps)';
-                    if (index === last) {
+                    if (index === defaultIndex) {
                         option.selected = "selected";
                     }
                     qualitySelector.appendChild(option);
                 });
-                qualitySelector.selectedIndex = availableLevels.length - 1;
+                qualitySelector.selectedIndex = defaultIndex;
                 qualitySelector.addEventListener('change', function () {
                     var selectedIndex = qualitySelector.selectedIndex;
                     hlsInstance.nextLevel = selectedIndex;
