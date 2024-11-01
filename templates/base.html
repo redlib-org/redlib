@@ -27,6 +27,8 @@
 		<link rel="manifest" type="application/json" href="/manifest.json">
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
 		<link rel="stylesheet" type="text/css" href="/style.css?v={{ env!("CARGO_PKG_VERSION") }}">
+		<!-- Video quality -->
+		<div id="video_quality" data-value="{{ prefs.video_quality }}"></div>
 		{% endblock %}
 		</head>
 	<body class="
