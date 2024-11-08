@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::cmp_owned)]
 
 use brotli::enc::{BrotliCompress, BrotliEncoderParams};
 use cached::proc_macro::cached;
@@ -192,6 +193,12 @@ impl Route<'_> {
 	/// Add an endpoint for `POST` requests
 	pub fn post(&mut self, dest: fn(Request<Body>) -> BoxResponse) -> &mut Self {
 		self.method(&Method::POST, dest)
+	}
+}
+
+impl Default for Server {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 
@@ -723,7 +730,7 @@ mod tests {
 
 				CompressionType::Brotli => Box::new(BrotliDecompressor::new(body_cursor, expected_lorem_ipsum.len())),
 
-				_ => panic!("no decompressor for {}", expected_encoding.to_string()),
+				_ => panic!("no decompressor for {}", expected_encoding),
 			};
 
 			let mut decompressed = Vec::<u8>::new();

@@ -85,7 +85,7 @@ fn info_html(req: &Request<Body>) -> Result<Response<Body>, Error> {
 pub struct InstanceInfo {
 	package_name: String,
 	crate_version: String,
-	git_commit: String,
+	pub git_commit: String,
 	deploy_date: String,
 	compile_mode: String,
 	deploy_unix_ts: i64,

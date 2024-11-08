@@ -1,3 +1,5 @@
+#![allow(clippy::cmp_owned)]
+
 use std::collections::HashMap;
 
 // CRATES
@@ -38,6 +40,7 @@ const PREFS: [&str; 19] = [
 	"hide_awards",
 	"hide_score",
 	"disable_visit_reddit_confirmation",
+	"video_quality",
 ];
 
 // FUNCTIONS

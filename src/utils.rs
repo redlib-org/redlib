@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![allow(clippy::cmp_owned)]
+
 use crate::config::{self, get_setting};
 //
 // CRATES
@@ -11,6 +13,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rinja::Template;
 use rust_embed::RustEmbed;
+use serde::Serialize;
 use serde_json::Value;
 use serde_json_path::{JsonPath, JsonPathExt};
 use std::collections::{HashMap, HashSet};
@@ -46,6 +49,7 @@ pub enum ResourceType {
 }
 
 // Post flair with content, background color and foreground color
+#[derive(Serialize)]
 pub struct Flair {
 	pub flair_parts: Vec<FlairPart>,
 	pub text: String,
@@ -54,7 +58,7 @@ pub struct Flair {
 }
 
 // Part of flair, either emoji or text
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct FlairPart {
 	pub flair_part_type: String,
 	pub value: String,
@@ -96,12 +100,14 @@ impl FlairPart {
 	}
 }
 
+#[derive(Serialize)]
 pub struct Author {
 	pub name: String,
 	pub flair: Flair,
 	pub distinguished: String,
 }
 
+#[derive(Serialize)]
 pub struct Poll {
 	pub poll_options: Vec<PollOption>,
 	pub voting_end_timestamp: (String, String),
@@ -129,6 +135,7 @@ impl Poll {
 	}
 }
 
+#[derive(Serialize)]
 pub struct PollOption {
 	pub id: u64,
 	pub text: String,
@@ -158,13 +165,14 @@ impl PollOption {
 }
 
 // Post flags with nsfw and stickied
+#[derive(Serialize)]
 pub struct Flags {
 	pub spoiler: bool,
 	pub nsfw: bool,
 	pub stickied: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Media {
 	pub url: String,
 	pub alt_url: String,
@@ -264,6 +272,7 @@ impl Media {
 	}
 }
 
+#[derive(Serialize)]
 pub struct GalleryMedia {
 	pub url: String,
 	pub width: i64,
@@ -304,6 +313,7 @@ impl GalleryMedia {
 }
 
 // Post containing content, metadata and media
+#[derive(Serialize)]
 pub struct Post {
 	pub id: String,
 	pub title: String,
@@ -470,7 +480,7 @@ pub struct Comment {
 	pub prefs: Preferences,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct Award {
 	pub name: String,
 	pub icon_url: String,
@@ -484,6 +494,7 @@ impl std::fmt::Display for Award {
 	}
 }
 
+#[derive(Serialize)]
 pub struct Awards(pub Vec<Award>);
 
 impl std::ops::Deref for Awards {
@@ -602,6 +613,7 @@ pub struct Preferences {
 	pub blur_nsfw: String,
 	pub unblur_on_hover: String,
 	pub hide_hls_notification: String,
+	pub video_quality: String,
 	pub hide_sidebar_and_summary: String,
 	pub use_hls: String,
 	pub autoplay_videos: String,
@@ -643,6 +655,7 @@ impl Preferences {
 			unblur_on_hover: setting(req, "unblur_on_hover"),
 			use_hls: setting(req, "use_hls"),
 			hide_hls_notification: setting(req, "hide_hls_notification"),
+			video_quality: setting(req, "video_quality"),
 			autoplay_videos: setting(req, "autoplay_videos"),
 			fixed_navbar: setting_or_default(req, "fixed_navbar", "on".to_string()),
 			disable_visit_reddit_confirmation: setting(req, "disable_visit_reddit_confirmation"),

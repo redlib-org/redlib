@@ -9,6 +9,7 @@ authors = [
     "spikecodes <19519553+spikecodes@users.noreply.github.com>",
 ]
 edition = "2021"
+default-run = "redlib"
 
 [dependencies]
 rinja = { version = "0.3.4", default-features = false }
@@ -16,13 +17,14 @@ cached = { version = "0.51.3", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
     "env",
+    "derive",
 ] }
 regex = "1.10.2"
 serde = { version = "1.0.193", features = ["derive"] }
 cookie = "0.18.0"
 futures-lite = "2.2.0"
 hyper = { version = "0.14.28", features = ["full"] }
-hyper-rustls = "0.24.2"
+hyper-rustls = { version = "0.24.2", features = [ "http2" ] }
 percent-encoding = "2.3.1"
 route-recognizer = "0.3.1"
 serde_json = "1.0.108"
@@ -56,3 +58,11 @@ sealed_test = "1.0.0"
 codegen-units = 1
 lto = true
 strip = "symbols"
+
+[[bin]]
+name = "redlib"
+path = "src/main.rs"
+
+[[bin]]
+name = "scraper"
+path = "src/scraper/main.rs"

@@ -2,35 +2,21 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::cmp_owned)]
 
-// Reference local files
-mod config;
-mod duplicates;
-mod instance_info;
-mod oauth;
-mod oauth_resources;
-mod post;
-mod search;
-mod settings;
-mod subreddit;
-mod user;
-mod utils;
-
-// Import Crates
+use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
+use std::str::FromStr;
 
 use futures_lite::FutureExt;
+use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
-
-mod client;
-use client::{canonical_path, proxy};
 use log::info;
 use once_cell::sync::Lazy;
-use server::RequestExt;
-use utils::{error, redirect, ThemeAssets};
+use redlib::client::{canonical_path, proxy, CLIENT};
+use redlib::server::{self, RequestExt};
+use redlib::utils::{error, redirect, ThemeAssets};
+use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
 
-use crate::client::OAUTH_CLIENT;
-
-mod server;
+use redlib::client::OAUTH_CLIENT;
 
 // Create Services
 
@@ -232,6 +218,11 @@ async fn main() {
 	app
 		.at("/highlighted.js")
 		.get(|_| resource(include_str!("../static/highlighted.js"), "text/javascript", false).boxed());
+	app
+		.at("/check_update.js")
+		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
+
+	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
@@ -388,4 +379,23 @@ async fn main() {
 	if let Err(e) = server.await {
 		eprintln!("Server error: {e}");
 	}
+}
+
+pub async fn proxy_commit_info() -> Result<Response<Body>, String> {
+	Ok(
+		Response::builder()
+			.status(200)
+			.header("content-type", "application/atom+xml")
+			.body(Body::from(fetch_commit_info().await))
+			.unwrap_or_default(),
+	)
+}
+
+#[cached(time = 600)]
+async fn fetch_commit_info() -> String {
+	let uri = Uri::from_str("https://github.com/redlib-org/redlib/commits/main.atom").expect("Invalid URI");
+
+	let resp: Body = CLIENT.get(uri).await.expect("Failed to request GitHub").into_body();
+
+	hyper::body::to_bytes(resp).await.expect("Failed to read body").iter().copied().map(|x| x as char).collect()
 }
