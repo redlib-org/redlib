@@ -33,7 +33,7 @@
       "required": false
     },
     "REDLIB_DEFAULT_SHOW_NSFW": {
-      "required": false
+      "required": true
     },
     "REDLIB_DEFAULT_BLUR_NSFW": {
       "required": false
@@ -57,7 +57,7 @@
       "required": false
     },
     "REDLIB_ROBOTS_DISABLE_INDEXING": {
-      "required": false
+      "required": true
     },
     "REDLIB_DEFAULT_SUBSCRIPTIONS": {
       "required": false
@@ -75,7 +75,7 @@
       "required": false
     },
     "REDLIB_FULL_URL": {
-      "required": false
+      "required": true
     }
   }
 }
