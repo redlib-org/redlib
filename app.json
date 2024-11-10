@@ -42,7 +42,7 @@
       "required": false
     },
     "REDLIB_HIDE_HLS_NOTIFICATION": {
-      "required": false
+      "required": true
     },
     "REDLIB_SFW_ONLY": {
       "required": false
