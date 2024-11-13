@@ -65,6 +65,8 @@ async fn main() {
 		std::io::stdout().flush().unwrap();
 	}
 
+	posts.truncate(final_count);
+
 	match format {
 		Format::Json => {
 			let filename: String = output.unwrap_or_else(|| format!("{sub}.json"));
