@@ -21,8 +21,10 @@ async function checkInstanceUpdateStatus() {
                 statusMessage = '✅ Instance is up to date.';
             } else if (commitIndex > 0) {
                 statusMessage = `⚠️ This instance is not up to date and is ${commitIndex} commits old. Test and confirm on an up-to-date instance before reporting.`;
+                document.getElementById('error-318').remove();
             } else {
                 statusMessage = `⚠️ This instance is not up to date and is at least ${commitHashes.length} commits old. Test and confirm on an up-to-date instance before reporting.`;
+                document.getElementById('error-318').remove();
             }
         } else {
             statusMessage = '⚠️ Unable to fetch commit information.';
