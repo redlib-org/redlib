@@ -376,17 +376,7 @@ impl Post {
 			let awards = Awards::parse(&data["all_awardings"]);
 
 			// selftext_html is set for text posts when browsing.
-			let mut body = {
-				let selftext = val(post, "selftext");
-				if selftext.contains("```") {
-					let mut html_output = String::new();
-					let parser = pulldown_cmark::Parser::new(&selftext);
-					pulldown_cmark::html::push_html(&mut html_output, parser);
-					rewrite_urls(&html_output)
-				} else {
-					rewrite_urls(&val(post, "selftext_html"))
-				}
-			};
+			let mut body = rewrite_urls(&val(post, "selftext_html"));
 			if body.is_empty() {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
@@ -730,7 +720,15 @@ pub async fn parse_post(post: &Value) -> Post {
 			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
-		rewrite_urls(&val(post, "selftext_html"))
+		let selftext = val(post, "selftext");
+		if selftext.contains("```") {
+			let mut html_output = String::new();
+			let parser = pulldown_cmark::Parser::new(&selftext);
+			pulldown_cmark::html::push_html(&mut html_output, parser);
+			rewrite_urls(&html_output)
+		} else {
+			rewrite_urls(&val(post, "selftext_html"))
+		}
 	};
 
 	// Build a post using data parsed from Reddit post API
