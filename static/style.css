@@ -1199,6 +1199,13 @@ a.search_subreddit:hover {
     overflow-wrap: anywhere;
 }
 
+.post_body pre {
+    background: var(--background);
+    overflow-x: auto;
+    margin: 10px 0;
+    padding: 10px;
+}
+
 .post_body img {
     max-width: 100%;
     display: block;
