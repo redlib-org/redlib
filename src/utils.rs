@@ -376,7 +376,17 @@ impl Post {
 			let awards = Awards::parse(&data["all_awardings"]);
 
 			// selftext_html is set for text posts when browsing.
-			let mut body = rewrite_urls(&val(post, "selftext_html"));
+			let mut body = {
+				let selftext = val(post, "selftext");
+				if selftext.contains("```") {
+					let mut html_output = String::new();
+					let parser = pulldown_cmark::Parser::new(&selftext);
+					pulldown_cmark::html::push_html(&mut html_output, parser);
+					rewrite_urls(&html_output)
+				} else {
+					rewrite_urls(&val(post, "selftext_html"))
+				}
+			};
 			if body.is_empty() {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
