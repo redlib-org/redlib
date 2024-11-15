@@ -1203,6 +1203,7 @@ a.search_subreddit:hover {
     background: var(--background);
     overflow-x: auto;
     margin: 10px 0;
+    padding: 10px;
 }
 
 .post_body img {
