@@ -507,7 +507,7 @@ impl std::ops::Deref for Awards {
 
 impl std::fmt::Display for Awards {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		self.iter().fold(Ok(()), |result, award| result.and_then(|()| writeln!(f, "{award}")))
+		self.iter().try_fold((), |_, award| writeln!(f, "{award}"))
 	}
 }
 
