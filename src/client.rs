@@ -229,6 +229,12 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		)
 	};
 
+	let (key, value) = match fastrand::u32(0..3) {
+		0 => ("X-Reddit-Width", fastrand::u32(300..500).to_string()),
+		1 => ("X-Reddit-DPR", "2".to_owned()),
+		_ => ("Device-Name", format!("Android {}", fastrand::u8(9..=14))),
+	};
+
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
 	let builder = Request::builder()
@@ -241,6 +247,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		.header("Host", host)
 		.header("Authorization", &format!("Bearer {token}"))
 		.header("Accept-Encoding", if method == Method::GET { "gzip" } else { "identity" })
+		.header(key, value)
 		.header(
 			"Cookie",
 			if quarantine {
