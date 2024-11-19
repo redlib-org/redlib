@@ -40,17 +40,17 @@ jobs:
       - if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools libssl-dev openssl-dev openssl-libs-static
+          sudo apt-get install -y --no-install-recommends clang lld musl-tools git perl libssl-dev pkg-config make
  
       - if: matrix.target == 'armv7-unknown-linux-musleabihf'
         run: |
           sudo apt update
-          sudo apt install -y gcc-arm-linux-gnueabihf musl-tools libssl-dev openssl-dev openssl-libs-static
+          sudo apt install -y gcc-arm-linux-gnueabihf clang lld musl-tools git perl libssl-dev pkg-config make
 
       - if: matrix.target == 'aarch64-unknown-linux-musl'
         run: |
           sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu musl-tools libssl-dev openssl-dev openssl-libs-static
+          sudo apt install -y gcc-aarch64-linux-gnu clang lld musl-tools git perl libssl-dev pkg-config make
 
       - name: Versions
         id: version
