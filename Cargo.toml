@@ -48,7 +48,7 @@ arc-swap = "1.7.1"
 serde_json_path = "0.7.1"
 async-recursion = "1.1.1"
 common-words-all = { version = "0.0.2", default-features = false, features = ["english", "one"] }
-hyper-tls = { version = "=0.5.0", features = ["vendored"] }
+hyper-rustls = { version = "0.24.2", features = [ "http2" ] }
 
 
 [dev-dependencies]

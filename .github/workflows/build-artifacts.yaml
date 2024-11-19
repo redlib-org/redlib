@@ -38,24 +38,24 @@ jobs:
       - if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools libssl-dev
+          sudo apt-get install -y --no-install-recommends musl-tools
  
       - if: matrix.target == 'armv7-unknown-linux-musleabihf'
         run: |
           sudo apt update
-          sudo apt install -y gcc-arm-linux-gnueabihf musl-tools libssl-dev
+          sudo apt install -y gcc-arm-linux-gnueabihf musl-tools
 
       - if: matrix.target == 'aarch64-unknown-linux-musl'
         run: |
           sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu musl-tools libssl-dev
+          sudo apt install -y gcc-aarch64-linux-gnu musl-tools
 
       - name: Versions
         id: version
         run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
 
       - name: Build
-        run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package release
         run: tar czf redlib-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ redlib
