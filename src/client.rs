@@ -241,7 +241,6 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		.header("Host", host)
 		.header("Authorization", &format!("Bearer {token}"))
 		.header("Accept-Encoding", if method == Method::GET { "gzip" } else { "identity" })
-		.header("Accept-Language", "en-US,en;q=0.5")
 		.header(
 			"Cookie",
 			if quarantine {
