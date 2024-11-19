@@ -4,8 +4,9 @@ use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
-use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
-use hyper_rustls::HttpsConnector;
+use hyper::Client;
+use hyper::{body, body::Buf, header, Body, Method, Request, Response, Uri};
+use hyper_tls::HttpsConnector;
 use libflate::gzip;
 use log::{error, trace, warn};
 use once_cell::sync::Lazy;
@@ -30,8 +31,7 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> =
-	Lazy::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
+pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> = Lazy::new(HttpsConnector::new);
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
 
@@ -242,7 +242,6 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		.header("Authorization", &format!("Bearer {token}"))
 		.header("Accept-Encoding", if method == Method::GET { "gzip" } else { "identity" })
 		.header("Accept-Language", "en-US,en;q=0.5")
-		.header("Connection", "keep-alive")
 		.header(
 			"Cookie",
 			if quarantine {
