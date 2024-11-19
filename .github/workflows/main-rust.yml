@@ -30,8 +30,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Install musl-gcc
-        run: sudo apt-get install musl-tools
+      - name: Install musl-gcc and libssl-dev
+        run: sudo apt-get install musl-tools libssl-dev
 
       - name: Install cargo musl target
         run: rustup target add x86_64-unknown-linux-musl
