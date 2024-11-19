@@ -37,4 +37,22 @@ async function checkInstanceUpdateStatus() {
     }
 }
 
+async function checkOtherInstances() {
+    try {
+        const response = await fetch('/instances.json');
+        const data = await response.json();
+        const randomInstance = data.instances[Math.floor(Math.random() * data.instances.length)];
+        const instanceUrl = randomInstance.url;
+        // Set the href of the <a> tag to the instance URL with path included
+        document.getElementById('random-instance').href = instanceUrl + window.location.pathname;
+        document.getElementById('random-instance').innerText = "Visit Random Instance";
+    } catch (error) {
+        console.error('Error fetching instances:', error);
+        document.getElementById('update-status').innerText = '⚠️ Error checking update status.';
+    }
+}
+
+// Set the target URL when the page loads
+window.addEventListener('load', checkOtherInstances);
+
 checkInstanceUpdateStatus();
