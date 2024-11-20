@@ -39,12 +39,12 @@ done
 echo "];" >> "$filename"
 
 # Fetch Android app versions
-page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
+page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
 # Append with pages
-page_2=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=2" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_3=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=3" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_4=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=4" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_5=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=5" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
+page_2=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=2" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_3=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=3" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_4=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=4" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_5=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=5" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
 
 # Concatenate all pages
 versions="${page_1}"
