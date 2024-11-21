@@ -4,6 +4,8 @@
 
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
+use redlib::subreddit::community;
+use spinners::{Spinner, Spinners};
 use std::str::FromStr;
 
 use futures_lite::FutureExt;
@@ -371,6 +373,29 @@ async fn main() {
 
 	// Default service in case no routes match
 	app.at("/*").get(|req| error(req, "Nothing here").boxed());
+
+	println!("Performing self-test...");
+	{
+		let mut sp = Spinner::new(Spinners::Dots12, "Requesting /r/popular...".into());
+
+		let request = Request::builder().uri("/").method("GET").body(Body::empty()).unwrap();
+
+		let response = community(request).await;
+		match response {
+			Ok(sub) => {
+				if sub.status().is_success() {
+					sp.stop_with_message("✅ Request successful!".into());
+				} else {
+					sp.stop_with_message(format!("❌ Request failed: {}", sub.status()));
+					panic!("Self-test failed");
+				}
+			}
+			Err(e) => {
+				sp.stop_with_message(format!("❌ Request failed: {e}"));
+				panic!("Self-test failed");
+			}
+		}
+	}
 
 	println!("Running Redlib v{} on {listener}!", env!("CARGO_PKG_VERSION"));
 
