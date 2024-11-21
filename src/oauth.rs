@@ -38,12 +38,12 @@ impl Oauth {
 				}
 				Ok(None) => {
 					error!("Failed to create OAuth client. Retrying in 5 seconds...");
-					continue;
 				}
 				Err(duration) => {
 					error!("Failed to create OAuth client in {duration:?}. Retrying in 5 seconds...");
 				}
 			}
+			tokio::time::sleep(Duration::from_secs(5)).await;
 		}
 	}
 
@@ -91,7 +91,7 @@ impl Oauth {
 		// Build request
 		let request = builder.body(body).unwrap();
 
-		trace!("Sending token request...");
+		trace!("Sending token request...\n\n{request:#?}");
 
 		// Send request
 		let client: &once_cell::sync::Lazy<client::Client<_, Body>> = &CLIENT;

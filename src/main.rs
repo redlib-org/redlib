@@ -385,7 +385,7 @@ async fn main() {
 				error!("Please update to the latest version. Then, check the issue tracker for the latest error.");
 				error!("https://github.com/redlib-org/redlib/issues");
 				panic!("Self-test failed");
-			},
+			}
 		}
 	}
 
