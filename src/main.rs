@@ -11,7 +11,7 @@ use std::str::FromStr;
 use futures_lite::FutureExt;
 use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
-use log::info;
+use log::{error, info};
 use once_cell::sync::Lazy;
 use redlib::client::{canonical_path, proxy, CLIENT};
 use redlib::server::{self, RequestExt};
@@ -377,23 +377,15 @@ async fn main() {
 	println!("Performing self-test...");
 	{
 		let mut sp = Spinner::new(Spinners::Dots12, "Requesting /r/popular...".into());
-
-		let request = Request::builder().uri("/").method("GET").body(Body::empty()).unwrap();
-
-		let response = community(request).await;
-		match response {
-			Ok(sub) => {
-				if sub.status().is_success() {
-					sp.stop_with_message("✅ Request successful!".into());
-				} else {
-					sp.stop_with_message(format!("❌ Request failed: {}", sub.status()));
-					panic!("Self-test failed");
-				}
-			}
+		match self_check().await {
+			Ok(()) => sp.stop_with_message("✅ Request successful!".into()),
 			Err(e) => {
-				sp.stop_with_message(format!("❌ Request failed: {e}"));
+				sp.stop_with_message(format!("❌ Request failed: {}", e));
+				error!("Self-test failed: {}", e);
+				error!("Please update to the latest version. Then, check the issue tracker for the latest error.");
+				error!("https://github.com/redlib-org/redlib/issues");
 				panic!("Self-test failed");
-			}
+			},
 		}
 	}
 
@@ -443,4 +435,14 @@ async fn fetch_instances() -> String {
 	let resp: Body = CLIENT.get(uri).await.expect("Failed to request GitHub").into_body();
 
 	hyper::body::to_bytes(resp).await.expect("Failed to read body").iter().copied().map(|x| x as char).collect()
+}
+
+async fn self_check() -> Result<(), String> {
+	let request = Request::get("/").body(Body::empty()).unwrap();
+
+	match community(request).await {
+		Ok(sub) if sub.status().is_success() => Ok(()),
+		Ok(sub) => Err(sub.status().to_string()),
+		Err(e) => Err(e),
+	}
 }
