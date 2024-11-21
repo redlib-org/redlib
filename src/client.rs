@@ -218,39 +218,29 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// Construct the hyper client from the HTTPS connector.
 	let client: &Lazy<Client<_, Body>> = &CLIENT;
 
-	let (token, vendor_id, device_id, user_agent, loid) = {
-		let client = OAUTH_CLIENT.load_full();
-		(
-			client.token.clone(),
-			client.headers_map.get("Client-Vendor-Id").cloned().unwrap_or_default(),
-			client.headers_map.get("X-Reddit-Device-Id").cloned().unwrap_or_default(),
-			client.headers_map.get("User-Agent").cloned().unwrap_or_default(),
-			client.headers_map.get("x-reddit-loid").cloned().unwrap_or_default(),
-		)
-	};
-
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
-	let mut headers = vec![
-		("User-Agent", user_agent),
-		("Client-Vendor-Id", vendor_id),
-		("X-Reddit-Device-Id", device_id),
-		("x-reddit-loid", loid),
-		("Host", host.to_string()),
-		("Authorization", format!("Bearer {token}")),
-		("Accept-Encoding", if method == Method::GET { "gzip".into() } else { "identity".into() }),
+	let mut headers: Vec<(String, String)> = vec![
+		("Host".into(), host.into()),
+		("Accept-Encoding".into(), if method == Method::GET { "gzip".into() } else { "identity".into() }),
 		(
-			"Cookie",
+			"Cookie".into(),
 			if quarantine {
 				"_options=%7B%22pref_quarantine_optin%22%3A%20true%2C%20%22pref_gated_sr_optin%22%3A%20true%7D".into()
 			} else {
 				"".into()
 			},
 		),
-		("X-Reddit-Width", fastrand::u32(300..500).to_string()),
-		("X-Reddit-DPR", "2".to_owned()),
-		("Device-Name", format!("Android {}", fastrand::u8(9..=14))),
 	];
+
+	{
+		let client = OAUTH_CLIENT.load_full();
+		for (key, value) in client.initial_headers.clone() {
+			headers.push((key, value));
+		}
+	}
+
+	trace!("Headers: {:#?}", headers);
 
 	// shuffle headers: https://github.com/redlib-org/redlib/issues/324
 	fastrand::shuffle(&mut headers);

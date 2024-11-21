@@ -7,8 +7,8 @@ use crate::{
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
 use log::{error, info, trace};
-
 use serde_json::json;
+use tegen::tegen::TextGenerator;
 use tokio::time::{error::Elapsed, timeout};
 
 static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
@@ -84,7 +84,7 @@ impl Oauth {
 
 		// Set JSON body. I couldn't tell you what this means. But that's what the client sends
 		let json = json!({
-				"scopes": ["*","email"]
+				"scopes": ["*","email", "pii"]
 		});
 		let body = Body::from(json.to_string());
 
@@ -185,11 +185,21 @@ impl Device {
 
 		let android_user_agent = format!("Reddit/{android_app_version}/Android {android_version}");
 
+		let qos = fastrand::u32(1000..=100_000);
+		let qos: f32 = qos as f32 / 1000.0;
+		let qos = format!("{:.3}", qos);
+
+		let codecs = TextGenerator::new().generate("available-codecs=video/avc, video/hevc{, video/x-vnd.on2.vp9|}");
+
 		// Android device headers
-		let headers = HashMap::from([
-			("Client-Vendor-Id".into(), uuid.clone()),
-			("X-Reddit-Device-Id".into(), uuid.clone()),
+		let headers: HashMap<String, String> = HashMap::from([
 			("User-Agent".into(), android_user_agent),
+			("x-reddit-retry".into(), "algo=no-retries".into()),
+			("x-reddit-compression".into(), "1".into()),
+			("x-reddit-qos".into(), qos),
+			("x-reddit-media-codecs".into(), codecs),
+			("Content-Type".into(), "application/json; charset=UTF-8".into()),
+			("client-vendor-id".into(), uuid.clone()),
 		]);
 
 		info!("[🔄] Spoofing Android client with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_ANDROID_OAUTH_CLIENT_ID}\"");

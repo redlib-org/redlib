@@ -2,9 +2,7 @@
 // Rerun scripts/update_oauth_resources.sh to update this file
 // Please do not edit manually
 // Filled in with real app versions
-pub static _IOS_APP_VERSION_LIST: &[&str; 1] = &[
-	"",
-];
+pub static _IOS_APP_VERSION_LIST: &[&str; 1] = &[""];
 pub static ANDROID_APP_VERSION_LIST: &[&str; 150] = &[
 	"Version 2024.22.1/Build 1652272",
 	"Version 2024.23.1/Build 1665606",
@@ -157,6 +155,4 @@ pub static ANDROID_APP_VERSION_LIST: &[&str; 150] = &[
 	"Version 2022.41.0/Build 630468",
 	"Version 2022.41.1/Build 634168",
 ];
-pub static _IOS_OS_VERSION_LIST: &[&str; 1] = &[
-	"",
-];
+pub static _IOS_OS_VERSION_LIST: &[&str; 1] = &[""];

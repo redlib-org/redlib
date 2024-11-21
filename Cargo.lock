@@ -1327,6 +1327,8 @@ version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
+ "libc",
+ "rand_chacha",
  "rand_core",
 ]
 
@@ -1345,6 +1347,9 @@ name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "redlib"
@@ -1380,6 +1385,7 @@ dependencies = [
  "serde_json",
  "serde_json_path",
  "serde_yaml",
+ "tegen",
  "time",
  "tokio",
  "toml",
@@ -1893,6 +1899,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tegen"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10a2d5a357b7c859b410139734a875136473c3b18b1bbd8d5bdc1769d9002acd"
+dependencies = [
+ "rand",
 ]
 
 [[package]]
