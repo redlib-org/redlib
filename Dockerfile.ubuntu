@@ -46,6 +46,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
 
 # Add container metadata
-MAINTAINER sigaloid
+LABEL org.opencontainers.image.authors="sigaloid"
 
 CMD ["redlib"]
