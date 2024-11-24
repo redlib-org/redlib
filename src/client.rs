@@ -19,8 +19,7 @@ use std::{io, result::Result};
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
 use crate::server::RequestExt;
-use crate::subreddit::community;
-use crate::utils::format_url;
+use crate::utils::{format_url, Post};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -480,11 +479,10 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 }
 
 async fn self_check(sub: &str) -> Result<(), String> {
-	let request = Request::get(format!("/r/{sub}/")).body(Body::empty()).unwrap();
+	let query = format!("/r/{sub}/hot.json?&raw_json=1");
 
-	match community(request).await {
-		Ok(sub) if sub.status().is_success() => Ok(()),
-		Ok(sub) => Err(sub.status().to_string()),
+	match Post::fetch(&query, true).await {
+		Ok(_) => Ok(()),
 		Err(e) => Err(e),
 	}
 }
@@ -507,6 +505,26 @@ pub async fn rate_limit_check() -> Result<(), String> {
 	}
 
 	Ok(())
+}
+
+#[cfg(test)]
+use {crate::config::get_setting, sealed_test::prelude::*};
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_rate_limit_check() {
+	rate_limit_check().await.unwrap();
+}
+
+#[test]
+#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "rust")])]
+fn test_default_subscriptions() {
+	tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap().block_on(async {
+		let subscriptions = get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS");
+		assert!(subscriptions.is_some());
+
+		// check rate limit
+		rate_limit_check().await.unwrap();
+	});
 }
 
 #[cfg(test)]
