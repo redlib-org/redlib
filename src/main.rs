@@ -149,9 +149,10 @@ async fn main() {
 	match rate_limit_check().await {
 		Ok(()) => {
 			info!("[✅] Rate limit check passed");
-		},
+		}
 		Err(e) => {
-			log::error!("[❌] Rate limit check failed: {}", e);
+			log::error!(" Rate limit check failed: {}", e);
+			println!("[❌] Rate limit check failed: {}", e);
 			std::process::exit(1);
 		}
 	}
