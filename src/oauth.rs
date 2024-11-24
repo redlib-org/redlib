@@ -38,12 +38,12 @@ impl Oauth {
 				}
 				Ok(None) => {
 					error!("Failed to create OAuth client. Retrying in 5 seconds...");
-					continue;
 				}
 				Err(duration) => {
 					error!("Failed to create OAuth client in {duration:?}. Retrying in 5 seconds...");
 				}
 			}
+			tokio::time::sleep(Duration::from_secs(5)).await;
 		}
 	}
 
@@ -91,13 +91,14 @@ impl Oauth {
 		// Build request
 		let request = builder.body(body).unwrap();
 
-		trace!("Sending token request...");
+		trace!("Sending token request...\n\n{request:?}");
 
 		// Send request
 		let client: &once_cell::sync::Lazy<client::Client<_, Body>> = &CLIENT;
 		let resp = client.request(request).await.ok()?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
+		trace!("OAuth headers: {:#?}", resp.headers());
 
 		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
 		// Technically it's not needed, but it's easy for Reddit API to check for this.
@@ -200,6 +201,7 @@ impl Device {
 			("x-reddit-media-codecs".into(), codecs),
 			("Content-Type".into(), "application/json; charset=UTF-8".into()),
 			("client-vendor-id".into(), uuid.clone()),
+			("X-Reddit-Device-Id".into(), uuid.clone()),
 		]);
 
 		info!("[🔄] Spoofing Android client with headers: {headers:?}, uuid: \"{uuid}\", and OAuth ID \"{REDDIT_ANDROID_OAUTH_CLIENT_ID}\"");

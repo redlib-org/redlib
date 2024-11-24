@@ -11,7 +11,7 @@ use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
 use log::info;
 use once_cell::sync::Lazy;
-use redlib::client::{canonical_path, proxy, CLIENT};
+use redlib::client::{canonical_path, proxy, rate_limit_check, CLIENT};
 use redlib::server::{self, RequestExt};
 use redlib::utils::{error, redirect, ThemeAssets};
 use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
@@ -145,6 +145,16 @@ async fn main() {
 				.num_args(1),
 		)
 		.get_matches();
+
+	match rate_limit_check().await {
+		Ok(()) => {
+			info!("[✅] Rate limit check passed");
+		},
+		Err(e) => {
+			log::error!("[❌] Rate limit check failed: {}", e);
+			std::process::exit(1);
+		}
+	}
 
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
