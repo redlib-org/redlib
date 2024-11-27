@@ -9,7 +9,7 @@ use std::str::FromStr;
 use futures_lite::FutureExt;
 use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
-use log::info;
+use log::{info, warn};
 use once_cell::sync::Lazy;
 use redlib::client::{canonical_path, proxy, rate_limit_check, CLIENT};
 use redlib::server::{self, RequestExt};
@@ -151,9 +151,12 @@ async fn main() {
 			info!("[✅] Rate limit check passed");
 		}
 		Err(e) => {
-			log::error!(" Rate limit check failed: {}", e);
-			println!("[❌] Rate limit check failed: {}", e);
-			std::process::exit(1);
+			let mut message = format!("Rate limit check failed: {}", e);
+			message += "\nThis may cause issues with the rate limit.";
+			message += "\nPlease report this error with the above information.";
+			message += "\nhttps://github.com/redlib-org/redlib/issues/new?assignees=sigaloid&labels=bug&title=%F0%9F%90%9B+Bug+Report%3A+Rate+limit+mismatch";
+			warn!("{}", message);
+			eprintln!("{}", message);
 		}
 	}
 
