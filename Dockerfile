@@ -1,5 +1,5 @@
 # Use an Alpine-based image as the base
-FROM rust:1.71.0-alpine3.19 AS build
+FROM rust:1.71.0-alpine AS build
 
 # Install necessary dependencies (git, curl, etc.)
 RUN apk add --no-cache git curl build-base
