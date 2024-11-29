@@ -1,7 +1,7 @@
-FROM rust:1.71.0-alpine
+FROM rust:latest
 
-# Install git and other necessary dependencies
-RUN apt-get update && apt-get install -y git
+# Install git and other necessary dependencies using apk (Alpine's package manager)
+RUN apk update && apk add --no-cache git
 
 # Set the working directory to /build
 WORKDIR /build
