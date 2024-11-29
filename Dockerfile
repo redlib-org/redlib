@@ -1,4 +1,4 @@
-FROM rust:1.71.0-alpine3.19
+FROM rust:1.71.0-alpine
 
 # Set the target architecture as an ARG (default to x86_64)
 ARG TARGET=x86_64-unknown-linux-musl
