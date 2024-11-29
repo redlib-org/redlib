@@ -1,3 +1,18 @@
+# This Fork
+I'm not sure the maintainer of redlib wants random themes added, so until my PR gets approved I just wanted to add my theme "Midnight Purple" to my public redlib instances.
+
+Instances that will use this image: <br>
+https://reddit.idevicehacked.com <br>
+https://pirate.vodka <br>
+
+original github repo: <br>
+https://github.com/redlib-org/redlib
+
+my fork for the theme: <br>
+https://github.com/LucifersCircle/redlib <br>
+
+This fork should stay up to date with the official github repo.
+
 # Redlib
 
 > An alternative private front-end to Reddit, with its origins in [Libreddit](https://github.com/libreddit/libreddit).
