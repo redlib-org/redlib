@@ -44,5 +44,5 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}:latest
             ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
             ${{ env.REGISTRY_IMAGE }}:${{ matrix.target }}
-          build-args: 
-            TARGET: ${{ matrix.target }}
+          build-args: |
+            TARGET=${{ matrix.target }}
