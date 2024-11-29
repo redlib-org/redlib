@@ -27,8 +27,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build --file Dockerfile --tag luciferscircle/webos-token-refresh .
+        docker build --file Dockerfile --tag luciferscircle/redlib .
 
     - name: Push Docker image
       run: |
-        docker push luciferscircle/webos-token-refresh
+        docker push luciferscircle/redlib
