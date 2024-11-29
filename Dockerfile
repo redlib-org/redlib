@@ -1,4 +1,5 @@
-FROM rust:1.71.0-alpine3.19
+# Use the official Rust image with Alpine base
+FROM rust:alpine
 
 # Set the target architecture as an ARG
 ARG TARGET
@@ -14,6 +15,10 @@ WORKDIR /redlib
 
 # Checkout the main branch (if needed)
 RUN git checkout main
+
+# Install the desired version of Rust (if a specific version is needed)
+RUN rustup install stable
+RUN rustup default stable
 
 # Build the project using Cargo (this will handle the Rust-specific build)
 RUN cargo build --release --target ${TARGET}
