@@ -4,6 +4,9 @@ FROM rust:1.71.0-alpine AS build
 # Install necessary dependencies (git, curl, etc.)
 RUN apk add --no-cache git curl build-base
 
+# Upgrade Cargo to the latest version
+RUN rustup update stable
+
 # Set the working directory for the build process
 WORKDIR /build
 
