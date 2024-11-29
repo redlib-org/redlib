@@ -1,8 +1,8 @@
 # Build stage
 FROM rust:latest AS builder
 
-# Install musl target for static linking
-RUN rustup target add x86_64-unknown-linux-musl
+# Install musl-tools for static linking
+RUN apt-get update && apt-get install -y musl-tools && rustup target add x86_64-unknown-linux-musl
 
 # Set the working directory
 WORKDIR /build
@@ -22,7 +22,7 @@ COPY --from=builder /build/target/x86_64-unknown-linux-musl/release/redlib /usr/
 # Set the working directory
 WORKDIR /app
 
-# Expose the application port
+# Expose the application port (update if needed)
 EXPOSE 8080
 
 # Run the binary
