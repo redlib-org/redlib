@@ -1,37 +1,35 @@
-# Use the official Rust image with Alpine base
-FROM rust:alpine
+FROM rust:1.71.0-alpine3.19
 
-# Set the target architecture as an ARG
-ARG TARGET
+# Set the target architecture as an ARG (default to x86_64)
+ARG TARGET=x86_64-unknown-linux-musl
 
-# Install necessary dependencies for building (including git)
-RUN apk add --no-cache curl git build-base
+# Install dependencies (curl, make, cmake, etc.)
+RUN apk add --no-cache curl cmake make
 
-# Clone the repository into /redlib
-RUN git clone https://github.com/LucifersCircle/redlib.git /redlib
+# Create the working directory for the build process
+WORKDIR /build
 
-# Set the working directory to the root of the cloned repository
-WORKDIR /redlib
+# Clone the redlib repository
+RUN git clone https://github.com/LucifersCircle/redlib.git /build
 
-# Checkout the main branch (if needed)
-RUN git checkout main
+# Checkout the main branch
+RUN cd /build && git checkout main
 
-# Install the desired version of Rust (if a specific version is needed)
-RUN rustup install stable
-RUN rustup default stable
+# Build the redlib binary using cargo
+RUN cd /build && cargo build --release --target ${TARGET}
 
-# Build the project using Cargo (this will handle the Rust-specific build)
-RUN cargo build --release --target ${TARGET}
+# Copy the binary to the appropriate location
+RUN cp /build/target/${TARGET}/release/redlib /usr/local/bin/redlib
 
-# Create a non-root user to run the application
+# Set up a non-privileged user to run the binary
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
 USER redlib
 
-# Expose the application port (if applicable)
+# Expose port 8080
 EXPOSE 8080
 
 # Run a healthcheck every minute to make sure redlib is functional
 HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider -q http://localhost:8080/settings || exit 1
 
-# Default command to run the application
-CMD ["./target/${TARGET}/release/redlib"]
+# Command to run the binary
+CMD ["redlib"]
