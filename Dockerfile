@@ -1,30 +1,32 @@
-# Use the official Rust image from Docker Hub as a base
-FROM rust:latest
+# Build stage
+FROM rust:latest AS builder
 
-# Install necessary build tools and dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get install -y git
 
-# Update Rust to the latest stable version
-RUN rustup update stable
-
-# Set the working directory for the build
+# Set the working directory
 WORKDIR /build
 
-# Clone the redlib repository from GitHub
+# Clone the repository
 RUN git clone https://github.com/LucifersCircle/redlib.git .
 
 # Build the project using Cargo
 RUN cargo build --release
 
-# Expose the required port
+# Final stage
+FROM alpine:latest
+
+# Install required runtime libraries
+RUN apk add --no-cache libc6-compat
+
+# Copy the compiled binary from the builder stage
+COPY --from=builder /build/target/release/redlib /usr/local/bin/redlib
+
+# Set the working directory
+WORKDIR /app
+
+# Expose the application port (update if needed)
 EXPOSE 8080
 
-# Set the user to 'redlib' as specified in the original repo
-USER redlib
-
-# Command to run when the container starts (start the binary)
+# Run the binary
 CMD ["redlib"]
