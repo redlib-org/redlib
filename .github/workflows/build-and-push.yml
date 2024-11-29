@@ -6,12 +6,24 @@ on:
       - main
   workflow_dispatch: # Allows manual trigger
 
+env:
+  REGISTRY_IMAGE: luciferscircle/redlib
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64, linux/arm/v7]
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl, armv7-unknown-linux-musleabihf]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up QEMU (for cross-platform builds)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -26,5 +38,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: ${{ matrix.platform }}
           push: true
-          tags: luciferscircle/redlib:${{ github.sha }}
+          tags: |
+            ${{ env.REGISTRY_IMAGE }}:latest
+            ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+            ${{ env.REGISTRY_IMAGE }}:${{ matrix.target }}
+          build-args: 
+            TARGET: ${{ matrix.target }}
