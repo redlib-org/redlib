@@ -1,11 +1,12 @@
 FROM alpine:3.19
 
-ARG TARGET
+ARG TARGET=x86_64-unknown-linux-musl
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl tar
 
-RUN curl -L "https://github.com/redlib-org/redlib/releases/latest/download/redlib-${TARGET}.tar.gz" | \
-    tar xz -C /usr/local/bin/
+# Download the latest artifact from the main branch and extract it
+RUN curl -L "https://github.com/LucifersCircle/redlib/archive/refs/heads/main.tar.gz" | \
+    tar --strip-components=1 -xz -C /usr/local/bin/ redlib-main/target/${TARGET}/redlib
 
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
 USER redlib
@@ -17,4 +18,3 @@ EXPOSE 8080
 HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider -q http://localhost:8080/settings || exit 1
 
 CMD ["redlib"]
-
