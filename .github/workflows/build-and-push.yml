@@ -1,39 +1,34 @@
-name: Build and Push Docker Image
+name: Build and Deploy Docker Image
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows manual trigger
-
-env:
-  REGISTRY_IMAGE: luciferscircle/redlib
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.REGISTRY_IMAGE }}:latest
-            ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
-          build-args: |
-            TARGET=x86_64-unknown-linux-musl
+    - name: Build Docker image
+      run: |
+        docker build --file Dockerfile --tag luciferscircle/webos-token-refresh .
+
+    - name: Push Docker image
+      run: |
+        docker push luciferscircle/webos-token-refresh
