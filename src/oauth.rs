@@ -11,9 +11,9 @@ use serde_json::json;
 use tegen::tegen::TextGenerator;
 use tokio::time::{error::Elapsed, timeout};
 
-static REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
+const REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
 
-static AUTH_ENDPOINT: &str = "https://www.reddit.com";
+const AUTH_ENDPOINT: &str = "https://www.reddit.com";
 
 // Spoofed client for Android devices
 #[derive(Debug, Clone, Default)]
