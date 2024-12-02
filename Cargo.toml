@@ -50,6 +50,7 @@ async-recursion = "1.1.1"
 common-words-all = { version = "0.0.2", default-features = false, features = ["english", "one"] }
 hyper-rustls = { version = "0.24.2", features = [ "http2" ] }
 tegen = "0.1.4"
+serde_urlencoded = "0.7.1"
 
 
 [dev-dependencies]

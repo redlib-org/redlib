@@ -13,7 +13,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rinja::Template;
 use rust_embed::RustEmbed;
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use serde_json::Value;
 use serde_json_path::{JsonPath, JsonPathExt};
 use std::collections::{HashMap, HashSet};
@@ -601,8 +601,9 @@ pub struct Params {
 	pub before: Option<String>,
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize)]
 pub struct Preferences {
+	#[serde(skip)]
 	pub available_themes: Vec<String>,
 	pub theme: String,
 	pub front_page: String,
@@ -620,10 +621,19 @@ pub struct Preferences {
 	pub disable_visit_reddit_confirmation: String,
 	pub comment_sort: String,
 	pub post_sort: String,
+	#[serde(serialize_with = "serialize_vec_with_plus")]
 	pub subscriptions: Vec<String>,
+	#[serde(serialize_with = "serialize_vec_with_plus")]
 	pub filters: Vec<String>,
 	pub hide_awards: String,
 	pub hide_score: String,
+}
+
+fn serialize_vec_with_plus<S>(vec: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	serializer.serialize_str(&vec.join("+"))
 }
 
 #[derive(RustEmbed)]
@@ -664,6 +674,10 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 		}
+	}
+
+	pub fn to_urlencoded(&self) -> Result<String, String> {
+		serde_urlencoded::to_string(self).map_err(|e| e.to_string())
 	}
 }
 
@@ -1277,7 +1291,7 @@ pub fn get_post_url(post: &Post) -> String {
 
 #[cfg(test)]
 mod tests {
-	use super::{format_num, format_url, rewrite_urls};
+	use super::{format_num, format_url, rewrite_urls, Preferences};
 
 	#[test]
 	fn format_num_works() {
@@ -1343,6 +1357,35 @@ mod tests {
 		assert_eq!(format_url("default"), "");
 		assert_eq!(format_url("nsfw"), "");
 		assert_eq!(format_url("spoiler"), "");
+	}
+	#[test]
+	fn serialize_prefs() {
+		let prefs = Preferences {
+			available_themes: vec![],
+			theme: "laserwave".to_owned(),
+			front_page: "default".to_owned(),
+			layout: "compact".to_owned(),
+			wide: "on".to_owned(),
+			blur_spoiler: "on".to_owned(),
+			show_nsfw: "off".to_owned(),
+			blur_nsfw: "on".to_owned(),
+			hide_hls_notification: "off".to_owned(),
+			video_quality: "best".to_owned(),
+			hide_sidebar_and_summary: "off".to_owned(),
+			use_hls: "on".to_owned(),
+			autoplay_videos: "on".to_owned(),
+			fixed_navbar: "on".to_owned(),
+			disable_visit_reddit_confirmation: "on".to_owned(),
+			comment_sort: "confidence".to_owned(),
+			post_sort: "top".to_owned(),
+			subscriptions: vec!["memes".to_owned(), "mildlyinteresting".to_owned()],
+			filters: vec![],
+			hide_awards: "off".to_owned(),
+			hide_score: "off".to_owned(),
+		};
+		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
+
+		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off")
 	}
 }
 
