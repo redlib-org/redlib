@@ -45,7 +45,7 @@ pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
 
 pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
 
-static URL_PAIRS: [(&str, &str); 2] = [
+const URL_PAIRS: [(&str, &str); 2] = [
 	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
 	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
 ];
@@ -262,7 +262,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 							return Ok(response);
 						};
 						let location_header = response.headers().get(header::LOCATION);
-						if location_header == Some(&HeaderValue::from_static("https://www.reddit.com/")) {
+						if location_header == Some(&HeaderValue::from_static(ALTERNATIVE_REDDIT_URL_BASE)) {
 							return Err("Reddit response was invalid".to_string());
 						}
 						return request(
@@ -528,7 +528,7 @@ fn test_default_subscriptions() {
 }
 
 #[cfg(test)]
-static POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+const POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_localization_popular() {
