@@ -25,7 +25,7 @@ use std::{
 	str::{from_utf8, Split},
 	string::ToString,
 };
-use time::Duration;
+use time::OffsetDateTime;
 
 use crate::dbg_msg;
 
@@ -170,10 +170,8 @@ impl ResponseExt for Response<Body> {
 	}
 
 	fn remove_cookie(&mut self, name: String) {
-		let mut cookie = Cookie::from(name);
-		cookie.set_path("/");
-		cookie.set_max_age(Duration::seconds(1));
-		if let Ok(val) = header::HeaderValue::from_str(&cookie.to_string()) {
+		let removal_cookie = Cookie::build(name).path("/").http_only(true).expires(OffsetDateTime::now_utc());
+		if let Ok(val) = header::HeaderValue::from_str(&removal_cookie.to_string()) {
 			self.headers_mut().append("Set-Cookie", val);
 		}
 	}

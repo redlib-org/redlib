@@ -825,18 +825,72 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 // Retrieve the value of a setting by name
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
-	req
-		.cookie(name)
-		.unwrap_or_else(|| {
-			// If there is no cookie for this setting, try receiving a default from the config
-			if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
-				Cookie::new(name, default)
-			} else {
-				Cookie::from(name)
-			}
-		})
-		.value()
-		.to_string()
+
+	// If this was called with "subscriptions" and the "subscriptions" cookie has a value
+	if name == "subscriptions" && req.cookie("subscriptions").is_some() {
+		// Create subscriptions string
+		let mut subscriptions = String::new();
+
+		// Default subscriptions cookie
+		if req.cookie("subscriptions").is_some() {
+			subscriptions.push_str(req.cookie("subscriptions").unwrap().value());
+		}
+
+		// Start with first numbered subscription cookie
+		let mut subscriptions_number = 1;
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
+			subscriptions.push_str(req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value());
+
+			// Increment subscription cookie number
+			subscriptions_number += 1;
+		}
+
+		// Return the subscriptions cookies as one large string
+		subscriptions
+	}
+	// If this was called with "filters" and the "filters" cookie has a value
+	else if name == "filters" && req.cookie("filters").is_some() {
+		// Create filters string
+		let mut filters = String::new();
+
+		// Default filters cookie
+		if req.cookie("filters").is_some() {
+			filters.push_str(req.cookie("filters").unwrap().value());
+		}
+
+		// Start with first numbered filters cookie
+		let mut filters_number = 1;
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+			// Push whatever filtersNUMBER cookie we're looking at into the filters string
+			filters.push_str(req.cookie(&format!("filters{}", filters_number)).unwrap().value());
+
+			// Increment filters cookie number
+			filters_number += 1;
+		}
+
+		// Return the filters cookies as one large string
+		filters
+	}
+	// The above two still come to this if there was no existing value
+	else {
+		req
+			.cookie(name)
+			.unwrap_or_else(|| {
+				// If there is no cookie for this setting, try receiving a default from the config
+				if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
+					Cookie::new(name, default)
+				} else {
+					Cookie::from(name)
+				}
+			})
+			.value()
+			.to_string()
+	}
 }
 
 // Retrieve the value of a setting by name or the default value
