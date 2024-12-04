@@ -934,6 +934,17 @@ pub fn format_url(url: &str) -> String {
 	}
 }
 
+static REGEX_BULLET: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
+static REGEX_BULLET_CONSECUTIVE_LINES: Lazy<Regex> = Lazy::new(|| Regex::new(r"</ul>\n<ul>").unwrap());
+
+pub fn render_bullet_lists(input_text: &str) -> String {
+	// ref: https://stackoverflow.com/a/4902622
+	// First enclose each bullet with <ul> <li> tags
+	let text1 = REGEX_BULLET.replace_all(&input_text, "<ul><li>$1</li></ul>").to_string();
+	// Then remove any consecutive </ul> <ul> tags
+	REGEX_BULLET_CONSECUTIVE_LINES.replace_all(&text1, "").to_string()
+}
+
 // These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)[^?]").unwrap());
@@ -1088,6 +1099,10 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 			}
 		}
 	}
+
+	// render bullet (unordered) lists
+	comment = render_bullet_lists(&comment);
+
 	// Call rewrite_urls() to transform any other Reddit links
 	rewrite_urls(&comment)
 }
