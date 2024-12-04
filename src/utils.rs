@@ -234,6 +234,14 @@ impl Media {
 			gallery = GalleryMedia::parse(&data["gallery_data"]["items"], &data["media_metadata"]);
 
 			("gallery", &data["url"], None)
+		} else if data["crosspost_parent_list"][0]["is_gallery"].as_bool().unwrap_or_default() {
+			// If this post contains a gallery of images
+			gallery = GalleryMedia::parse(
+				&data["crosspost_parent_list"][0]["gallery_data"]["items"],
+				&data["crosspost_parent_list"][0]["media_metadata"],
+			);
+
+			("gallery", &data["url"], None)
 		} else if data["is_reddit_media_domain"].as_bool().unwrap_or_default() && data["domain"] == "i.redd.it" {
 			// If this post contains a reddit media (image) URL.
 			("image", &data["url"], None)
