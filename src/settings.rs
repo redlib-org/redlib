@@ -21,7 +21,7 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 18] = [
+const PREFS: [&str; 19] = [
 	"theme",
 	"front_page",
 	"layout",
@@ -31,6 +31,7 @@ const PREFS: [&str; 18] = [
 	"blur_spoiler",
 	"show_nsfw",
 	"blur_nsfw",
+	"unblur_on_hover",
 	"use_hls",
 	"hide_hls_notification",
 	"autoplay_videos",
