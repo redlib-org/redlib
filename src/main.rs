@@ -109,6 +109,20 @@ async fn main() {
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
 		.arg(
+			Arg::new("ipv4-only")
+				.short('4')
+				.long("ipv4-only")
+				.help("Listen on IPv4 only")
+				.num_args(0),
+		)
+		.arg(
+			Arg::new("ipv6-only")
+				.short('6')
+				.long("ipv6-only")
+				.help("Listen on IPv6 only")
+				.num_args(0),
+		)
+		.arg(
 			Arg::new("redirect-https")
 				.short('r')
 				.long("redirect-https")
@@ -164,7 +178,16 @@ async fn main() {
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
 
-	let listener = [address, ":", port].concat();
+	let ipv4_only = std::env::var("IPV4_ONLY").is_ok() || matches.get_flag("ipv4-only");
+	let ipv6_only = std::env::var("IPV6_ONLY").is_ok() || matches.get_flag("ipv6-only");
+
+	let listener = if ipv4_only {
+		format!("0.0.0.0:{}", port)
+	} else if ipv6_only {
+		format!("[::]:{}", port)
+	} else {
+		[address, ":", port].concat()
+	};
 
 	println!("Starting Redlib...");
 
