@@ -1435,6 +1435,19 @@ a.search_subreddit:hover {
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
+    position: relative;
+}
+
+.comment_right[open] > .comment_data > .comment_collapse {
+    position: absolute;  /* relative to .comment_right */
+    width: 20px;
+    left: -35px;
+    top: 45px;
+    height: calc(100% - 45px);
+}
+
+.comment:has(> .comment_right[open] > .comment_data > .comment_collapse:hover) > .comment_left * {
+    background: var(--highlighted);
 }
 
 .comment:has([id]) .comment_data > * {
@@ -2038,6 +2051,14 @@ th {
         padding: 5px 0px;
         align-items: initial;
         margin-top: -5px;
+    }
+
+    .comment_right[open] > .comment_data > .comment_collapse {
+        /* relative to .comment_right */
+        width: 15px;
+        left: -29px;
+        top: 35px;
+        height: calc(100% - 35px);
     }
 
     .line {
