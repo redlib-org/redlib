@@ -629,7 +629,7 @@ pub struct Preferences {
 	pub hide_score: String,
 }
 
-fn serialize_vec_with_plus<S>(vec: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
 where
 	S: Serializer,
 {
