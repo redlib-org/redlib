@@ -363,14 +363,14 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 		// Starting at 0 so we handle the subscription cookie without a number first
 		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
-			let subcriptions_cookie = if subscriptions_number == 0 {
+			let subscriptions_cookie = if subscriptions_number == 0 {
 				"subscriptions".to_string()
 			} else {
 				format!("subscriptions{}", subscriptions_number)
 			};
 
 			response.insert_cookie(
-				Cookie::build((subcriptions_cookie, list))
+				Cookie::build((subscriptions_cookie, list))
 					.path("/")
 					.http_only(true)
 					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
