@@ -1,9 +1,11 @@
+#![allow(clippy::cmp_owned)]
+
 // CRATES
 use crate::utils::{self, catch_random, error, filter_posts, format_num, format_url, get_filters, param, redirect, setting, template, val, Post, Preferences};
 use crate::{
 	client::json,
+	server::RequestExt,
 	subreddit::{can_access_quarantine, quarantine},
-	RequestExt,
 };
 use hyper::{Body, Request, Response};
 use once_cell::sync::Lazy;

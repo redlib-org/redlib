@@ -27,6 +27,8 @@
 		<link rel="manifest" type="application/json" href="/manifest.json">
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
 		<link rel="stylesheet" type="text/css" href="/style.css?v={{ env!("CARGO_PKG_VERSION") }}">
+		<!-- Video quality -->
+		<div id="video_quality" data-value="{{ prefs.video_quality }}"></div>
 		{% endblock %}
 		</head>
 	<body class="
@@ -38,7 +40,7 @@
 		<nav class="
 			{% if prefs.fixed_navbar == "on" %} fixed_navbar{% endif %}">
 			<div id="logo">
-				<a id="redlib" href="/"><span id="lib">red</span><span id="reddit">lib.</span></a>
+				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
 				{% block subscriptions %}{% endblock %}
 			</div>
 			{% block search %}{% endblock %}

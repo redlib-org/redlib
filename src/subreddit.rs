@@ -1,11 +1,14 @@
+#![allow(clippy::cmp_owned)]
+
 use crate::{config, utils};
 // CRATES
 use crate::utils::{
 	catch_random, error, filter_posts, format_num, format_url, get_filters, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences, Subreddit,
 };
-use crate::{client::json, server::ResponseExt, RequestExt};
+use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
+use log::{debug, trace};
 use rinja::Template;
 
 use once_cell::sync::Lazy;
@@ -60,6 +63,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
 	let root = req.uri().path() == "/";
 	let query = req.uri().query().unwrap_or_default().to_string();
+	trace!("query: {}", query);
 	let subscribed = setting(&req, "subscriptions");
 	let front_page = setting(&req, "front_page");
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
@@ -121,6 +125,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	}
 
 	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
+	debug!("Path: {}", path);
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);

@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![allow(clippy::cmp_owned)]
+
 use crate::config::{self, get_setting};
 //
 // CRATES
@@ -11,6 +13,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rinja::Template;
 use rust_embed::RustEmbed;
+use serde::{Serialize, Serializer};
 use serde_json::Value;
 use serde_json_path::{JsonPath, JsonPathExt};
 use std::collections::{HashMap, HashSet};
@@ -46,6 +49,7 @@ pub enum ResourceType {
 }
 
 // Post flair with content, background color and foreground color
+#[derive(Serialize)]
 pub struct Flair {
 	pub flair_parts: Vec<FlairPart>,
 	pub text: String,
@@ -54,7 +58,7 @@ pub struct Flair {
 }
 
 // Part of flair, either emoji or text
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct FlairPart {
 	pub flair_part_type: String,
 	pub value: String,
@@ -96,12 +100,14 @@ impl FlairPart {
 	}
 }
 
+#[derive(Serialize)]
 pub struct Author {
 	pub name: String,
 	pub flair: Flair,
 	pub distinguished: String,
 }
 
+#[derive(Serialize)]
 pub struct Poll {
 	pub poll_options: Vec<PollOption>,
 	pub voting_end_timestamp: (String, String),
@@ -129,6 +135,7 @@ impl Poll {
 	}
 }
 
+#[derive(Serialize)]
 pub struct PollOption {
 	pub id: u64,
 	pub text: String,
@@ -158,13 +165,14 @@ impl PollOption {
 }
 
 // Post flags with nsfw and stickied
+#[derive(Serialize)]
 pub struct Flags {
 	pub spoiler: bool,
 	pub nsfw: bool,
 	pub stickied: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Media {
 	pub url: String,
 	pub alt_url: String,
@@ -264,6 +272,7 @@ impl Media {
 	}
 }
 
+#[derive(Serialize)]
 pub struct GalleryMedia {
 	pub url: String,
 	pub width: i64,
@@ -304,6 +313,7 @@ impl GalleryMedia {
 }
 
 // Post containing content, metadata and media
+#[derive(Serialize)]
 pub struct Post {
 	pub id: String,
 	pub title: String,
@@ -470,7 +480,7 @@ pub struct Comment {
 	pub prefs: Preferences,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct Award {
 	pub name: String,
 	pub icon_url: String,
@@ -484,6 +494,7 @@ impl std::fmt::Display for Award {
 	}
 }
 
+#[derive(Serialize)]
 pub struct Awards(pub Vec<Award>);
 
 impl std::ops::Deref for Awards {
@@ -496,7 +507,7 @@ impl std::ops::Deref for Awards {
 
 impl std::fmt::Display for Awards {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		self.iter().fold(Ok(()), |result, award| result.and_then(|()| writeln!(f, "{award}")))
+		self.iter().try_fold((), |_, award| writeln!(f, "{award}"))
 	}
 }
 
@@ -590,8 +601,9 @@ pub struct Params {
 	pub before: Option<String>,
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize)]
 pub struct Preferences {
+	#[serde(skip)]
 	pub available_themes: Vec<String>,
 	pub theme: String,
 	pub front_page: String,
@@ -601,6 +613,7 @@ pub struct Preferences {
 	pub show_nsfw: String,
 	pub blur_nsfw: String,
 	pub hide_hls_notification: String,
+	pub video_quality: String,
 	pub hide_sidebar_and_summary: String,
 	pub use_hls: String,
 	pub autoplay_videos: String,
@@ -608,10 +621,19 @@ pub struct Preferences {
 	pub disable_visit_reddit_confirmation: String,
 	pub comment_sort: String,
 	pub post_sort: String,
+	#[serde(serialize_with = "serialize_vec_with_plus")]
 	pub subscriptions: Vec<String>,
+	#[serde(serialize_with = "serialize_vec_with_plus")]
 	pub filters: Vec<String>,
 	pub hide_awards: String,
 	pub hide_score: String,
+}
+
+fn serialize_vec_with_plus<S>(vec: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	serializer.serialize_str(&vec.join("+"))
 }
 
 #[derive(RustEmbed)]
@@ -641,6 +663,7 @@ impl Preferences {
 			blur_nsfw: setting(req, "blur_nsfw"),
 			use_hls: setting(req, "use_hls"),
 			hide_hls_notification: setting(req, "hide_hls_notification"),
+			video_quality: setting(req, "video_quality"),
 			autoplay_videos: setting(req, "autoplay_videos"),
 			fixed_navbar: setting_or_default(req, "fixed_navbar", "on".to_string()),
 			disable_visit_reddit_confirmation: setting(req, "disable_visit_reddit_confirmation"),
@@ -651,6 +674,10 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 		}
+	}
+
+	pub fn to_urlencoded(&self) -> Result<String, String> {
+		serde_urlencoded::to_string(self).map_err(|e| e.to_string())
 	}
 }
 
@@ -1318,7 +1345,7 @@ pub fn get_post_url(post: &Post) -> String {
 
 #[cfg(test)]
 mod tests {
-	use super::{format_num, format_url, rewrite_urls};
+	use super::{format_num, format_url, rewrite_urls, Preferences};
 
 	#[test]
 	fn format_num_works() {
@@ -1384,6 +1411,35 @@ mod tests {
 		assert_eq!(format_url("default"), "");
 		assert_eq!(format_url("nsfw"), "");
 		assert_eq!(format_url("spoiler"), "");
+	}
+	#[test]
+	fn serialize_prefs() {
+		let prefs = Preferences {
+			available_themes: vec![],
+			theme: "laserwave".to_owned(),
+			front_page: "default".to_owned(),
+			layout: "compact".to_owned(),
+			wide: "on".to_owned(),
+			blur_spoiler: "on".to_owned(),
+			show_nsfw: "off".to_owned(),
+			blur_nsfw: "on".to_owned(),
+			hide_hls_notification: "off".to_owned(),
+			video_quality: "best".to_owned(),
+			hide_sidebar_and_summary: "off".to_owned(),
+			use_hls: "on".to_owned(),
+			autoplay_videos: "on".to_owned(),
+			fixed_navbar: "on".to_owned(),
+			disable_visit_reddit_confirmation: "on".to_owned(),
+			comment_sort: "confidence".to_owned(),
+			post_sort: "top".to_owned(),
+			subscriptions: vec!["memes".to_owned(), "mildlyinteresting".to_owned()],
+			filters: vec![],
+			hide_awards: "off".to_owned(),
+			hide_score: "off".to_owned(),
+		};
+		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
+
+		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off")
 	}
 }
 
