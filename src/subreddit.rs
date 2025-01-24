@@ -14,6 +14,7 @@ use rinja::Template;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use time::{Duration, OffsetDateTime};
+use chrono::DateTime;
 
 // STRUCTS
 #[derive(Template)]
@@ -499,6 +500,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 					link: Some(utils::get_post_url(&post)),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
+					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
 					description: Some(format!(
 						"<a href='{}{}'>Comments</a>",
 						config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
