@@ -22,6 +22,7 @@ use std::str::FromStr;
 use std::string::ToString;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
+use htmlescape::decode_html;
 
 /// Write a message to stderr on debug mode. This function is a no-op on
 /// release code.
@@ -376,7 +377,7 @@ impl Post {
 			let awards = Awards::parse(&data["all_awardings"]);
 
 			// selftext_html is set for text posts when browsing.
-			let mut body = rewrite_urls(&val(post, "selftext_html"));
+			let mut body = rewrite_urls(&decode_html(&val(post, "selftext_html")).unwrap());
 			if body.is_empty() {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
