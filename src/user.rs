@@ -163,7 +163,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 				.into_iter()
 				.map(|post| Item {
 					title: Some(post.title.to_string()),
-					link: Some(utils::get_post_url(&post)),
+					link: Some(format_url(&utils::get_post_url(&post))),
 					author: Some(post.author.name),
 					content: Some(rewrite_urls(&post.body)),
 					..Default::default()
