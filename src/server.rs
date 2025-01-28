@@ -267,13 +267,13 @@ impl Server {
 
 										Ok(res)
 									}
-									Err(msg) => new_boilerplate(def_headers, req_headers, 500, Body::from(msg)).await,
+									Err(msg) => new_boilerplate(def_headers, req_headers, 500, if is_head { Body::empty() } else { Body::from(msg) }).await,
 								}
 							}
 							.boxed()
 						}
 						// If there was a routing error
-						Err(e) => new_boilerplate(def_headers, req_headers, 404, e.into()).boxed(),
+						Err(e) => new_boilerplate(def_headers, req_headers, 404, if is_head { Body::empty() } else { e.into() }).boxed(),
 					}
 				}))
 			}
