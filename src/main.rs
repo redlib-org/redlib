@@ -108,20 +108,8 @@ async fn main() {
 	let matches = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
-		.arg(
-			Arg::new("ipv4-only")
-				.short('4')
-				.long("ipv4-only")
-				.help("Listen on IPv4 only")
-				.num_args(0),
-		)
-		.arg(
-			Arg::new("ipv6-only")
-				.short('6')
-				.long("ipv6-only")
-				.help("Listen on IPv6 only")
-				.num_args(0),
-		)
+		.arg(Arg::new("ipv4-only").short('4').long("ipv4-only").help("Listen on IPv4 only").num_args(0))
+		.arg(Arg::new("ipv6-only").short('6').long("ipv6-only").help("Listen on IPv6 only").num_args(0))
 		.arg(
 			Arg::new("redirect-https")
 				.short('r')
@@ -392,7 +380,7 @@ async fn main() {
 				Some("best" | "hot" | "new" | "top" | "rising" | "controversial") => subreddit::community(req).await,
 
 				// Short link for post
-				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/{id}"), 3).await {
+				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/comments/{id}"), 3).await {
 					Ok(path_opt) => match path_opt {
 						Some(path) => Ok(redirect(&path)),
 						None => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
