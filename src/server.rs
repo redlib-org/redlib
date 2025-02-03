@@ -238,8 +238,14 @@ impl Server {
 						path.pop();
 					}
 
+					// Replace HEAD with GET for routing
+					let (method, is_head) = match req.method() {
+						&Method::HEAD => (&Method::GET, true),
+						method => (method, false),
+					};
+
 					// Match the visited path with an added route
-					match router.recognize(&format!("/{}{}", req.method().as_str(), path)) {
+					match router.recognize(&format!("/{}{}", method.as_str(), path)) {
 						// If a route was configured for this path
 						Ok(found) => {
 							let mut parammed = req;
@@ -251,17 +257,21 @@ impl Server {
 								match func.await {
 									Ok(mut res) => {
 										res.headers_mut().extend(def_headers);
-										let _ = compress_response(&req_headers, &mut res).await;
+										if is_head {
+											*res.body_mut() = Body::empty();
+										} else {
+											let _ = compress_response(&req_headers, &mut res).await;
+										}
 
 										Ok(res)
 									}
-									Err(msg) => new_boilerplate(def_headers, req_headers, 500, Body::from(msg)).await,
+									Err(msg) => new_boilerplate(def_headers, req_headers, 500, if is_head { Body::empty() } else { Body::from(msg) }).await,
 								}
 							}
 							.boxed()
 						}
 						// If there was a routing error
-						Err(e) => new_boilerplate(def_headers, req_headers, 404, e.into()).boxed(),
+						Err(e) => new_boilerplate(def_headers, req_headers, 404, if is_head { Body::empty() } else { e.into() }).boxed(),
 					}
 				}))
 			}
