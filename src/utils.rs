@@ -1004,7 +1004,7 @@ static REGEX_BULLET_CONSECUTIVE_LINES: Lazy<Regex> = Lazy::new(|| Regex::new(r"<
 pub fn render_bullet_lists(input_text: &str) -> String {
 	// ref: https://stackoverflow.com/a/4902622
 	// First enclose each bullet with <ul> <li> tags
-	let text1 = REGEX_BULLET.replace_all(&input_text, "<ul><li>$1</li></ul>").to_string();
+	let text1 = REGEX_BULLET.replace_all(input_text, "<ul><li>$1</li></ul>").to_string();
 	// Then remove any consecutive </ul> <ul> tags
 	REGEX_BULLET_CONSECUTIVE_LINES.replace_all(&text1, "").to_string()
 }
@@ -1344,7 +1344,7 @@ pub fn url_path_basename(path: &str) -> String {
 		let mut url = url_result.unwrap();
 		url.path_segments_mut().unwrap().pop_if_empty();
 
-		url.path_segments().unwrap().last().unwrap().to_string()
+		url.path_segments().unwrap().next_back().unwrap().to_string()
 	}
 }
 
