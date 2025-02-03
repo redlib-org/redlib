@@ -11,7 +11,7 @@ authors = [
 edition = "2021"
 
 [features]
-no-https-verification = []
+no-https-verification = ["rustls/dangerous_configuration"]
 
 [dependencies]
 rinja = { version = "0.3.4", default-features = false }
@@ -46,7 +46,7 @@ pretty_env_logger = "0.5.0"
 dotenvy = "0.15.7"
 rss = "2.0.7"
 arc-swap = "1.7.1"
-rustls = { version = "0.21.12", features = ["dangerous_configuration"] }
+rustls = { version = "0.21.12"  }
 ctor = "0.2.8"
 serde_json_path = "0.6.7"
 async-recursion = "1.1.1"
