@@ -214,6 +214,41 @@ pub fn can_access_quarantine(req: &Request<Body>, sub: &str) -> bool {
 	setting(req, &format!("allow_quaran_{}", sub.to_lowercase())).parse().unwrap_or_default()
 }
 
+// Join items in chunks of 4000 bytes in length for cookies
+pub fn join_until_size_limit<T: std::fmt::Display>(vec: &[T]) -> Vec<std::string::String> {
+	let mut result = Vec::new();
+	let mut list = String::new();
+	let mut current_size = 0;
+
+	for item in vec {
+		// Size in bytes
+		let item_size = item.to_string().len();
+		// Use 4000 bytes to leave us some headroom because the name and options of the cookie count towards the 4096 byte cap
+		if current_size + item_size > 4000 {
+			// If last item add a seperator on the end of the list so it's interpreted properly in tanden with the next cookie
+			list.push('+');
+
+			// Push current list to result vector
+			result.push(list);
+
+			// Reset the list variable so we can continue with only new items
+			list = String::new();
+		}
+		// Add separator if not the first item
+		if !list.is_empty() {
+			list.push('+');
+		}
+		// Add current item to list
+		list.push_str(&item.to_string());
+		current_size = list.len() + item_size;
+	}
+	// Make sure to push whatever the remaining subreddits are there into the result vector
+	result.push(list);
+
+	// Return resulting vector
+	result
+}
+
 // Sub, filter, unfilter, or unsub by setting subscription cookie using response "Set-Cookie" header
 pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>, String> {
 	let sub = req.param("sub").unwrap_or_default();
@@ -306,28 +341,101 @@ pub async fn subscriptions_filters(req: Request<Body>) -> Result<Response<Body>,
 
 	let mut response = redirect(&path);
 
-	// Delete cookie if empty, else set
+	// If sub_list is empty remove all subscriptions cookies, otherwise update them and remove old ones
 	if sub_list.is_empty() {
+		// Remove subscriptions cookie
 		response.remove_cookie("subscriptions".to_string());
+
+		// Start with first numbered subscriptions cookie
+		let mut subscriptions_number = 1;
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{}", subscriptions_number));
+
+			// Increment subscriptions cookie number
+			subscriptions_number += 1;
+		}
 	} else {
-		response.insert_cookie(
-			Cookie::build(("subscriptions", sub_list.join("+")))
-				.path("/")
-				.http_only(true)
-				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.into(),
-		);
+		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
+		let mut subscriptions_number_to_delete_from = 0;
+
+		// Starting at 0 so we handle the subscription cookie without a number first
+		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
+			let subscriptions_cookie = if subscriptions_number == 0 {
+				"subscriptions".to_string()
+			} else {
+				format!("subscriptions{}", subscriptions_number)
+			};
+
+			response.insert_cookie(
+				Cookie::build((subscriptions_cookie, list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+
+			subscriptions_number_to_delete_from += 1;
+		}
+
+		// While whatever subscriptionsNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("subscriptions{}", subscriptions_number_to_delete_from)).is_some() {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{}", subscriptions_number_to_delete_from));
+
+			// Increment subscriptions cookie number
+			subscriptions_number_to_delete_from += 1;
+		}
 	}
+
+	// If filters is empty remove all filters cookies, otherwise update them and remove old ones
 	if filters.is_empty() {
+		// Remove filters cookie
 		response.remove_cookie("filters".to_string());
+
+		// Start with first numbered filters cookie
+		let mut filters_number = 1;
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{}", filters_number));
+
+			// Increment filters cookie number
+			filters_number += 1;
+		}
 	} else {
-		response.insert_cookie(
-			Cookie::build(("filters", filters.join("+")))
-				.path("/")
-				.http_only(true)
-				.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
-				.into(),
-		);
+		// Start at 0 to keep track of what number we need to start deleting old filters cookies from
+		let mut filters_number_to_delete_from = 0;
+
+		for (filters_number, list) in join_until_size_limit(&filters).into_iter().enumerate() {
+			let filters_cookie = if filters_number == 0 {
+				"filters".to_string()
+			} else {
+				format!("filters{}", filters_number)
+			};
+
+			response.insert_cookie(
+				Cookie::build((filters_cookie, list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+
+			filters_number_to_delete_from += 1;
+		}
+
+		// While whatever filtersNUMBER cookie we're looking at has a value
+		while req.cookie(&format!("filters{}", filters_number_to_delete_from)).is_some() {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{}", filters_number_to_delete_from));
+
+			// Increment filters cookie number
+			filters_number_to_delete_from += 1;
+		}
 	}
 
 	Ok(response)
