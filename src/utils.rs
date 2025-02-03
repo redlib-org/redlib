@@ -934,8 +934,6 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	// Remove (html-encoded) "\" from URLs.
 	text1 = text1.replace("%5C", "").replace("\\_", "_");
 
-	println!("text1 before: {text1}");
-
 	// Rewrite external media previews to Redlib
 	loop {
 		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
