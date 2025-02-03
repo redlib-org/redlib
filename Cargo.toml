@@ -51,6 +51,7 @@ common-words-all = { version = "0.0.2", default-features = false, features = ["e
 hyper-rustls = { version = "0.24.2", features = [ "http2" ] }
 tegen = "0.1.4"
 serde_urlencoded = "0.7.1"
+chrono = { version = "0.4.39", default-features = false, features = [ "std" ] }
 htmlescape = "0.3.1"
 
 
