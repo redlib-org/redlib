@@ -11,10 +11,10 @@ use hyper::{Body, Request, Response};
 use log::{debug, trace};
 use rinja::Template;
 
+use chrono::DateTime;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use time::{Duration, OffsetDateTime};
-use chrono::DateTime;
 
 // STRUCTS
 #[derive(Template)]
