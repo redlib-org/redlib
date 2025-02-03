@@ -1,0 +1,45 @@
+# supported versions here: https://hub.docker.com/_/rust
+ARG ALPINE_VERSION=3.20
+
+########################
+## builder image
+########################
+FROM rust:alpine${ALPINE_VERSION} AS builder
+
+RUN apk add --no-cache musl-dev
+
+WORKDIR /redlib
+
+# download (most) dependencies in their own layer
+COPY Cargo.lock Cargo.toml ./
+RUN mkdir src && echo "fn main() { panic!(\"why am i running?\") }" > src/main.rs
+RUN cargo build --release --locked --bin redlib
+RUN rm ./src/main.rs && rmdir ./src
+
+# copy the source and build the redlib binary
+COPY . ./
+RUN cargo build --release --locked --bin redlib
+RUN echo "finished building redlib!"
+
+########################
+## release image
+########################
+FROM alpine:${ALPINE_VERSION} AS release
+
+# Import redlib binary from builder
+COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
+
+# Add non-root user for running redlib
+RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
+USER redlib
+
+# Document that we intend to expose port 8080 to whoever runs the container
+EXPOSE 8080
+
+# Run a healthcheck every minute to make sure redlib is functional
+HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
+
+# Add container metadata
+LABEL org.opencontainers.image.authors="sigaloid"
+
+CMD ["redlib"]
