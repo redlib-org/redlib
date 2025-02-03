@@ -638,7 +638,7 @@ pub struct Preferences {
 	pub hide_score: String,
 }
 
-fn serialize_vec_with_plus<S>(vec: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
 where
 	S: Serializer,
 {
@@ -915,11 +915,12 @@ pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> S
 // Detect and redirect in the event of a random subreddit
 pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>, String> {
 	if sub == "random" || sub == "randnsfw" {
-		let new_sub = json(format!("/r/{sub}/about.json?raw_json=1"), false).await?["data"]["display_name"]
-			.as_str()
-			.unwrap_or_default()
-			.to_string();
-		Ok(redirect(&format!("/r/{new_sub}{additional}")))
+		Ok(redirect(&format!(
+			"/r/{}{additional}",
+			json(format!("/r/{sub}/about.json?raw_json=1"), false).await?["data"]["display_name"]
+				.as_str()
+				.unwrap_or_default()
+		)))
 	} else {
 		Err("No redirect needed".to_string())
 	}
@@ -1019,8 +1020,7 @@ static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)
 pub fn rewrite_urls(input_text: &str) -> String {
 	let mut text1 =
 		// Rewrite Reddit links to Redlib
-		REDDIT_REGEX.replace_all(input_text, r#"href="/"#)
-			.to_string();
+		REDDIT_REGEX.replace_all(input_text, r#"href="/"#).to_string();
 
 	loop {
 		if REDDIT_EMOJI_REGEX.find(&text1).is_none() {
@@ -1042,49 +1042,44 @@ pub fn rewrite_urls(input_text: &str) -> String {
 		} else {
 			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
 
-			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
-			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str()).to_string();
+			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str());
+			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str());
 
 			/* As long as image_caption isn't empty remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
 			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
 			if !image_caption.is_empty() {
-				image_caption = image_caption[1..image_caption.len() - 4].to_string();
+				image_caption = &image_caption[1..image_caption.len() - 4];
 			}
 
 			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
 			let image_to_replace = format!("<p><a href=\"{image_url}{image_caption}</a></p>");
 
-			// _image_replacement needs to be in scope for the replacement at the bottom of the loop
-			let mut _image_replacement = String::new();
-
 			/* We don't want to show a caption that's just the image's link, so we check if we find a Reddit preview link within the image's caption.
 			If we don't find one we must have actual text, so we include a <figcaption> block that contains it.
 			Otherwise we don't include the <figcaption> block as we don't need it. */
-			if REDDIT_PREVIEW_REGEX.find(&image_caption).is_none() {
+			let _image_replacement = if REDDIT_PREVIEW_REGEX.find(image_caption).is_none() {
 				// Without this " would show as \" instead. "\&quot;" is how the quotes are formatted within image_text beforehand
-				image_caption = image_caption.replace("\\&quot;", "\"");
-
-				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{image_caption}</figcaption></figure>");
+				format!(
+					"<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{}</figcaption></figure>",
+					image_caption.replace("\\&quot;", "\"")
+				)
 			} else {
-				_image_replacement = format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>");
-			}
+				format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>")
+			};
 
 			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
 			if it's preview we're dealing with something that needs /preview/pre, external-preview is /preview/external-pre, and i is /img */
-			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str()).to_string();
-			let mut _preview_type = String::new();
-			if reddit_preview_regex_capture == "preview" {
-				_preview_type = "/preview/pre".to_string();
-			} else if reddit_preview_regex_capture == "external-preview" {
-				_preview_type = "/preview/external-pre".to_string();
-			} else {
-				_preview_type = "/img".to_string();
-			}
+			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str());
+
+			let _preview_type = match reddit_preview_regex_capture {
+				"preview" => "/preview/pre",
+				"external-preview" => "/preview/external-pre",
+				_ => "/img",
+			};
 
 			text1 = REDDIT_PREVIEW_REGEX
 				.replace(&text1, format!("{_preview_type}$2"))
 				.replace(&image_to_replace, &_image_replacement)
-				.to_string()
 		}
 	}
 }
@@ -1158,7 +1153,7 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 				);
 
 				// Inside the comment replace the ID we found with the string that will embed the image
-				comment = comment.replace(&id, &to_replace_with).to_string();
+				comment = comment.replace(&id, &to_replace_with);
 			}
 		}
 	}
