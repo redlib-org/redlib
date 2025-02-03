@@ -25,7 +25,7 @@ use std::{
 	str::{from_utf8, Split},
 	string::ToString,
 };
-use time::Duration;
+use time::OffsetDateTime;
 
 use crate::dbg_msg;
 
@@ -170,10 +170,8 @@ impl ResponseExt for Response<Body> {
 	}
 
 	fn remove_cookie(&mut self, name: String) {
-		let mut cookie = Cookie::from(name);
-		cookie.set_path("/");
-		cookie.set_max_age(Duration::seconds(1));
-		if let Ok(val) = header::HeaderValue::from_str(&cookie.to_string()) {
+		let removal_cookie = Cookie::build(name).path("/").http_only(true).expires(OffsetDateTime::now_utc());
+		if let Ok(val) = header::HeaderValue::from_str(&removal_cookie.to_string()) {
 			self.headers_mut().append("Set-Cookie", val);
 		}
 	}
@@ -240,8 +238,14 @@ impl Server {
 						path.pop();
 					}
 
+					// Replace HEAD with GET for routing
+					let (method, is_head) = match req.method() {
+						&Method::HEAD => (&Method::GET, true),
+						method => (method, false),
+					};
+
 					// Match the visited path with an added route
-					match router.recognize(&format!("/{}{}", req.method().as_str(), path)) {
+					match router.recognize(&format!("/{}{}", method.as_str(), path)) {
 						// If a route was configured for this path
 						Ok(found) => {
 							let mut parammed = req;
@@ -253,17 +257,21 @@ impl Server {
 								match func.await {
 									Ok(mut res) => {
 										res.headers_mut().extend(def_headers);
-										let _ = compress_response(&req_headers, &mut res).await;
+										if is_head {
+											*res.body_mut() = Body::empty();
+										} else {
+											let _ = compress_response(&req_headers, &mut res).await;
+										}
 
 										Ok(res)
 									}
-									Err(msg) => new_boilerplate(def_headers, req_headers, 500, Body::from(msg)).await,
+									Err(msg) => new_boilerplate(def_headers, req_headers, 500, if is_head { Body::empty() } else { Body::from(msg) }).await,
 								}
 							}
 							.boxed()
 						}
 						// If there was a routing error
-						Err(e) => new_boilerplate(def_headers, req_headers, 404, e.into()).boxed(),
+						Err(e) => new_boilerplate(def_headers, req_headers, 404, if is_head { Body::empty() } else { e.into() }).boxed(),
 					}
 				}))
 			}
@@ -274,8 +282,19 @@ impl Server {
 
 		// Bind server to address specified above. Gracefully shut down if CTRL+C is pressed
 		let server = HyperServer::bind(address).serve(make_svc).with_graceful_shutdown(async {
+			#[cfg(windows)]
 			// Wait for the CTRL+C signal
 			tokio::signal::ctrl_c().await.expect("Failed to install CTRL+C signal handler");
+
+			#[cfg(unix)]
+			{
+				// Wait for CTRL+C or SIGTERM signals
+				let mut signal_terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).expect("Failed to install SIGTERM signal handler");
+				tokio::select! {
+					_ = tokio::signal::ctrl_c() => (),
+					_ = signal_terminate.recv() => ()
+				}
+			}
 		});
 
 		server.boxed()

@@ -35,6 +35,9 @@
    - [Docker](#docker)
      - [Docker Compose](#docker-compose)
      - [Docker CLI](#docker-cli)
+   - Podman 
+      - Quadlets
+
    - [Binary](#binary)
      - [Running as a systemd service](#running-as-a-systemd-service)
    - [Building from source](#building-from-source)
@@ -180,7 +183,7 @@ For configuration options, see the [Configuration section](#Configuration).
 
 [Docker](https://www.docker.com) lets you run containerized applications. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
 
-Docker images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
+Container images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
 
 ### Docker Compose
 
@@ -223,6 +226,37 @@ Stream logs from the Redlib container:
 
 ```bash
 docker logs -f redlib
+```
+## Podman 
+
+[Podman](https://podman.io/) lets you run containerized applications in a rootless fashion. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
+
+Container images for Redlib are available at [quay.io](https://quay.io/repository/redlib/redlib), with support for `amd64`, `arm64`, and `armv7` platforms.
+
+### Quadlets
+
+> [!IMPORTANT]
+> These instructions assume that you are on a systemd based distro with [podman](https://podman.io/). If not, follow these [instructions on podman's website](https://podman.io/docs/installation) for how to do so. 
+> It also assumes you have used `loginctl enable-linger <username>` to enable the service to start for your user without logging in. 
+
+Copy the `redlib.container` and `.env.example` files to `.config/containers/systemd/` and modify any relevant values (for example, the ports Redlib should listen on, renaming the .env file and editing its values, etc.).
+
+To start Redlib either reboot or follow the instructions below:
+
+Notify systemd of the new files
+```bash
+systemctl --user daemon-reload
+```
+
+Start the newly generated service file
+
+```bash
+systemctl --user start redlib.service
+```
+
+You can check the status of your container by using the following command:
+```bash 
+systemctl --user status redlib.service
 ```
 
 ## Binary
@@ -369,6 +403,17 @@ REDLIB_DEFAULT_USE_HLS = "on"
 > ```
 >
 > If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
+
+## Command Line Flags
+
+Redlib supports the following command line flags:
+
+- `-4`, `--ipv4-only`: Listen on IPv4 only.
+- `-6`, `--ipv6-only`: Listen on IPv6 only.
+- `-r`, `--redirect-https`: Redirect all HTTP requests to HTTPS (no longer functional).
+- `-a`, `--address <ADDRESS>`: Sets address to listen on. Default is `[::]`.
+- `-p`, `--port <PORT>`: Port to listen on. Default is `8080`.
+- `-H`, `--hsts <EXPIRE_TIME>`: HSTS header to tell browsers that this site should only be accessed over HTTPS. Default is `604800`.
 
 ## Instance settings
 

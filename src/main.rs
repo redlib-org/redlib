@@ -9,9 +9,9 @@ use std::str::FromStr;
 use futures_lite::FutureExt;
 use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
-use log::info;
+use log::{info, warn};
 use once_cell::sync::Lazy;
-use redlib::client::{canonical_path, proxy, CLIENT};
+use redlib::client::{canonical_path, proxy, rate_limit_check, CLIENT};
 use redlib::server::{self, RequestExt};
 use redlib::utils::{error, redirect, ThemeAssets};
 use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
@@ -108,6 +108,8 @@ async fn main() {
 	let matches = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
+		.arg(Arg::new("ipv4-only").short('4').long("ipv4-only").help("Listen on IPv4 only").num_args(0))
+		.arg(Arg::new("ipv6-only").short('6').long("ipv6-only").help("Listen on IPv6 only").num_args(0))
 		.arg(
 			Arg::new("redirect-https")
 				.short('r')
@@ -146,11 +148,34 @@ async fn main() {
 		)
 		.get_matches();
 
+	match rate_limit_check().await {
+		Ok(()) => {
+			info!("[✅] Rate limit check passed");
+		}
+		Err(e) => {
+			let mut message = format!("Rate limit check failed: {}", e);
+			message += "\nThis may cause issues with the rate limit.";
+			message += "\nPlease report this error with the above information.";
+			message += "\nhttps://github.com/redlib-org/redlib/issues/new?assignees=sigaloid&labels=bug&title=%F0%9F%90%9B+Bug+Report%3A+Rate+limit+mismatch";
+			warn!("{}", message);
+			eprintln!("{}", message);
+		}
+	}
+
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
 
-	let listener = [address, ":", port].concat();
+	let ipv4_only = std::env::var("IPV4_ONLY").is_ok() || matches.get_flag("ipv4-only");
+	let ipv6_only = std::env::var("IPV6_ONLY").is_ok() || matches.get_flag("ipv6-only");
+
+	let listener = if ipv4_only {
+		format!("0.0.0.0:{}", port)
+	} else if ipv6_only {
+		format!("[::]:{}", port)
+	} else {
+		[address, ":", port].concat()
+	};
 
 	println!("Starting Redlib...");
 
@@ -223,6 +248,7 @@ async fn main() {
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
+	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
@@ -354,7 +380,7 @@ async fn main() {
 				Some("best" | "hot" | "new" | "top" | "rising" | "controversial") => subreddit::community(req).await,
 
 				// Short link for post
-				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/{id}"), 3).await {
+				Some(id) if (5..8).contains(&id.len()) => match canonical_path(format!("/comments/{id}"), 3).await {
 					Ok(path_opt) => match path_opt {
 						Some(path) => Ok(redirect(&path)),
 						None => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
@@ -394,6 +420,25 @@ pub async fn proxy_commit_info() -> Result<Response<Body>, String> {
 #[cached(time = 600)]
 async fn fetch_commit_info() -> String {
 	let uri = Uri::from_str("https://github.com/redlib-org/redlib/commits/main.atom").expect("Invalid URI");
+
+	let resp: Body = CLIENT.get(uri).await.expect("Failed to request GitHub").into_body();
+
+	hyper::body::to_bytes(resp).await.expect("Failed to read body").iter().copied().map(|x| x as char).collect()
+}
+
+pub async fn proxy_instances() -> Result<Response<Body>, String> {
+	Ok(
+		Response::builder()
+			.status(200)
+			.header("content-type", "application/json")
+			.body(Body::from(fetch_instances().await))
+			.unwrap_or_default(),
+	)
+}
+
+#[cached(time = 600)]
+async fn fetch_instances() -> String {
+	let uri = Uri::from_str("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json").expect("Invalid URI");
 
 	let resp: Body = CLIENT.get(uri).await.expect("Failed to request GitHub").into_body();
 

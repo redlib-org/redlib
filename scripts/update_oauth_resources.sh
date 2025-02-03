@@ -24,7 +24,7 @@ echo "// Please do not edit manually" >> "$filename"
 echo "// Filled in with real app versions" >> "$filename"
 
 # Open the array in the source file
-echo "pub static _IOS_APP_VERSION_LIST: &[&str; $ios_app_count] = &[" >> "$filename"
+echo "pub const _IOS_APP_VERSION_LIST: &[&str; $ios_app_count] = &[" >> "$filename"
 
 num=0
 
@@ -39,12 +39,12 @@ done
 echo "];" >> "$filename"
 
 # Fetch Android app versions
-page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
+page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
 # Append with pages
-page_2=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=2" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_3=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=3" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_4=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=4" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
-page_5=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=5" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq)
+page_2=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=2" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_3=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=3" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_4=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=4" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+page_5=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=5" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
 
 # Concatenate all pages
 versions="${page_1}"
@@ -63,7 +63,7 @@ android_count=$(echo "$versions" | wc -l)
 echo -e "Fetching \e[32m$android_count Android app versions...\e[0m"
 
 # Append to the source file
-echo "pub static ANDROID_APP_VERSION_LIST: &[&str; $android_count] = &[" >> "$filename"
+echo "pub const ANDROID_APP_VERSION_LIST: &[&str; $android_count] = &[" >> "$filename"
 
 num=0
 
@@ -89,7 +89,7 @@ ios_count=$(echo "$table" | wc -l)
 echo -e "Fetching \e[34m$ios_count iOS versions...\e[0m"
 
 # Append to the source file
-echo "pub static _IOS_OS_VERSION_LIST: &[&str; $ios_count] = &[" >> "$filename"
+echo "pub const _IOS_OS_VERSION_LIST: &[&str; $ios_count] = &[" >> "$filename"
 
 num=0
 
