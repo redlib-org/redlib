@@ -282,8 +282,19 @@ impl Server {
 
 		// Bind server to address specified above. Gracefully shut down if CTRL+C is pressed
 		let server = HyperServer::bind(address).serve(make_svc).with_graceful_shutdown(async {
+			#[cfg(windows)]
 			// Wait for the CTRL+C signal
 			tokio::signal::ctrl_c().await.expect("Failed to install CTRL+C signal handler");
+
+			#[cfg(unix)]
+			{
+				// Wait for CTRL+C or SIGTERM signals
+				let mut signal_terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).expect("Failed to install SIGTERM signal handler");
+				tokio::select! {
+					_ = tokio::signal::ctrl_c() => (),
+					_ = signal_terminate.recv() => ()
+				}
+			}
 		});
 
 		server.boxed()
