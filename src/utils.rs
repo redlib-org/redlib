@@ -989,6 +989,17 @@ pub fn format_url(url: &str) -> String {
 	}
 }
 
+static REGEX_BULLET: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
+static REGEX_BULLET_CONSECUTIVE_LINES: Lazy<Regex> = Lazy::new(|| Regex::new(r"</ul>\n<ul>").unwrap());
+
+pub fn render_bullet_lists(input_text: &str) -> String {
+	// ref: https://stackoverflow.com/a/4902622
+	// First enclose each bullet with <ul> <li> tags
+	let text1 = REGEX_BULLET.replace_all(&input_text, "<ul><li>$1</li></ul>").to_string();
+	// Then remove any consecutive </ul> <ul> tags
+	REGEX_BULLET_CONSECUTIVE_LINES.replace_all(&text1, "").to_string()
+}
+
 // These are links we want to replace in-body
 static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
 static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)[^?]").unwrap());
@@ -1143,6 +1154,10 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 			}
 		}
 	}
+
+	// render bullet (unordered) lists
+	comment = render_bullet_lists(&comment);
+
 	// Call rewrite_urls() to transform any other Reddit links
 	rewrite_urls(&comment)
 }
@@ -1504,4 +1519,29 @@ fn test_rewriting_emotes() {
 	let comment_input = r#"<div class="comment_body "><div class="md"><p>:2028:</p></div></div>"#;
 	let output = r#"<div class="comment_body "><div class="md"><p><img loading="lazy" src="/emote/t5_31hpy/PW6WsOaLcd.png" width="60" height="60" style="vertical-align:text-bottom"></p></div></div>"#;
 	assert_eq!(rewrite_emotes(&json_input, comment_input.to_string()), output);
+}
+
+#[test]
+fn test_rewriting_bullet_list() {
+	let input = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
+- Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)
+- Contrast 70 (which for me was the default one)
+- Picture mode Custom
+- Super resolution + Off (it looks horrible anyway)
+- Sharpness 50 (default one I think)
+- Black level High (low messes up gray colors)
+- DFC Off 
+- Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)
+- Freesync doesn&#39;t matter
+- Black stabilizer 50
+- Gamma setting on 0 
+- Color Temp Medium
+How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
+</div>"#;
+let output = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
+<ul><li>Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)</li><li>Contrast 70 (which for me was the default one)</li><li>Picture mode Custom</li><li>Super resolution + Off (it looks horrible anyway)</li><li>Sharpness 50 (default one I think)</li><li>Black level High (low messes up gray colors)</li><li>DFC Off </li><li>Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)</li><li>Freesync doesn&#39;t matter</li><li>Black stabilizer 50</li><li>Gamma setting on 0 </li><li>Color Temp Medium</li></ul>
+How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
+</div>"#;
+
+	assert_eq!(render_bullet_lists(input), output);
 }
