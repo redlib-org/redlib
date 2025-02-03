@@ -64,11 +64,3 @@ sealed_test = "1.0.0"
 codegen-units = 1
 lto = true
 strip = "symbols"
-
-[[bin]]
-name = "redlib"
-path = "src/main.rs"
-
-[[bin]]
-name = "scraper"
-path = "src/scraper/main.rs"
