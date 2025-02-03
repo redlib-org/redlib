@@ -7,6 +7,7 @@ use crate::config::{self, get_setting};
 //
 use crate::{client::json, server::RequestExt};
 use cookie::Cookie;
+use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
 use log::error;
 use once_cell::sync::Lazy;
@@ -22,7 +23,6 @@ use std::str::FromStr;
 use std::string::ToString;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
-use htmlescape::decode_html;
 
 /// Write a message to stderr on debug mode. This function is a no-op on
 /// release code.
