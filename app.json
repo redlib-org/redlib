@@ -38,6 +38,9 @@
     "REDLIB_DEFAULT_BLUR_NSFW": {
       "required": false
     },
+    "REDLIB_DEFAULT_UNBLUR_ON_HOVER" : {
+      "required": false
+    },
     "REDLIB_USE_HLS": {
       "required": false
     },
