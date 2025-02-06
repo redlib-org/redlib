@@ -551,6 +551,14 @@ pub struct ErrorTemplate {
 	pub url: String,
 }
 
+#[derive(Template)]
+#[template(path = "info.html")]
+pub struct InfoTemplate {
+	pub msg: String,
+	pub prefs: Preferences,
+	pub url: String,
+}
+
 /// Template for NSFW landing page. The landing page is displayed when a page's
 /// content is wholly NSFW, but a user has not enabled the option to view NSFW
 /// posts.
@@ -636,6 +644,7 @@ pub struct Preferences {
 	pub filters: Vec<String>,
 	pub hide_awards: String,
 	pub hide_score: String,
+	pub remove_default_feeds: String,
 }
 
 fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
@@ -682,6 +691,7 @@ impl Preferences {
 			filters: setting(req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect(),
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
+			remove_default_feeds: setting(req, "remove_default_feeds"),
 		}
 	}
 
@@ -1265,6 +1275,20 @@ pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, Stri
 	Ok(Response::builder().status(404).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
+/// Renders a generic info landing page.
+pub async fn info(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
+	let url = req.uri().to_string();
+	let body = InfoTemplate {
+		msg: msg.to_string(),
+		prefs: Preferences::new(&req),
+		url,
+	}
+	.render()
+	.unwrap_or_default();
+
+	Ok(Response::builder().status(200).header("content-type", "text/html").body(body.into()).unwrap_or_default())
+}
+
 /// Returns true if the config/env variable `REDLIB_SFW_ONLY` carries the
 /// value `on`.
 ///
@@ -1463,10 +1487,11 @@ mod tests {
 			filters: vec![],
 			hide_awards: "off".to_owned(),
 			hide_score: "off".to_owned(),
+			remove_default_feeds: "off".to_owned(),
 		};
 		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
 
-		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off")
+		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
 	}
 }
 

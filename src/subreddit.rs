@@ -3,12 +3,13 @@
 use crate::{config, utils};
 // CRATES
 use crate::utils::{
-	catch_random, error, filter_posts, format_num, format_url, get_filters, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences, Subreddit,
+	catch_random, error, filter_posts, format_num, format_url, get_filters, info, nsfw_landing, param, redirect, rewrite_urls, setting, template, val, Post, Preferences,
+	Subreddit,
 };
 use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
-use log::{debug, trace};
+use log::debug;
 use rinja::Template;
 
 use chrono::DateTime;
@@ -66,6 +67,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	let query = req.uri().query().unwrap_or_default().to_string();
 	let subscribed = setting(&req, "subscriptions");
 	let front_page = setting(&req, "front_page");
+	let remove_default_feeds = setting(&req, "remove_default_feeds") == "on";
 	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
 	let sort = req.param("sort").unwrap_or_else(|| req.param("id").unwrap_or(post_sort));
 
@@ -78,6 +80,21 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	} else {
 		front_page.clone()
 	});
+
+	if (sub_name == "popular" || sub_name == "all") && remove_default_feeds {
+		if subscribed.is_empty() {
+			return info(req, "Subscribe to some subreddits! (Default feeds disabled in settings)").await;
+		} else {
+			// If there are subscribed subs, but we get here, then the problem is that front_page pref is set to something besides default.
+			// Tell user to go to settings and change front page to default.
+			return info(
+				req,
+				"You have subscribed to some subreddits, but your front page is not set to default. Visit settings and change front page to default.",
+			)
+			.await;
+		}
+	}
+
 	let quarantined = can_access_quarantine(&req, &sub_name) || root;
 
 	// Handle random subreddits

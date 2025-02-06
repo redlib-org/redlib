@@ -27,6 +27,11 @@
 			<fieldset>
 				<legend>Interface</legend>
 				<div class="prefs-group">
+					<label for="remove_default_feeds">Remove default feeds</label>
+					<input type="hidden" value="off" name="remove_default_feeds">
+					<input type="checkbox" name="remove_default_feeds" id="remove_default_feeds" {% if prefs.remove_default_feeds == "on" %}checked{% endif %}>
+				</div>
+				<div class="prefs-group">
 					<label for="front_page">Front page:</label>
 					<select name="front_page" id="front_page"> 
 						{% call utils::options(prefs.front_page, ["default", "popular", "all"], "default") %}

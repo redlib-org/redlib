@@ -43,8 +43,10 @@
 		<div id="feed_list">
 			<p>MAIN FEEDS</p>
 			<a href="/">Home</a>
-			<a href="/r/popular">Popular</a>
-			<a href="/r/all">All</a>
+			{% if prefs.remove_default_feeds != "on" %}
+				<a href="/r/popular">Popular</a>
+				<a href="/r/all">All</a>
+			{% endif %}
 			{% if prefs.subscriptions.len() > 0 %}
 				<p>REDDIT FEEDS</p>
 				{% for sub in prefs.subscriptions %}
