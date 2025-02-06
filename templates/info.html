@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "utils.html" as utils %}
+
+{% block title %}Info: {{ msg }}{% endblock %}
+{% block sortstyle %}{% endblock %}
+
+{% block subscriptions %}
+	{% call utils::sub_list("") %}
+{% endblock %}
+
+{% block search %}
+	{% call utils::search("".to_owned(), "") %}
+{% endblock %}
+
+{% block content %}
+<div id="error">
+	<h2>{{ msg }}</h2>
+	<br />
+</div>
+{% endblock %}
