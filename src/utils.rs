@@ -1646,7 +1646,7 @@ How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or t
 }
 
 #[test]
-fn test_prefs_serialization_loop_json() {
+fn test_default_prefs_serialization_loop_json() {
 	let prefs = Preferences::default();
 	let serialized = serde_json::to_string(&prefs).unwrap();
 	let deserialized: Preferences = serde_json::from_str(&serialized).unwrap();
@@ -1654,23 +1654,42 @@ fn test_prefs_serialization_loop_json() {
 }
 
 #[test]
-fn test_prefs_serialization_loop_bincode() {
+fn test_default_prefs_serialization_loop_bincode() {
 	let prefs = Preferences::default();
-	let serialized = bincode::serialize(&prefs).unwrap();
-	let deserialized: Preferences = bincode::deserialize(&serialized).unwrap();
-	assert_eq!(prefs, deserialized);
+	test_round_trip(&prefs, false);
+	test_round_trip(&prefs, true);
 }
 
+static KNOWN_GOOD_CONFIGS: &[&str] = &[
+	"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
+	"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
+	"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
+];
+
 #[test]
-fn test_known_good_configs() {
-	let configs = vec![
-		"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
-		"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
-		"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
-	];
-	for config in configs {
+fn test_known_good_configs_deserialization() {
+	for config in KNOWN_GOOD_CONFIGS {
 		let bytes = base2048::decode(config).unwrap();
 		let decompressed = deflate_decompress(bytes).unwrap();
 		assert!(bincode::deserialize::<Preferences>(&decompressed).is_ok());
 	}
+}
+
+#[test]
+fn test_known_good_configs_full_round_trip() {
+	for config in KNOWN_GOOD_CONFIGS {
+		let bytes = base2048::decode(config).unwrap();
+		let decompressed = deflate_decompress(bytes).unwrap();
+		let prefs: Preferences = bincode::deserialize(&decompressed).unwrap();
+		test_round_trip(&prefs, false);
+		test_round_trip(&prefs, true);
+	}
+}
+
+fn test_round_trip(input: &Preferences, compression: bool) {
+	let serialized = bincode::serialize(input).unwrap();
+	let compressed = if compression { deflate_compress(serialized).unwrap() } else { serialized };
+	let decompressed = if compression { deflate_decompress(compressed).unwrap() } else { compressed };
+	let deserialized: Preferences = bincode::deserialize(&decompressed).unwrap();
+	assert_eq!(*input, deserialized);
 }
