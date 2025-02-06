@@ -197,10 +197,10 @@
 		<br />
 		<div>
 			<script src="/copy.js"></script>
-			<label for="bincode_str">Or, export/import here (be sure to save ):</label>
+			<label for="bincode_str">Or, export/import here (be sure to save first):</label>
 			<br />
 			<input type="text" id="bincode_str" name="bincode_str"
-				value="{% match prefs.to_bincode_str() %}{% when Ok with (bincode_str) %}{{ bincode_str }}{% when Err with (err) %}{{ err }}{% endmatch %}"
+				value="{% match prefs.to_bincode_str() %}{% when Ok with (bincode_str) %}{{ bincode_str }}{% when Err with (err) %}Error: {{ err }}{% endmatch %}"
 				readonly>
 			<button id="copy" class="copy">Copy</button>
 
