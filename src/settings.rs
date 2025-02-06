@@ -281,7 +281,7 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, Strin
 	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| format!("Failed to deserialize bytes into Preferences struct: {}", e))?;
 	prefs.available_themes = vec![];
 
-	let url = format!("/settings/restore/?{}", prefs.to_urlencoded().unwrap());
+	let url = format!("/settings/restore/?{}", prefs.to_urlencoded()?);
 
 	Ok(redirect(&url))
 }
