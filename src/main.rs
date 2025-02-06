@@ -246,6 +246,7 @@ async fn main() {
 	app
 		.at("/check_update.js")
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
+	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
 
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
 	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
@@ -284,6 +285,7 @@ async fn main() {
 	// Configure settings
 	app.at("/settings").get(|r| settings::get(r).boxed()).post(|r| settings::set(r).boxed());
 	app.at("/settings/restore").get(|r| settings::restore(r).boxed());
+	app.at("/settings/encoded-restore").post(|r| settings::encoded_restore(r).boxed());
 	app.at("/settings/update").get(|r| settings::update(r).boxed());
 
 	// RSS Subscriptions

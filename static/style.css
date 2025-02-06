@@ -553,14 +553,18 @@ aside {
 .subscribe,
 .unsubscribe,
 .filter,
-.unfilter {
+.unfilter,
+.copy,
+.import {
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .subscribe,
-.filter {
+.filter,
+.copy,
+.import {
     color: var(--foreground);
     background-color: var(--accent);
 }
