@@ -5,12 +5,13 @@ use std::collections::HashMap;
 // CRATES
 use crate::server::ResponseExt;
 use crate::subreddit::join_until_size_limit;
-use crate::utils::{redirect, template, Preferences};
+use crate::utils::{deflate_decompress, redirect, template, Preferences};
 use cookie::Cookie;
 use futures_lite::StreamExt;
 use hyper::{Body, Request, Response};
 use rinja::Template;
 use time::{Duration, OffsetDateTime};
+use url::form_urlencoded;
 
 // STRUCTS
 #[derive(Template)]
@@ -261,4 +262,26 @@ pub async fn restore(req: Request<Body>) -> Result<Response<Body>, String> {
 
 pub async fn update(req: Request<Body>) -> Result<Response<Body>, String> {
 	Ok(set_cookies_method(req, false))
+}
+
+pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, String> {
+	let body = hyper::body::to_bytes(req.into_body())
+		.await
+		.map_err(|e| format!("Failed to get bytes from request body: {}", e))?;
+
+	let encoded_prefs = form_urlencoded::parse(&body)
+		.find(|(key, _)| key == "encoded_prefs")
+		.map(|(_, value)| value)
+		.ok_or_else(|| "encoded_prefs parameter not found in request body".to_string())?;
+
+	let bytes = base2048::decode(&encoded_prefs).ok_or_else(|| "Failed to decode base2048 encoded preferences".to_string())?;
+
+	let out = deflate_decompress(bytes)?;
+
+	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| format!("Failed to deserialize bytes into Preferences struct: {}", e))?;
+	prefs.available_themes = vec![];
+
+	let url = format!("/settings/restore/?{}", prefs.to_urlencoded()?);
+
+	Ok(redirect(&url))
 }
