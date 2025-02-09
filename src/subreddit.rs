@@ -8,6 +8,7 @@ use crate::utils::{
 };
 use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
+use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
 use log::debug;
 use rinja::Template;
@@ -623,7 +624,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 					title: Some(post.title.to_string()),
 					link: Some(format_url(&utils::get_post_url(&post))),
 					author: Some(post.author.name),
-					content: Some(rewrite_urls(&post.body)),
+					content: Some(rewrite_urls(&decode_html(&post.body).unwrap())),
 					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
 					description: Some(format!(
 						"<a href='{}{}'>Comments</a>",

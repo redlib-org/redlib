@@ -7,7 +7,6 @@ use crate::config::{self, get_setting};
 //
 use crate::{client::json, server::RequestExt};
 use cookie::Cookie;
-use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
@@ -388,7 +387,7 @@ impl Post {
 			let awards = Awards::parse(&data["all_awardings"]);
 
 			// selftext_html is set for text posts when browsing.
-			let mut body = rewrite_urls(&decode_html(&val(post, "selftext_html")).unwrap());
+			let mut body = rewrite_urls(&val(post, "selftext_html"));
 			if body.is_empty() {
 				body = rewrite_urls(&val(post, "body_html"));
 			}

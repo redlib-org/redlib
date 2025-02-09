@@ -6,6 +6,7 @@ use crate::server::RequestExt;
 use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
 use crate::{config, utils};
 use chrono::DateTime;
+use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
 use rinja::Template;
 use time::{macros::format_description, OffsetDateTime};
@@ -167,7 +168,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 					link: Some(format_url(&utils::get_post_url(&post))),
 					author: Some(post.author.name),
 					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
-					content: Some(rewrite_urls(&post.body)),
+					content: Some(rewrite_urls(&decode_html(&post.body).unwrap())),
 					..Default::default()
 				})
 				.collect::<Vec<_>>(),
