@@ -18,9 +18,15 @@
 			<fieldset>
 				<legend>Appearance</legend>
 				<div class="prefs-group">
-					<label for="theme">Theme:</label>
-					<select name="theme" id="theme"> 
-						{% call utils::options(prefs.theme, prefs.available_themes, "system") %}
+					<label for="theme_light">Light Theme:</label>
+					<select name="theme_light" id="theme_light"> 
+						{% call utils::options(prefs.theme_light, prefs.available_themes, "light") %}
+					</select>
+				</div>
+				<div class="prefs-group">
+					<label for="theme_dark">Dark Theme:</label>
+					<select name="theme_dark" id="theme_dark"> 
+						{% call utils::options(prefs.theme_dark, prefs.available_themes, "dark") %}
 					</select>
 				</div>
 			</fieldset>

@@ -605,7 +605,8 @@ pub struct Params {
 pub struct Preferences {
 	#[serde(skip)]
 	pub available_themes: Vec<String>,
-	pub theme: String,
+	pub theme_light: String,
+	pub theme_dark: String,
 	pub front_page: String,
 	pub layout: String,
 	pub wide: String,
@@ -645,15 +646,15 @@ impl Preferences {
 	// Build preferences from cookies
 	pub fn new(req: &Request<Body>) -> Self {
 		// Read available theme names from embedded css files.
-		// Always make the default "system" theme available.
-		let mut themes = vec!["system".to_string()];
+		let mut themes = Vec::new();
 		for file in ThemeAssets::iter() {
 			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
 			themes.push(chunks[0].to_owned());
 		}
 		Self {
 			available_themes: themes,
-			theme: setting(req, "theme"),
+			theme_light: setting(req, "theme_light"),
+			theme_dark: setting(req, "theme_dark"),
 			front_page: setting(req, "front_page"),
 			layout: setting(req, "layout"),
 			wide: setting(req, "wide"),

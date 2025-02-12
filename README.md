@@ -381,7 +381,7 @@ REDLIB_DEFAULT_SHOW_NSFW=on redlib
 ```
 
 ```bash
-REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME_DARK=dark redlib -r
 ```
 
 You can also configure Redlib with a configuration file named `redlib.toml`. For example:

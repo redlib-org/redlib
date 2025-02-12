@@ -84,8 +84,28 @@ async fn style() -> Result<Response<Body>, String> {
 	let mut res = include_str!("../static/style.css").to_string();
 	for file in ThemeAssets::iter() {
 		res.push('\n');
-		let theme = ThemeAssets::get(file.as_ref()).unwrap();
-		res.push_str(std::str::from_utf8(theme.data.as_ref()).unwrap());
+		let theme: Vec<&str> = file.as_ref().split(".css").collect();
+		let theme = ".".to_owned() + &theme[0].to_owned();
+		let style = ThemeAssets::get(file.as_ref()).unwrap();
+		let style = std::str::from_utf8(style.data.as_ref()).unwrap();
+		let style_light = &style.replace(&theme, &(theme.clone() + "_light"));
+		let style_light = &format!(
+			"
+		@media (prefers-color-scheme: light) {{
+			{style_light}
+		}}
+				"
+		);
+		let style_dark = &style.replace(&theme, &(theme.clone() + "_dark"));
+		let style_dark = &format!(
+			"
+		@media (prefers-color-scheme: dark) {{
+			{style_dark}
+		}}
+				"
+		);
+		res.push_str(style_light);
+		res.push_str(style_dark);
 	}
 	Ok(
 		Response::builder()

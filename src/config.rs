@@ -24,9 +24,13 @@ pub struct Config {
 	#[serde(alias = "LIBREDDIT_SFW_ONLY")]
 	pub(crate) sfw_only: Option<String>,
 
-	#[serde(rename = "REDLIB_DEFAULT_THEME")]
-	#[serde(alias = "LIBREDDIT_DEFAULT_THEME")]
-	pub(crate) default_theme: Option<String>,
+	#[serde(rename = "REDLIB_DEFAULT_THEME_LIGHT")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_THEME_LIGHT")]
+	pub(crate) default_theme_light: Option<String>,
+
+	#[serde(rename = "REDLIB_DEFAULT_THEME_DARK")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_THEME_DARK")]
+	pub(crate) default_theme_dark: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_FRONT_PAGE")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_FRONT_PAGE")]
@@ -134,7 +138,8 @@ impl Config {
 		};
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),
-			default_theme: parse("REDLIB_DEFAULT_THEME"),
+			default_theme_light: parse("REDLIB_DEFAULT_THEME_LIGHT"),
+			default_theme_dark: parse("REDLIB_DEFAULT_THEME_DARK"),
 			default_front_page: parse("REDLIB_DEFAULT_FRONT_PAGE"),
 			default_layout: parse("REDLIB_DEFAULT_LAYOUT"),
 			default_post_sort: parse("REDLIB_DEFAULT_POST_SORT"),
@@ -163,7 +168,8 @@ impl Config {
 fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 	match name {
 		"REDLIB_SFW_ONLY" => config.sfw_only.clone(),
-		"REDLIB_DEFAULT_THEME" => config.default_theme.clone(),
+		"REDLIB_DEFAULT_THEME_LIGHT" => config.default_theme_light.clone(),
+		"REDLIB_DEFAULT_THEME_DARK" => config.default_theme_dark.clone(),
 		"REDLIB_DEFAULT_FRONT_PAGE" => config.default_front_page.clone(),
 		"REDLIB_DEFAULT_LAYOUT" => config.default_layout.clone(),
 		"REDLIB_DEFAULT_COMMENT_SORT" => config.default_comment_sort.clone(),
