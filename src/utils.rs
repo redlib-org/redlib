@@ -1528,7 +1528,8 @@ mod tests {
 	fn serialize_prefs() {
 		let prefs = Preferences {
 			available_themes: vec![],
-			theme: "laserwave".to_owned(),
+			theme_light: "laserwave".to_owned(),
+			theme_dark: "laserwave".to_owned(),
 			front_page: "default".to_owned(),
 			layout: "compact".to_owned(),
 			wide: "on".to_owned(),

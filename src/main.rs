@@ -85,7 +85,7 @@ async fn style() -> Result<Response<Body>, String> {
 	for file in ThemeAssets::iter() {
 		res.push('\n');
 		let theme: Vec<&str> = file.as_ref().split(".css").collect();
-		let theme = ".".to_owned() + &theme[0].to_owned();
+		let theme = ".".to_owned() + theme[0];
 		let style = ThemeAssets::get(file.as_ref()).unwrap();
 		let style = std::str::from_utf8(style.data.as_ref()).unwrap();
 		let style_light = &style.replace(&theme, &(theme.clone() + "_light"));
