@@ -493,14 +493,18 @@ aside {
 .subscribe,
 .unsubscribe,
 .filter,
-.unfilter {
+.unfilter,
+.copy,
+.import {
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .subscribe,
-.filter {
+.filter,
+.copy,
+.import {
     color: var(--foreground);
     background-color: var(--accent);
 }
@@ -1137,6 +1141,13 @@ a.search_subreddit:hover {
     grid-area: post_body;
     width: calc(100% - 30px);
     overflow-wrap: anywhere;
+}
+
+.post_body pre {
+    background: var(--background);
+    overflow-x: auto;
+    margin: 10px 0;
+    padding: 10px;
 }
 
 .post_body img {

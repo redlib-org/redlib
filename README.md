@@ -404,6 +404,17 @@ REDLIB_DEFAULT_USE_HLS = "on"
 >
 > If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
 
+## Command Line Flags
+
+Redlib supports the following command line flags:
+
+- `-4`, `--ipv4-only`: Listen on IPv4 only.
+- `-6`, `--ipv6-only`: Listen on IPv6 only.
+- `-r`, `--redirect-https`: Redirect all HTTP requests to HTTPS (no longer functional).
+- `-a`, `--address <ADDRESS>`: Sets address to listen on. Default is `[::]`.
+- `-p`, `--port <PORT>`: Port to listen on. Default is `8080`.
+- `-H`, `--hsts <EXPIRE_TIME>`: HSTS header to tell browsers that this site should only be accessed over HTTPS. Default is `604800`.
+
 ## Instance settings
 
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
@@ -429,7 +440,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
 | `POST_SORT`                         | `["hot", "new", "top", "rising", "controversial"]`                                                                                 | `hot`         |
 | `COMMENT_SORT`                      | `["confidence", "top", "new", "controversial", "old"]`                                                                             | `confidence`  |
-| `BLUR_SPOILER`                         | `["on", "off"]`                                                                                                                    | `off`         |
+| `BLUR_SPOILER`                      | `["on", "off"]`                                                                                                                    | `off`         |
 | `SHOW_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `BLUR_NSFW`                         | `["on", "off"]`                                                                                                                    | `off`         |
 | `USE_HLS`                           | `["on", "off"]`                                                                                                                    | `off`         |
@@ -441,3 +452,4 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_SIDEBAR_AND_SUMMARY`          | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
+| `REMOVE_DEFAULT_FEEDS`              | `["on", "off"]`                                                                                                                    | `off`         |

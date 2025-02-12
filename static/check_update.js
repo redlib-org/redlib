@@ -33,7 +33,7 @@ async function checkInstanceUpdateStatus() {
         document.getElementById('update-status').innerText = statusMessage;
     } catch (error) {
         console.error('Error fetching commits:', error);
-        document.getElementById('update-status').innerText = '⚠️ Error checking update status.';
+        document.getElementById('update-status').innerText = '⚠️ Error checking update status: ' + error;
     }
 }
 
@@ -48,7 +48,7 @@ async function checkOtherInstances() {
         document.getElementById('random-instance').innerText = "Visit Random Instance";
     } catch (error) {
         console.error('Error fetching instances:', error);
-        document.getElementById('update-status').innerText = '⚠️ Error checking update status.';
+        document.getElementById('update-status').innerText = '⚠️ Error checking other instances: ' + error;
     }
 }
 

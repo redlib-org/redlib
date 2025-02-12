@@ -1,0 +1,14 @@
+/* midnightpurple theme setting */
+.midnightPurple{
+	--accent: #be6ede;
+	--green: #268F02;
+	--text: white;
+	--foreground: #222;
+	--background: #000000;
+	--outside: #1f1f1f;
+	--post: #000000;
+	--panel-border: 1px solid #4E1764;
+	--highlighted: #333;
+	--visited: #aaa;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

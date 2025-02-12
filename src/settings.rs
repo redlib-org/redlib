@@ -4,12 +4,14 @@ use std::collections::HashMap;
 
 // CRATES
 use crate::server::ResponseExt;
-use crate::utils::{redirect, template, Preferences};
+use crate::subreddit::join_until_size_limit;
+use crate::utils::{deflate_decompress, redirect, template, Preferences};
 use cookie::Cookie;
 use futures_lite::StreamExt;
 use hyper::{Body, Request, Response};
 use rinja::Template;
 use time::{Duration, OffsetDateTime};
+use url::form_urlencoded;
 
 // STRUCTS
 #[derive(Template)]
@@ -21,7 +23,7 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 19] = [
+const PREFS: [&str; 20] = [
 	"theme_light",
 	"theme_dark",
 	"front_page",
@@ -41,6 +43,7 @@ const PREFS: [&str; 19] = [
 	"hide_score",
 	"disable_visit_reddit_confirmation",
 	"video_quality",
+	"remove_default_feeds",
 ];
 
 // FUNCTIONS
@@ -120,7 +123,7 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 
 	let mut response = redirect(&path);
 
-	for name in [PREFS.to_vec(), vec!["subscriptions", "filters"]].concat() {
+	for name in PREFS {
 		match form.get(name) {
 			Some(value) => response.insert_cookie(
 				Cookie::build((name.to_owned(), value.clone()))
@@ -137,6 +140,119 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 		};
 	}
 
+	// Get subscriptions/filters to restore from query string
+	let subscriptions = form.get("subscriptions");
+	let filters = form.get("filters");
+
+	// We can't search through the cookies directly like in subreddit.rs, so instead we have to make a string out of the request's headers to search through
+	let cookies_string = parts
+		.headers
+		.get("cookie")
+		.map(|hv| hv.to_str().unwrap_or("").to_string()) // Return String
+		.unwrap_or_else(String::new); // Return an empty string if None
+
+	// If there are subscriptions to restore set them and delete any old subscriptions cookies, otherwise delete them all
+	if subscriptions.is_some() {
+		let sub_list: Vec<String> = subscriptions.expect("Subscriptions").split('+').map(str::to_string).collect();
+
+		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
+		let mut subscriptions_number_to_delete_from = 0;
+
+		// Starting at 0 so we handle the subscription cookie without a number first
+		for (subscriptions_number, list) in join_until_size_limit(&sub_list).into_iter().enumerate() {
+			let subscriptions_cookie = if subscriptions_number == 0 {
+				"subscriptions".to_string()
+			} else {
+				format!("subscriptions{}", subscriptions_number)
+			};
+
+			response.insert_cookie(
+				Cookie::build((subscriptions_cookie, list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+
+			subscriptions_number_to_delete_from += 1;
+		}
+
+		// While subscriptionsNUMBER= is in the string of cookies add a response removing that cookie
+		while cookies_string.contains(&format!("subscriptions{subscriptions_number_to_delete_from}=")) {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{subscriptions_number_to_delete_from}"));
+
+			// Increment subscriptions cookie number
+			subscriptions_number_to_delete_from += 1;
+		}
+	} else {
+		// Remove unnumbered subscriptions cookie
+		response.remove_cookie("subscriptions".to_string());
+
+		// Starts at one to deal with the first numbered subscription cookie and onwards
+		let mut subscriptions_number_to_delete_from = 1;
+
+		// While subscriptionsNUMBER= is in the string of cookies add a response removing that cookie
+		while cookies_string.contains(&format!("subscriptions{subscriptions_number_to_delete_from}=")) {
+			// Remove that subscriptions cookie
+			response.remove_cookie(format!("subscriptions{subscriptions_number_to_delete_from}"));
+
+			// Increment subscriptions cookie number
+			subscriptions_number_to_delete_from += 1;
+		}
+	}
+
+	// If there are filters to restore set them and delete any old filters cookies, otherwise delete them all
+	if filters.is_some() {
+		let filters_list: Vec<String> = filters.expect("Filters").split('+').map(str::to_string).collect();
+
+		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
+		let mut filters_number_to_delete_from = 0;
+
+		// Starting at 0 so we handle the subscription cookie without a number first
+		for (filters_number, list) in join_until_size_limit(&filters_list).into_iter().enumerate() {
+			let filters_cookie = if filters_number == 0 {
+				"filters".to_string()
+			} else {
+				format!("filters{}", filters_number)
+			};
+
+			response.insert_cookie(
+				Cookie::build((filters_cookie, list))
+					.path("/")
+					.http_only(true)
+					.expires(OffsetDateTime::now_utc() + Duration::weeks(52))
+					.into(),
+			);
+
+			filters_number_to_delete_from += 1;
+		}
+
+		// While filtersNUMBER= is in the string of cookies add a response removing that cookie
+		while cookies_string.contains(&format!("filters{filters_number_to_delete_from}=")) {
+			// Remove that filters cookie
+			response.remove_cookie(format!("filters{filters_number_to_delete_from}"));
+
+			// Increment filters cookie number
+			filters_number_to_delete_from += 1;
+		}
+	} else {
+		// Remove unnumbered filters cookie
+		response.remove_cookie("filters".to_string());
+
+		// Starts at one to deal with the first numbered subscription cookie and onwards
+		let mut filters_number_to_delete_from = 1;
+
+		// While filtersNUMBER= is in the string of cookies add a response removing that cookie
+		while cookies_string.contains(&format!("filters{filters_number_to_delete_from}=")) {
+			// Remove that sfilters cookie
+			response.remove_cookie(format!("filters{filters_number_to_delete_from}"));
+
+			// Increment filters cookie number
+			filters_number_to_delete_from += 1;
+		}
+	}
+
 	response
 }
 
@@ -147,4 +263,26 @@ pub async fn restore(req: Request<Body>) -> Result<Response<Body>, String> {
 
 pub async fn update(req: Request<Body>) -> Result<Response<Body>, String> {
 	Ok(set_cookies_method(req, false))
+}
+
+pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, String> {
+	let body = hyper::body::to_bytes(req.into_body())
+		.await
+		.map_err(|e| format!("Failed to get bytes from request body: {}", e))?;
+
+	let encoded_prefs = form_urlencoded::parse(&body)
+		.find(|(key, _)| key == "encoded_prefs")
+		.map(|(_, value)| value)
+		.ok_or_else(|| "encoded_prefs parameter not found in request body".to_string())?;
+
+	let bytes = base2048::decode(&encoded_prefs).ok_or_else(|| "Failed to decode base2048 encoded preferences".to_string())?;
+
+	let out = deflate_decompress(bytes)?;
+
+	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| format!("Failed to deserialize bytes into Preferences struct: {}", e))?;
+	prefs.available_themes = vec![];
+
+	let url = format!("/settings/restore/?{}", prefs.to_urlencoded()?);
+
+	Ok(redirect(&url))
 }

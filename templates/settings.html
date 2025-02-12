@@ -4,15 +4,15 @@
 {% block title %}Redlib Settings{% endblock %}
 
 {% block subscriptions %}
-	{% call utils::sub_list("") %}
+{% call utils::sub_list("") %}
 {% endblock %}
 
 {% block search %}
-	{% call utils::search("".to_owned(), "") %}
+{% call utils::search("".to_owned(), "") %}
 {% endblock %}
 
 {% block content %}
-	<div id="settings">
+<div id="settings">
 	<form action="/settings" method="POST">
 		<div class="prefs">
 			<fieldset>
@@ -33,141 +33,164 @@
 			<fieldset>
 				<legend>Interface</legend>
 				<div class="prefs-group">
+					<label for="remove_default_feeds">Remove default feeds</label>
+					<input type="hidden" value="off" name="remove_default_feeds">
+					<input type="checkbox" name="remove_default_feeds" id="remove_default_feeds" {% if
+						prefs.remove_default_feeds=="on" %}checked{% endif %}>
+				</div>
+				<div class="prefs-group">
 					<label for="front_page">Front page:</label>
-					<select name="front_page" id="front_page"> 
+					<select name="front_page" id="front_page">
 						{% call utils::options(prefs.front_page, ["default", "popular", "all"], "default") %}
 					</select>
 				</div>
 				<div class="prefs-group">
 					<label for="layout">Layout:</label>
-					<select name="layout" id="layout"> 
+					<select name="layout" id="layout">
 						{% call utils::options(prefs.layout, ["card", "clean", "compact"], "card") %}
 					</select>
 				</div>
 				<div class="prefs-group">
 					<label for="wide">Wide UI:</label>
 					<input type="hidden" value="off" name="wide">
-					<input type="checkbox" name="wide" id="wide" {% if prefs.wide == "on" %}checked{% endif %}>
+					<input type="checkbox" name="wide" id="wide" {% if prefs.wide=="on" %}checked{% endif %}>
 				</div>
 			</fieldset>
 			<fieldset>
 				<legend>Content</legend>
 				<div class="prefs-group">
 					<label for="video_quality">Video quality:</label>
-					<select name="video_quality" id="video_quality"> 
+					<select name="video_quality" id="video_quality">
 						{% call utils::options(prefs.video_quality, ["best", "medium", "worst"], "best") %}
 					</select>
 				</div>
 				<div class="prefs-group">
 					<label for="post_sort" title="Applies only to subreddit feeds">Default subreddit post sort:</label>
-					<select name="post_sort"> 
-						{% call utils::options(prefs.post_sort, ["hot", "new", "top", "rising", "controversial"], "hot") %}
+					<select name="post_sort">
+						{% call utils::options(prefs.post_sort, ["hot", "new", "top", "rising", "controversial"], "hot")
+						%}
 					</select>
 				</div>
 				<div class="prefs-group">
 					<label for="comment_sort">Default comment sort:</label>
-					<select name="comment_sort" id="comment_sort"> 
-						{% call utils::options(prefs.comment_sort, ["confidence", "top", "new", "controversial", "old"], "confidence") %}
+					<select name="comment_sort" id="comment_sort">
+						{% call utils::options(prefs.comment_sort, ["confidence", "top", "new", "controversial", "old"],
+						"confidence") %}
 					</select>
 				</div>
 				<div class="prefs-group">
 					<label for="blur_spoiler">Blur spoiler previews:</label>
 					<input type="hidden" value="off" name="blur_spoiler">
-					<input type="checkbox" name="blur_spoiler" id="blur_spoiler" {% if prefs.blur_spoiler == "on" %}checked{% endif %}>
+					<input type="checkbox" name="blur_spoiler" id="blur_spoiler" {% if prefs.blur_spoiler=="on"
+						%}checked{% endif %}>
 				</div>
-        {% if !crate::utils::sfw_only() %}
+				{% if !crate::utils::sfw_only() %}
 				<div class="prefs-group">
 					<label for="show_nsfw">Show NSFW posts:</label>
 					<input type="hidden" value="off" name="show_nsfw">
-					<input type="checkbox" name="show_nsfw" id="show_nsfw" {% if prefs.show_nsfw == "on" %}checked{% endif %}>
+					<input type="checkbox" name="show_nsfw" id="show_nsfw" {% if prefs.show_nsfw=="on" %}checked{% endif
+						%}>
 				</div>
 				<div class="prefs-group">
 					<label for="blur_nsfw">Blur NSFW previews:</label>
 					<input type="hidden" value="off" name="blur_nsfw">
-					<input type="checkbox" name="blur_nsfw" id="blur_nsfw" {% if prefs.blur_nsfw == "on" %}checked{% endif %}>
+					<input type="checkbox" name="blur_nsfw" id="blur_nsfw" {% if prefs.blur_nsfw=="on" %}checked{% endif
+						%}>
 				</div>
-        {% endif %}
+				{% endif %}
 				<div class="prefs-group">
 					<label for="autoplay_videos">Autoplay videos</label>
 					<input type="hidden" value="off" name="autoplay_videos">
-					<input type="checkbox" name="autoplay_videos" id="autoplay_videos" {% if prefs.autoplay_videos == "on" %}checked{% endif %}>
+					<input type="checkbox" name="autoplay_videos" id="autoplay_videos" {% if prefs.autoplay_videos=="on"
+						%}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="fixed_navbar">Keep navbar fixed</label>
 					<input type="hidden" value="off" name="fixed_navbar">
-					<input type="checkbox" name="fixed_navbar" {% if prefs.fixed_navbar == "on" %}checked{% endif %}>
+					<input type="checkbox" name="fixed_navbar" {% if prefs.fixed_navbar=="on" %}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="hide_sidebar_and_summary">Hide the summary and sidebar</label>
 					<input type="hidden" value="off" name="hide_sidebar_and_summary">
-					<input type="checkbox" name="hide_sidebar_and_summary" {% if prefs.hide_sidebar_and_summary == "on" %}checked{% endif %}>
+					<input type="checkbox" name="hide_sidebar_and_summary" {% if prefs.hide_sidebar_and_summary=="on"
+						%}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="use_hls">Use HLS for videos</label>
 					<details id="feeds">
 						<summary>Why?</summary>
-						<div id="feed_list" class="helper">Reddit videos require JavaScript (via HLS.js) to be enabled to be played with audio. Therefore, this toggle lets you either use Redlib JS-free or utilize this feature.</div>
+						<div id="feed_list" class="helper">Reddit videos require JavaScript (via HLS.js) to be enabled
+							to be played with audio. Therefore, this toggle lets you either use Redlib JS-free or
+							utilize this feature.</div>
 					</details>
 					<input type="hidden" value="off" name="use_hls">
-					<input type="checkbox" name="use_hls" id="use_hls" {% if prefs.use_hls == "on" %}checked{% endif %}>
+					<input type="checkbox" name="use_hls" id="use_hls" {% if prefs.use_hls=="on" %}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="hide_hls_notification">Hide notification about possible HLS usage</label>
 					<input type="hidden" value="off" name="hide_hls_notification">
-					<input type="checkbox" name="hide_hls_notification" id="hide_hls_notification" {% if prefs.hide_hls_notification == "on" %}checked{% endif %}>
+					<input type="checkbox" name="hide_hls_notification" id="hide_hls_notification" {% if
+						prefs.hide_hls_notification=="on" %}checked{% endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="hide_awards">Hide awards</label>
 					<input type="hidden" value="off" name="hide_awards">
-					<input type="checkbox" name="hide_awards" id="hide_awards" {% if prefs.hide_awards == "on" %}checked{% endif %}>
+					<input type="checkbox" name="hide_awards" id="hide_awards" {% if prefs.hide_awards=="on" %}checked{%
+						endif %}>
 				</div>
 				<div class="prefs-group">
 					<label for="hide_score">Hide score</label>
 					<input type="hidden" value="off" name="hide_score">
-					<input type="checkbox" name="hide_score" id="hide_score" {% if prefs.hide_score == "on" %}checked{% endif %}>
+					<input type="checkbox" name="hide_score" id="hide_score" {% if prefs.hide_score=="on" %}checked{%
+						endif %}>
 				</div>
 				<div class="prefs-group">
-					<label for="disable_visit_reddit_confirmation">Do not confirm before visiting content on Reddit</label>
+					<label for="disable_visit_reddit_confirmation">Do not confirm before visiting content on
+						Reddit</label>
 					<input type="hidden" value="off" name="disable_visit_reddit_confirmation">
-					<input type="checkbox" name="disable_visit_reddit_confirmation" {% if prefs.disable_visit_reddit_confirmation == "on" %}checked{% endif %}>
+					<input type="checkbox" name="disable_visit_reddit_confirmation" {% if
+						prefs.disable_visit_reddit_confirmation=="on" %}checked{% endif %}>
 				</div>
 			</fieldset>
 			<input id="save" type="submit" value="Save">
 		</div>
 	</form>
 	{% if prefs.subscriptions.len() > 0 %}
-		<div class="prefs" id="settings_subs">
-			<legend>Subscribed Feeds</legend>
-			{% for sub in prefs.subscriptions %}
-			<div>
-				{% let feed -%}
-				{% if sub.starts_with("u_") -%}{% let feed = format!("u/{}", &sub[2..]) -%}{% else -%}{% let feed = format!("r/{}", sub) -%}{% endif -%}
-				<a href="/{{ feed }}">{{ feed }}</a>
-				<form action="/r/{{ sub }}/unsubscribe/?redirect=settings" method="POST">
-						<button class="unsubscribe">Unsubscribe</button>
-				</form>
-			</div>
-			{% endfor %}
+	<div class="prefs" id="settings_subs">
+		<legend>Subscribed Feeds</legend>
+		{% for sub in prefs.subscriptions %}
+		<div>
+			{% let feed -%}
+			{% if sub.starts_with("u_") -%}{% let feed = format!("u/{}", &sub[2..]) -%}{% else -%}{% let feed =
+			format!("r/{}", sub) -%}{% endif -%}
+			<a href="/{{ feed }}">{{ feed }}</a>
+			<form action="/r/{{ sub }}/unsubscribe/?redirect=settings" method="POST">
+				<button class="unsubscribe">Unsubscribe</button>
+			</form>
 		</div>
+		{% endfor %}
+	</div>
 	{% endif %}
 	{% if !prefs.filters.is_empty() %}
-		<div class="prefs" id="settings_filters">
-			<legend>Filtered Feeds</legend>
-			{% for sub in prefs.filters %}
-			<div>
-				{% let feed -%}
-				{% if sub.starts_with("u_") -%}{% let feed = format!("u/{}", &sub[2..]) -%}{% else -%}{% let feed = format!("r/{}", sub) -%}{% endif -%}
-				<a href="/{{ feed }}">{{ feed }}</a>
-				<form action="/r/{{ sub }}/unfilter/?redirect=settings" method="POST">
-					<button class="unfilter">Unfilter</button>
-				</form>
-			</div>
-			{% endfor %}
+	<div class="prefs" id="settings_filters">
+		<legend>Filtered Feeds</legend>
+		{% for sub in prefs.filters %}
+		<div>
+			{% let feed -%}
+			{% if sub.starts_with("u_") -%}{% let feed = format!("u/{}", &sub[2..]) -%}{% else -%}{% let feed =
+			format!("r/{}", sub) -%}{% endif -%}
+			<a href="/{{ feed }}">{{ feed }}</a>
+			<form action="/r/{{ sub }}/unfilter/?redirect=settings" method="POST">
+				<button class="unfilter">Unfilter</button>
+			</form>
 		</div>
+		{% endfor %}
+	</div>
 	{% endif %}
 
 	<div id="settings_note">
-		<p><b>Note:</b> settings and subscriptions are saved in browser cookies. Clearing your cookies will reset them.</p>
+		<p><b>Note:</b> settings and subscriptions are saved in browser cookies. Clearing your cookies will reset them.
+		</p>
 		<br>
 		{% match prefs.to_urlencoded() %}
 		{% when Ok with (encoded_prefs) %}
@@ -177,6 +200,23 @@
 		<p>There was an error creating your restore link: {{ err }}</p>
 		<p>Please report this issue</p>
 		{% endmatch %}
+		<br />
+		<div>
+			<script src="/copy.js"></script>
+			<label for="bincode_str">Or, export/import here (be sure to save first):</label>
+			<br />
+			<input type="text" id="bincode_str" name="bincode_str"
+				value="{% match prefs.to_bincode_str() %}{% when Ok with (bincode_str) %}{{ bincode_str }}{% when Err with (err) %}Error: {{ err }}{% endmatch %}"
+				readonly>
+			<button id="copy" class="copy">Copy</button>
+
+			<br />
+			<form action="/settings/encoded-restore/" method="POST">
+				<input type="text" id="encoded_prefs" name="encoded_prefs" value=""
+					placeholder="Paste your encoded settings here">
+				<button class="import" type="submit">Import</button>
+			</form>
+		</div>
 	</div>
 </div>
 
