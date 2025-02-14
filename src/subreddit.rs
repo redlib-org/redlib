@@ -10,7 +10,6 @@ use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
 use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
-use log::debug;
 use rinja::Template;
 
 use chrono::DateTime;
