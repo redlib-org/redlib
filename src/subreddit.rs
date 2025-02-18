@@ -10,7 +10,6 @@ use crate::{client::json, server::RequestExt, server::ResponseExt};
 use cookie::Cookie;
 use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
-use log::debug;
 use rinja::Template;
 
 use chrono::DateTime;
@@ -143,7 +142,6 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 	}
 
 	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
-	debug!("Path: {}", path);
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
 	let filters = get_filters(&req);
