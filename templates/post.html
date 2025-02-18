@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% import "utils.html" as utils %}
 
-{% block title %}{{ post.title }} - r/{{ post.community }}{% endblock %}
+{% block title %}
+	{% if single_thread %}
+		{{ comments[0].author.name }} comments on {{ post.title }} - r/{{ post.community }}
+	{% else %}
+		{{ post.title }} - r/{{ post.community }}
+	{% endif %}
+{% endblock %}
 
 {% block search %}
 	{% call utils::search(["/r/", post.community.as_str()].concat(), "") %}
