@@ -76,6 +76,9 @@
     },
     "REDLIB_FULL_URL": {
       "required": false
+    },
+    "REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS": {
+      "required": false
     }
   }
 }
