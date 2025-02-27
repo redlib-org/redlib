@@ -71,11 +71,11 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 		return Ok(redirect("/"));
 	}
 
-	if query.starts_with("r/") || query.starts_with("user/") {
+	if query.starts_with("r/") || query.starts_with("R/") || query.starts_with("user/") {
 		return Ok(redirect(&format!("/{query}")));
 	}
 
-	if query.starts_with("u/") {
+	if query.starts_with("u/") || query.starts_with("U/") {
 		return Ok(redirect(&format!("/user{}", &query[1..])));
 	}
 
