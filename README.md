@@ -6,7 +6,7 @@
 
 ---
 
-**10-second pitch:** Redlib is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://redlib.matthew.science/r/unpopularopinion) without being [tracked](#reddit).
+**10-second pitch:** Redlib is a private front-end like [Invidious](https://github.com/iv-org/invidious) but for Reddit. Browse the coldest takes of [r/unpopularopinion](https://farside.link/redlib/r/unpopularopinion) without being [tracked](#reddit).
 
 - 🚀 Fast: written in Rust for blazing-fast speeds and memory safety
 - ☁️ Light: no JavaScript, no ads, no tracking, no bloat
@@ -30,7 +30,6 @@
      - [Reddit](#reddit)
      - [Redlib](#redlib-1)
        - [Server](#server)
-       - [Official instance (redlib.matthew.science)](#official-instance-redlibmatthewscience)
 5. [Deployment](#deployment)
    - [Docker](#docker)
      - [Docker Compose](#docker-compose)
@@ -159,17 +158,7 @@ For transparency, I hope to describe all the ways Redlib handles user privacy.
 
 - **Logging:** In production (when running the binary, hosting with docker, or using the official instances), Redlib logs nothing. When debugging (running from source without `--release`), Redlib logs post IDs fetched to aid with troubleshooting.
 
-- **Cookies:** Redlib uses optional cookies to store any configured settings in [the settings menu](https://redlib.matthew.science/settings). These are not cross-site cookies and the cookies hold no personal data.
-
-#### Official instance (redlib.matthew.science)
-
-The official instance is hosted at https://redlib.matthew.science.
-
-- **Server:** The official instance runs a production binary, and thus logs nothing.
-
-- **DNS:** The domain for the official instance uses Cloudflare as the DNS resolver. However, this site is not proxied through Cloudflare, and thus Cloudflare doesn't have access to user traffic.
-
-- **Hosting:** The official instance is hosted on [Replit](https://replit.com/), which monitors usage to prevent abuse. I can understand if this invalidates certain users' threat models, and therefore, self-hosting, using unofficial instances, and browsing through Tor are welcomed.
+- **Cookies:** Redlib uses optional cookies to store any configured settings in the settings menu. These are not cross-site cookies and the cookies hold no personal data.
 
 ---
 
