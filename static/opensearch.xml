@@ -3,9 +3,9 @@
   <ShortName>Search Redlib</ShortName>
   <Description>Search for whatever you want on Redlib, awesome Reddit frontend</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="32" height="32" type="image/x-icon">/favicon.ico</Image>
-  <Url type="text/html" template="/search">
+  <Image width="32" height="32" type="image/x-icon">https://localhost:8080/favicon.ico</Image>
+  <Url type="text/html" template="https://localhost:8080/search">
     <Param name="q" value="{searchTerms}"/>
   </Url>
-  <moz:SearchForm>/search</moz:SearchForm>
+  <moz:SearchForm>https://localhost:8080/search</moz:SearchForm>
 </OpenSearchDescription>
