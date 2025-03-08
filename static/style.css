@@ -37,66 +37,6 @@
     font-weight: 100 900;
 }
 
-/* Automatic theme selection */
-:root,
-.dark {
-    /* Default & fallback theme (dark) */
-    --accent: #d54455;
-    --green: #5cff85;
-    --text: white;
-    --foreground: #222;
-    --background: #0f0f0f;
-    --outside: #1f1f1f;
-    --post: #161616;
-    --panel-border: 1px solid #333;
-    --highlighted: #333;
-    --visited: #aaa;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --popup: #b80a27;
-    --spoiler: #ddd;
-
-    /* Hint color theme to browser for scrollbar */
-    color-scheme: dark;
-}
-
-/* Browser-defined light theme */
-@media (prefers-color-scheme: light) {
-    :root {
-        --accent: #bb2b3b;
-        --green: #00a229;
-        --text: black;
-        --foreground: #f5f5f5;
-        --background: #ddd;
-        --outside: #ececec;
-        --post: #eee;
-        --panel-border: 1px solid #ccc;
-        --highlighted: white;
-        --visited: #555;
-        --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        --spoiler: #0f0f0f;
-
-        /* Hint color theme to browser for scrollbar */
-        color-scheme: light;
-    }
-}
-
-/* Other themes are located in the "themes" folder */
-
-/* Tokyo Night theme setting */
-.tokyoNight {
-    --accent: #565f89;
-    --green: #73daca;
-    --text: #a9b1d6;
-    --foreground: #24283b;
-    --background: #1a1b26;
-    --outside: #24283b;
-    --post: #1a1b26;
-    --panel-border: 1px solid #a9b1d6;
-    --highlighted: #414868;
-    --visited: #414868;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
 /* General */
 
 ::selection {
