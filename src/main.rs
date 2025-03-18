@@ -81,7 +81,9 @@ async fn resource(body: &str, content_type: &str, cache: bool) -> Result<Respons
 		.unwrap_or_default();
 
 	if cache {
-		res.headers_mut().insert("Cache-Control", HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"));
+		res
+			.headers_mut()
+			.insert("Cache-Control", HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"));
 	}
 
 	Ok(res)
@@ -439,7 +441,7 @@ pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 		Response::builder()
 			.status(200)
 			.header("content-type", "application/json")
-			.body(Body::from(fetch_instances().await?))// Could fail if no internet
+			.body(Body::from(fetch_instances().await?)) // Could fail if no internet
 			.unwrap_or_default(),
 	)
 }
