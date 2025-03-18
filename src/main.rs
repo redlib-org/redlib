@@ -4,8 +4,6 @@
 
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
-use std::str::FromStr;
-use bincode::Error;
 use futures_lite::FutureExt;
 use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
@@ -259,7 +257,7 @@ async fn main() {
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
 
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
-	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
+	app.at("/instances.json").get(|_| async move { Ok(proxy_instances().await.unwrap()) }.boxed()); // TODO: In the process of migrating error handling. (I recommend thiserror crate for dynamic errors.) No proper error handling yes, so functionality unimpacted.
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
@@ -438,21 +436,21 @@ async fn fetch_commit_info() -> String {
 	hyper::body::to_bytes(resp).await.expect("Failed to read body").iter().copied().map(|x| x as char).collect()
 }
 
-pub async fn proxy_instances() -> Result<Response<Body>, String> {
+pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 	Ok(
 		Response::builder()
 			.status(200)
 			.header("content-type", "application/json")
-			.body(Body::from(fetch_instances().await))
+			.body(Body::from(fetch_instances().await?))
 			.unwrap_or_default(),
 	)
 }
 
-#[cached(time = 600)]
-async fn fetch_instances() -> String {
+#[cached(time = 600, result = true, result_fallback = true)]
+async fn fetch_instances() -> Result<String, hyper::Error> {
 	let uri = Uri::from_static("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json");
 
-	let resp: Body = CLIENT.get(uri).await.expect("Failed to request GitHub").into_body();
+	let resp: Body = CLIENT.get(uri).await?.into_body(); // Could fail if there is no internet
 
-	hyper::body::to_bytes(resp).await.expect("Failed to read body").iter().copied().map(|x| x as char).collect()
+	Ok(hyper::body::to_bytes(resp).await?.iter().copied().map(|x| x as char).collect())
 }
