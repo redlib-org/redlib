@@ -258,7 +258,7 @@ async fn main() {
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
 
-	app.at("/commits.atom").get(|_| async move { Ok(proxy_instances().await.unwrap()) }.boxed()); // TODO: see below
+	app.at("/commits.atom").get(|_| async move { Ok(proxy_commit_info().await.unwrap()) }.boxed()); // TODO: see below
 	app.at("/instances.json").get(|_| async move { Ok(proxy_instances().await.unwrap()) }.boxed()); // TODO: In the process of migrating error handling. (I recommend thiserror crate for dynamic errors.) No proper error handling yes, so functionality unimpacted.
 
 	// Proxy media through Redlib
