@@ -18,10 +18,10 @@ use redlib::client::OAUTH_CLIENT;
 
 use futures_util::future::TryFutureExt;
 
-use axum::{routing::get, routing::post, };
-use tower_default_headers::DefaultHeadersLayer;
 use axum::http;
 use axum::http::header::{HeaderMap, HeaderName, HeaderValue as HeaderValuex};
+use axum::{routing::get, routing::post};
+use tower_default_headers::DefaultHeadersLayer;
 // Create Services
 
 // Required for the manifest to be valid
@@ -121,7 +121,10 @@ async fn stylex() -> impl axum::response::IntoResponse {
 	}
 	let mut headers = axum::http::HeaderMap::new();
 	headers.insert(axum::http::header::CONTENT_TYPE, axum::http::HeaderValue::from_static("text/css"));
-	headers.insert(axum::http::header::CACHE_CONTROL, axum::http::HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"));
+	headers.insert(
+		axum::http::header::CACHE_CONTROL,
+		axum::http::HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
+	);
 	info!("stylex called");
 	(headers, res)
 }
@@ -222,7 +225,7 @@ async fn main() {
 	info!("Evaluating instance info.");
 	Lazy::force(&instance_info::INSTANCE_INFO);
 	info!("Creating OAUTH client.");
-	Lazy::force(&OAUTH_CLIENT);  // TODO: Redlib hangs when launched offline due to this.
+	Lazy::force(&OAUTH_CLIENT); // TODO: Redlib hangs when launched offline due to this.
 
 	// Define default headers (added to all responses)
 	app.default_headers = headers! {
@@ -238,10 +241,6 @@ async fn main() {
 		(axum::http::header::X_FRAME_OPTIONS, HeaderValuex::from_static("DENY")),
 		(axum::http::header::CONTENT_SECURITY_POLICY, HeaderValuex::from_static("default-src 'none'; font-src 'self'; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"), )
 	].into_iter());
-	// 	http::header::HeaderMap::new();
-	// default_headersx.insert(http::header::REFERRER_POLICY, http::header::HeaderValue::from_static("no-referrer"));
-
-
 
 	if let Some(expire_time) = hsts {
 		if let Ok(val) = HeaderValue::from_str(&format!("max-age={expire_time}")) {
@@ -449,10 +448,19 @@ async fn main() {
 	app.at("/*").get(|req| error(req, "Nothing here").boxed());
 
 	let appx: axum::routing::Router<()> = axum::routing::Router::new()
-		.route("/style.css", get (stylex))
+		.route("/style.css", get(stylex))
+		.route(
+			"/manifest.json",
+			get((
+				[
+					(axum::http::header::CONTENT_TYPE, "application/json"),
+					(axum::http::header::CACHE_CONTROL, "public, max-age=86400, s-maxage=3600"),
+				],
+				include_bytes!("../static/manifest.json"),
+			)),
+		)
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
-
 
 	// Temporary listener for the axum server:
 	let listenerx = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
