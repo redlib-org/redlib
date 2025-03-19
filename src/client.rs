@@ -12,6 +12,8 @@ use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
+use http_api_problem::ApiError;
+use reqwest;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::{io, result::Result};
@@ -34,6 +36,34 @@ pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> =
 	Lazy::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
 
 pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENTX: Lazy<reqwest::Client> = Lazy::new(|| reqwest::Client::new());
+
+pub fn into_api_error(e: reqwest::Error) -> ApiError {
+	if e.is_timeout() || e.is_connect() {
+		ApiError::builder(http_api_problem::StatusCode::GATEWAY_TIMEOUT) // 504
+			.title("Gateway Timeout")
+			.message(format!("{e}"))
+			.source(e)
+			.finish()
+	} else if e.is_decode() {
+		ApiError::builder(http_api_problem::StatusCode::BAD_GATEWAY) // 502
+			.title("Bad Gateway")
+			.message(format!("{e}"))
+			.source(e)
+			.finish()
+	} else if e.is_status() && e.status().is_some() {
+		let status = e.status().unwrap();
+		ApiError::try_builder(status.as_u16())
+			.expect("reqwest considers this HTTP status to be an error status, but http_api_problem does not.")
+			.finish()
+	} else {
+		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR) // 500
+			.title("Internal Server Error")
+			.message(format!("{e}"))
+			.source(e)
+			.finish()
+	}
+}
 
 pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());

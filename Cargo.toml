@@ -56,10 +56,11 @@ htmlescape = "0.3.1"
 bincode = "1.3.3"
 base2048 = "2.0.2"
 revision = "0.10.0"
-http-api-problem = { version = "0.60", features = ["hyper", "api-error"] }
+http-api-problem = { version = "0.60", features = ["axum", "api-error"] }
 futures-util = "0.3.31"
 axum= { version = "0.8" }
 tower-default-headers = "0.2.0"
+reqwest = {  version = "0.12.15", features = ["stream"] }
 
 
 [dev-dependencies]
