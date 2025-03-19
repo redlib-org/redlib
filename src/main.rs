@@ -35,6 +35,15 @@ async fn pwa_logo() -> Result<Response<Body>, String> {
 	)
 }
 
+async fn pwa_logox() -> impl axum::response::IntoResponse {
+	let headers = [
+		(axum::http::header::CONTENT_TYPE, "image/png"),
+		(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
+	];
+	let logo = include_bytes!("../static/logo.png");
+	(headers, logo)
+}
+
 // Required for iOS App Icons
 async fn iphone_logo() -> Result<Response<Body>, String> {
 	Ok(
@@ -486,6 +495,7 @@ async fn main() {
 		)
 		.route("/robots.txt", get(robots))
 		.route("/favicon.ico", get(faviconx))
+		.route("/logo.png", get(pwa_logox))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
