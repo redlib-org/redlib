@@ -503,6 +503,7 @@ async fn main() {
 		.route("/check_update.js", get(cached_static_resource!("../static/check_update.js", "text/javascript")))
 		.route("/copy.js", get(cached_static_resource!("../static/copy.js", "text/javascript")))
 		.route("/commits.atom", get(proxy_commit_infox))
+		.route("/instances.json", get(proxy_instancesx))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
@@ -530,7 +531,7 @@ pub async fn proxy_commit_info() -> Result<Response<Body>, hyper::Error> {
 	)
 }
 #[cached(time = 600, result = true, result_fallback = true)]
-async fn proxy_commit_infox() -> Result<([(axum::http::header::HeaderName, &'static str); 2], Bytes), ApiError> {
+pub async fn proxy_commit_infox() -> Result<([(axum::http::header::HeaderName, &'static str); 2], Bytes), ApiError> {
 	let response = fetch_reqwest("https://github.com/redlib-org/redlib/commits/main.atom").await.map_err(&into_api_error)?;
 	// Note: Want to use Result::and_then(...), but that method does not allow async, so can't call await inside.
 	// Hence forced to call `into_api_error` twice.
@@ -557,6 +558,21 @@ pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 			.body(Body::from(fetch_instances().await?)) // Could fail if no internet
 			.unwrap_or_default(),
 	)
+}
+
+#[cached(time = 600, result = true, result_fallback = true)]
+pub async fn proxy_instancesx() -> Result<([(axum::http::header::HeaderName, &'static str); 2], Bytes), ApiError> {
+	let response = fetch_reqwest("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json")
+		.await
+		.map_err(&into_api_error)?;
+	// NOTE: Want to use Result::and_then(...), but that method does not allow async, so can't call .await inside.
+	// Hence forced to call `into_api_error` twice.
+	let data = response.bytes().await.map_err(&into_api_error)?;
+	let headers = [
+		(axum::http::header::CONTENT_TYPE, "application/json"),
+		(axum::http::header::CACHE_CONTROL, "public, max-age=86400, s-maxage=600"),
+	];
+	Ok((headers, data))
 }
 
 async fn fetch_reqwest(url: &str) -> Result<reqwest::Response, reqwest::Error> {
