@@ -57,6 +57,15 @@ async fn favicon() -> Result<Response<Body>, String> {
 	)
 }
 
+async fn faviconx() -> impl axum::response::IntoResponse {
+	let headers = [
+		(axum::http::header::CONTENT_TYPE, "image/vnd.microsoft.icon"),
+		(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
+	];
+	let favicon = include_bytes!("../static/favicon.ico");
+	(headers, favicon)
+}
+
 async fn font() -> Result<Response<Body>, String> {
 	Ok(
 		Response::builder()
@@ -476,6 +485,7 @@ async fn main() {
 			)),
 		)
 		.route("/robots.txt", get(robots))
+		.route("/favicon.ico", get(faviconx))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
