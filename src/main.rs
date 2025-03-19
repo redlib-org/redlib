@@ -77,7 +77,6 @@ async fn favicon() -> Result<Response<Body>, String> {
 	)
 }
 
-
 async fn font() -> Result<Response<Body>, String> {
 	Ok(
 		Response::builder()
@@ -491,6 +490,17 @@ async fn main() {
 		.route("/favicon.ico", get(cached_static_resource!("../static/favicon.ico", "image/vnd.microsoft.icon")))
 		.route("/logo.png", get(cached_static_resource!("../static/logo.png", "image/png")))
 		.route("/Inter.var.woff2", get(cached_static_resource!("../static/Inter.var.woff2", "font/woff2")))
+		.route("/touch-icon-iphone.png", get(cached_static_resource!("../static/apple-touch-icon.png", "image/png")))
+		.route("/apple-touch-icon.png", get(cached_static_resource!("../static/apple-touch-icon.png", "image/png")))
+		.route(
+			"/opensearch.xml",
+			get(cached_static_resource!("../static/opensearch.xml", "application/opensearchdescription+xml")),
+		)
+		.route("/playHLSVideo.js", get(cached_static_resource!("../static/playHLSVideo.js", "text/javascript")))
+		.route("/hls.min.js", get(cached_static_resource!("../static/hls.min.js", "text/javascript")))
+		.route("/highlighted.js", get(cached_static_resource!("../static/highlighted.js", "text/javascript")))
+		.route("/check_update.js", get(cached_static_resource!("../static/check_update.js", "text/javascript")))
+		.route("/copy.js", get(cached_static_resource!("../static/copy.js", "text/javascript")))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
