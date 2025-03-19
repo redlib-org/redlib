@@ -129,6 +129,22 @@ async fn stylex() -> impl axum::response::IntoResponse {
 	(headers, res)
 }
 
+async fn robots() -> impl axum::response::IntoResponse {
+	let headers = [
+		(axum::http::header::CONTENT_TYPE, "text/plain"),
+		(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
+	];
+	let robots_txt = if match config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
+		Some(val) => val == "on",
+		None => false,
+	} {
+		"User-agent: *\nDisallow: /"
+	} else {
+		"User-agent: *\nDisallow: /u/\nDisallow: /user/"
+	};
+	(headers, robots_txt)
+}
+
 #[tokio::main]
 async fn main() {
 	// Load environment variables
@@ -459,6 +475,7 @@ async fn main() {
 				include_bytes!("../static/manifest.json"),
 			)),
 		)
+		.route("/robots.txt", get(robots))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
