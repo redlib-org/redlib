@@ -23,7 +23,7 @@ regex = "1.10.2"
 serde = { version = "1.0.193", features = ["derive"] }
 cookie = "0.18.0"
 futures-lite = "2.2.0"
-hyper = { version = "0.14.32", features = ["stream", "backports", "deprecated"] }
+hyper = { version = "0.14.32", features = ["stream", "backports"] }
 percent-encoding = "2.3.1"
 route-recognizer = "0.3.1"
 serde_json = "1.0.133"
@@ -58,6 +58,8 @@ base2048 = "2.0.2"
 revision = "0.10.0"
 http-api-problem = { version = "0.60", features = ["hyper", "api-error"] }
 futures-util = "0.3.31"
+axum= { version = "0.8" }
+tower-default-headers = "0.2.0"
 
 
 [dev-dependencies]

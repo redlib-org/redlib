@@ -18,6 +18,10 @@ use redlib::client::OAUTH_CLIENT;
 
 use futures_util::future::TryFutureExt;
 
+use axum::{routing::get, routing::post, };
+use tower_default_headers::DefaultHeadersLayer;
+use axum::http;
+use axum::http::header::{HeaderMap, HeaderName, HeaderValue as HeaderValuex};
 // Create Services
 
 // Required for the manifest to be valid
@@ -106,6 +110,20 @@ async fn style() -> Result<Response<Body>, String> {
 			.body(res.to_string().into())
 			.unwrap_or_default(),
 	)
+}
+
+async fn stylex() -> impl axum::response::IntoResponse {
+	let mut res = include_str!("../static/style.css").to_string();
+	for file in ThemeAssets::iter() {
+		res.push('\n');
+		let theme = ThemeAssets::get(file.as_ref()).unwrap();
+		res.push_str(std::str::from_utf8(theme.data.as_ref()).unwrap());
+	}
+	let mut headers = axum::http::HeaderMap::new();
+	headers.insert(axum::http::header::CONTENT_TYPE, axum::http::HeaderValue::from_static("text/css"));
+	headers.insert(axum::http::header::CACHE_CONTROL, axum::http::HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"));
+	info!("stylex called");
+	(headers, res)
 }
 
 #[tokio::main]
@@ -204,7 +222,7 @@ async fn main() {
 	info!("Evaluating instance info.");
 	Lazy::force(&instance_info::INSTANCE_INFO);
 	info!("Creating OAUTH client.");
-	Lazy::force(&OAUTH_CLIENT);
+	Lazy::force(&OAUTH_CLIENT);  // TODO: Redlib hangs when launched offline due to this.
 
 	// Define default headers (added to all responses)
 	app.default_headers = headers! {
@@ -214,9 +232,27 @@ async fn main() {
 		"Content-Security-Policy" => "default-src 'none'; font-src 'self'; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"
 	};
 
+	let mut default_headersx: HeaderMap<HeaderValuex> = HeaderMap::from_iter([
+		(axum::http::header::REFERRER_POLICY, HeaderValuex::from_static("no-referrer")),
+		(axum::http::header::X_CONTENT_TYPE_OPTIONS, HeaderValuex::from_static("nosniff")),
+		(axum::http::header::X_FRAME_OPTIONS, HeaderValuex::from_static("DENY")),
+		(axum::http::header::CONTENT_SECURITY_POLICY, HeaderValuex::from_static("default-src 'none'; font-src 'self'; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"), )
+	].into_iter());
+	// 	http::header::HeaderMap::new();
+	// default_headersx.insert(http::header::REFERRER_POLICY, http::header::HeaderValue::from_static("no-referrer"));
+
+
+
 	if let Some(expire_time) = hsts {
 		if let Ok(val) = HeaderValue::from_str(&format!("max-age={expire_time}")) {
 			app.default_headers.insert("Strict-Transport-Security", val);
+		}
+	}
+
+	//axum
+	if let Some(expire_time) = hsts {
+		if let Ok(val) = HeaderValuex::from_str(&format!("max-age={expire_time}")) {
+			default_headersx.insert(axum::http::header::STRICT_TRANSPORT_SECURITY, val);
 		}
 	}
 
@@ -411,6 +447,16 @@ async fn main() {
 
 	// Default service in case no routes match
 	app.at("/*").get(|req| error(req, "Nothing here").boxed());
+
+	let appx: axum::routing::Router<()> = axum::routing::Router::new()
+		.route("/style.css", get (stylex))
+		.route("/", get(|| async { "hello, world!" }))
+		.layer(DefaultHeadersLayer::new(default_headersx));
+
+
+	// Temporary listener for the axum server:
+	let listenerx = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+	axum::serve(listenerx, appx).await.unwrap();
 
 	println!("Running Redlib v{} on {listener}!", env!("CARGO_PKG_VERSION"));
 
