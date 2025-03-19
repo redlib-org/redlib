@@ -731,8 +731,8 @@ impl Preferences {
 		}
 	}
 
-	pub fn to_urlencoded(&self) -> Result<String, String> {
-		serde_urlencoded::to_string(self).map_err(|e| e.to_string())
+	pub fn to_urlencoded(&self) -> Result<String, serde_urlencoded::ser::Error> {
+		serde_urlencoded::to_string(self)
 	}
 
 	pub fn to_bincode(&self) -> Result<Vec<u8>, String> {
@@ -752,10 +752,10 @@ pub fn deflate_compress(i: Vec<u8>) -> Result<Vec<u8>, String> {
 	e.finish().into_result().map_err(|e| e.to_string())
 }
 
-pub fn deflate_decompress(i: Vec<u8>) -> Result<Vec<u8>, String> {
+pub fn deflate_decompress(i: Vec<u8>) -> Result<Vec<u8>, std::io::Error> {
 	let mut decoder = Decoder::new(&i[..]);
 	let mut out = Vec::new();
-	decoder.read_to_end(&mut out).map_err(|e| format!("Failed to read from gzip decoder: {}", e))?;
+	decoder.read_to_end(&mut out)?;
 	Ok(out)
 }
 

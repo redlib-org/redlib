@@ -31,6 +31,15 @@ use crate::dbg_msg;
 
 type BoxResponse = Pin<Box<dyn Future<Output = Result<Response<Body>, String>> + Send>>;
 
+// thiserror error combing hyper::Error and http:Error
+/*#[derive(thiserror::Error, Debug)]
+pub enum Error {
+	#[error(transparent)]
+	Hyper(#[from] hyper::Error),
+	#[error(transparent)]
+	Http(#[from] http::Error),
+}*/
+
 /// Compressors for the response Body, in ascending order of preference.
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 enum CompressionType {

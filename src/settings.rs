@@ -8,6 +8,7 @@ use crate::subreddit::join_until_size_limit;
 use crate::utils::{deflate_decompress, redirect, template, Preferences};
 use cookie::Cookie;
 use futures_lite::StreamExt;
+use http_api_problem::ApiError;
 use hyper::{Body, Request, Response};
 use rinja::Template;
 use time::{Duration, OffsetDateTime};
@@ -264,24 +265,55 @@ pub async fn update(req: Request<Body>) -> Result<Response<Body>, String> {
 	Ok(set_cookies_method(req, false))
 }
 
-pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, String> {
-	let body = hyper::body::to_bytes(req.into_body())
-		.await
-		.map_err(|e| format!("Failed to get bytes from request body: {}", e))?;
+pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, ApiError> {
+	let body = hyper::body::to_bytes(req.into_body()).await.map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::REQUEST_TIMEOUT) // 408
+			.title("Request Timeout")
+			.message(format!("The server could not receive the request: {e}"))
+			.source(e)
+			.finish()
+	})?;
 
 	let encoded_prefs = form_urlencoded::parse(&body)
 		.find(|(key, _)| key == "encoded_prefs")
 		.map(|(_, value)| value)
-		.ok_or_else(|| "encoded_prefs parameter not found in request body".to_string())?;
+		.ok_or_else(|| {
+			ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+				.title("Bad Request")
+				.message("Missing encoded_prefs parameter")
+				.finish()
+		})?;
 
-	let bytes = base2048::decode(&encoded_prefs).ok_or_else(|| "Failed to decode base2048 encoded preferences".to_string())?;
+	let bytes = base2048::decode(&encoded_prefs).ok_or_else(|| {
+		ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+			.title("Invalid base2048")
+			.message(format!("Given invalid base2048 string as encoded preferences: {}", &encoded_prefs))
+	})?;
 
-	let out = deflate_decompress(bytes)?;
+	let out = deflate_decompress(bytes).map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR) // 500
+			.title("Could not read deflate stream")
+			.message(e.to_string())
+			.source(e)
+			.finish()
+	})?;
 
-	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| format!("Failed to deserialize bytes into Preferences struct: {}", e))?;
+	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+			.title("Invalid preference string")
+			.message(format!("Failed to deserialize bytes into Preferences struct: {}", e))
+			.source(e)
+	})?;
 	prefs.available_themes = vec![];
 
-	let url = format!("/settings/restore/?{}", prefs.to_urlencoded()?);
+	let url = format!(
+		"/settings/restore/?{}",
+		prefs.to_urlencoded().map_err(|e| ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+			.title("Invalid preference string")
+			.message(format!("Given preference struct is not url-encodable: {}", e))
+			.source(e)
+			.finish())?
+	);
 
 	Ok(redirect(&url))
 }

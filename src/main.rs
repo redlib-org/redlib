@@ -16,6 +16,8 @@ use redlib::{config, duplicates, headers, instance_info, post, search, settings,
 
 use redlib::client::OAUTH_CLIENT;
 
+use futures_util::future::TryFutureExt;
+
 // Create Services
 
 // Required for the manifest to be valid
@@ -258,9 +260,8 @@ async fn main() {
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
 
-	app.at("/commits.atom").get(|_| async move { Ok(proxy_commit_info().await.unwrap()) }.boxed()); // TODO: see below
-	app.at("/instances.json").get(|_| async move { Ok(proxy_instances().await.unwrap()) }.boxed()); // TODO: In the process of migrating error handling. (I recommend thiserror crate for dynamic errors.) No proper error handling yes, so functionality unimpacted.
-
+	app.at("/commits.atom").get(|_| proxy_commit_info().map_err(|e| e.to_string()).boxed());
+	app.at("/instances.json").get(|_| proxy_instances().map_err(|e| e.to_string()).boxed());
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
@@ -295,7 +296,9 @@ async fn main() {
 	// Configure settings
 	app.at("/settings").get(|r| settings::get(r).boxed()).post(|r| settings::set(r).boxed());
 	app.at("/settings/restore").get(|r| settings::restore(r).boxed());
-	app.at("/settings/encoded-restore").post(|r| settings::encoded_restore(r).boxed());
+	app
+		.at("/settings/encoded-restore")
+		.post(|r| settings::encoded_restore(r).map_err(|e| e.to_string()).boxed());
 	app.at("/settings/update").get(|r| settings::update(r).boxed());
 
 	// RSS Subscriptions
