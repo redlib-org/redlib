@@ -35,14 +35,25 @@ async fn pwa_logo() -> Result<Response<Body>, String> {
 	)
 }
 
-async fn pwa_logox() -> impl axum::response::IntoResponse {
-	let headers = [
-		(axum::http::header::CONTENT_TYPE, "image/png"),
-		(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
-	];
-	let logo = include_bytes!("../static/logo.png");
-	(headers, logo)
+macro_rules! cached_static_resource {
+	($path:expr, $content_type:expr) => {
+		(
+			[
+				(axum::http::header::CONTENT_TYPE, $content_type),
+				(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
+			],
+			include_bytes!($path),
+		)
+	};
 }
+/*async fn static_resource(path: &'static str, content_type: axum::http::header::HeaderValue) -> impl axum::response::IntoResponse {
+	let headers = [
+		(axum::http::header::CONTENT_TYPE, content_type),
+		(axum::http::header::CACHE_CONTROL, axum::http::header::HeaderValue::from_static("public, max-age=1209600, s-maxage=86400")),
+	];
+	let image = include_bytes!(path);
+	(headers, image)
+}*/
 
 // Required for iOS App Icons
 async fn iphone_logo() -> Result<Response<Body>, String> {
@@ -66,14 +77,6 @@ async fn favicon() -> Result<Response<Body>, String> {
 	)
 }
 
-async fn faviconx() -> impl axum::response::IntoResponse {
-	let headers = [
-		(axum::http::header::CONTENT_TYPE, "image/vnd.microsoft.icon"),
-		(axum::http::header::CACHE_CONTROL, "public, max-age=1209600, s-maxage=86400"),
-	];
-	let favicon = include_bytes!("../static/favicon.ico");
-	(headers, favicon)
-}
 
 async fn font() -> Result<Response<Body>, String> {
 	Ok(
@@ -483,19 +486,11 @@ async fn main() {
 
 	let appx: axum::routing::Router<()> = axum::routing::Router::new()
 		.route("/style.css", get(stylex))
-		.route(
-			"/manifest.json",
-			get((
-				[
-					(axum::http::header::CONTENT_TYPE, "application/json"),
-					(axum::http::header::CACHE_CONTROL, "public, max-age=86400, s-maxage=3600"),
-				],
-				include_bytes!("../static/manifest.json"),
-			)),
-		)
+		.route("/manifest.json", get(cached_static_resource!("../static/manifest.json", "application/json")))
 		.route("/robots.txt", get(robots))
-		.route("/favicon.ico", get(faviconx))
-		.route("/logo.png", get(pwa_logox))
+		.route("/favicon.ico", get(cached_static_resource!("../static/favicon.ico", "image/vnd.microsoft.icon")))
+		.route("/logo.png", get(cached_static_resource!("../static/logo.png", "image/png")))
+		.route("/Inter.var.woff2", get(cached_static_resource!("../static/Inter.var.woff2", "font/woff2")))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
