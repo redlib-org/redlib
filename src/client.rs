@@ -21,7 +21,7 @@ use std::{io, result::Result};
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
 use crate::server::RequestExt;
-use crate::utils::{format_url, Post};
+use crate::utils::{fetch_reqwest, format_url, Post};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -177,6 +177,19 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 	}
 
 	stream(&url, &req).await
+}
+
+pub async fn proxyx(url: impl reqwest::IntoUrl) -> impl axum::response::IntoResponse {
+	let response: reqwest::Response = fetch_reqwest(url).await.map_err(&into_api_error)?;
+	let mut response_builder = axum::http::Response::builder().status(response.status()); // See https://github.com/tokio-rs/axum/blob/main/examples/reqwest-response/src/main.rs#L62C5-L67C18
+	*response_builder.headers_mut().unwrap() = response.headers().clone();
+	Ok::<_, ApiError>(response_builder.body(axum::body::Body::from_stream(response.bytes_stream())).map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::BAD_GATEWAY) //502
+			.title("Bad Gateway")
+			.message(format!("Could not forward response: {e}"))
+			.source(e)
+			.finish()
+	})?)
 }
 
 async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String> {

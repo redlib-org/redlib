@@ -5,6 +5,7 @@ use crate::config::{self, get_setting};
 //
 // CRATES
 //
+use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
@@ -1691,4 +1692,8 @@ fn test_round_trip(input: &Preferences, compression: bool) {
 	let decompressed = if compression { deflate_decompress(compressed).unwrap() } else { compressed };
 	let deserialized: Preferences = bincode::deserialize(&decompressed).unwrap();
 	assert_eq!(*input, deserialized);
+}
+
+pub async fn fetch_reqwest(url: impl reqwest::IntoUrl) -> Result<reqwest::Response, reqwest::Error> {
+	CLIENTX.get(url).send().await?.error_for_status() // Forward HTTP errors as an error
 }

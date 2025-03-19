@@ -10,10 +10,10 @@ use hyper::Uri;
 use hyper::{body::Bytes, header::HeaderValue, Body, Request, Response};
 use log::{info, warn};
 use once_cell::sync::Lazy;
-use redlib::client::{canonical_path, into_api_error, proxy, rate_limit_check, CLIENT, CLIENTX};
+use redlib::client::{canonical_path, into_api_error, proxy, proxyx, rate_limit_check, CLIENT};
 use redlib::server::{self, RequestExt};
 use redlib::utils::{error, redirect, ThemeAssets};
-use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
+use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user, utils};
 
 use redlib::client::OAUTH_CLIENT;
 
@@ -504,6 +504,10 @@ async fn main() {
 		.route("/copy.js", get(cached_static_resource!("../static/copy.js", "text/javascript")))
 		.route("/commits.atom", get(proxy_commit_infox))
 		.route("/instances.json", get(proxy_instancesx))
+		.route(
+			"/vid/{id}/{size}",
+			get(|axum::extract::Path((id, size)): axum::extract::Path<(String, String)>| proxyx(format!("https://v.redd.it/{id}/DASH_{size}"))),
+		)
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
@@ -532,7 +536,9 @@ pub async fn proxy_commit_info() -> Result<Response<Body>, hyper::Error> {
 }
 #[cached(time = 600, result = true, result_fallback = true)]
 pub async fn proxy_commit_infox() -> Result<([(axum::http::header::HeaderName, &'static str); 2], Bytes), ApiError> {
-	let response = fetch_reqwest("https://github.com/redlib-org/redlib/commits/main.atom").await.map_err(&into_api_error)?;
+	let response = utils::fetch_reqwest("https://github.com/redlib-org/redlib/commits/main.atom")
+		.await
+		.map_err(&into_api_error)?;
 	// Note: Want to use Result::and_then(...), but that method does not allow async, so can't call await inside.
 	// Hence forced to call `into_api_error` twice.
 	let data = response.bytes().await.map_err(&into_api_error)?;
@@ -562,7 +568,7 @@ pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 
 #[cached(time = 600, result = true, result_fallback = true)]
 pub async fn proxy_instancesx() -> Result<([(axum::http::header::HeaderName, &'static str); 2], Bytes), ApiError> {
-	let response = fetch_reqwest("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json")
+	let response = utils::fetch_reqwest("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json")
 		.await
 		.map_err(&into_api_error)?;
 	// NOTE: Want to use Result::and_then(...), but that method does not allow async, so can't call .await inside.
@@ -573,10 +579,6 @@ pub async fn proxy_instancesx() -> Result<([(axum::http::header::HeaderName, &'s
 		(axum::http::header::CACHE_CONTROL, "public, max-age=86400, s-maxage=600"),
 	];
 	Ok((headers, data))
-}
-
-async fn fetch_reqwest(url: &str) -> Result<reqwest::Response, reqwest::Error> {
-	CLIENTX.get(url).send().await?.error_for_status() // Forward HTTP errors as an error
 }
 
 #[cached(time = 600, result = true, result_fallback = true)]
