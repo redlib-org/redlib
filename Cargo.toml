@@ -3,7 +3,7 @@ name = "redlib"
 description = " Alternative private front-end to Reddit"
 license = "AGPL-3.0-only"
 repository = "https://github.com/redlib-org/redlib"
-version = "0.35.1"
+version = "0.36.0"
 authors = [
     "Matthew Esposito <matt+cargo@matthew.science>",
     "spikecodes <19519553+spikecodes@users.noreply.github.com>",

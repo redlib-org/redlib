@@ -12,6 +12,7 @@ use http_api_problem::ApiError;
 use hyper::{Body, Request, Response};
 use rinja::Template;
 use time::{Duration, OffsetDateTime};
+use tokio::time::timeout;
 use url::form_urlencoded;
 
 // STRUCTS
@@ -274,6 +275,14 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, ApiEr
 			.finish()
 	})?;
 
+	if body.len() > 1024 * 1024 {
+		return Err(
+			ApiError::builder(http_api_problem::StatusCode::PAYLOAD_TOO_LARGE) //413
+				.message("Preference string is too large.")
+				.finish(),
+		);
+	}
+
 	let encoded_prefs = form_urlencoded::parse(&body)
 		.find(|(key, _)| key == "encoded_prefs")
 		.map(|(_, value)| value)
@@ -290,20 +299,31 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, ApiEr
 			.message(format!("Given invalid base2048 string as encoded preferences: {}", &encoded_prefs))
 	})?;
 
-	let out = deflate_decompress(bytes).map_err(|e| {
+	let out = timeout(std::time::Duration::from_secs(1), async { deflate_decompress(bytes) }).await.map_err(|e| {
 		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR) // 500
 			.title("Could not read deflate stream")
-			.message(e.to_string())
+			.message(format!("Failed to decompress bytes: {e}"))
 			.source(e)
 			.finish()
-	})?;
+	})??;
 
-	let mut prefs: Preferences = bincode::deserialize(&out).map_err(|e| {
-		ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
-			.title("Invalid preference string")
-			.message(format!("Failed to deserialize bytes into Preferences struct: {}", e))
-			.source(e)
-	})?;
+	let mut prefs: Preferences = timeout(std::time::Duration::from_secs(1), async { bincode::deserialize(&out) })
+		.await
+		.map_err(|e| {
+			ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+				.title("Invalid preference string")
+				.message(format!("Failed to deserialize preferences: {}", e))
+				.source(e)
+				.finish()
+		})?
+		.map_err(|e| {
+			ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+				.title("Invalid preference string")
+				.message(format!("Failed to deserialize bytes into Preferences struct: {}", e))
+				.source(e)
+				.finish()
+		})?;
+
 	prefs.available_themes = vec![];
 
 	let url = format!(
