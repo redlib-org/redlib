@@ -15,7 +15,7 @@ use serde_json::Value;
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
 use crate::server::RequestExt;
-use crate::utils::{fetch_reqwest, format_url, Post};
+use crate::utils::{format_url, Post};
 use http_api_problem::ApiError;
 use reqwest;
 use std::sync::atomic::Ordering;
@@ -179,7 +179,7 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 	stream(&url, &req).await
 }
 
-pub async fn proxyx(
+pub async fn proxy_get(
 	axum::extract::Path(parameters): axum::extract::Path<std::collections::HashMap<String, String>>,
 	mut req: axum::extract::Request,
 	fmtstr: &str,
@@ -208,8 +208,39 @@ pub async fn proxyx(
 			.finish()
 	})?;
 
+	// Filter request headers
+	let mut new_headers = axum::http::HeaderMap::new();
+
+	// NOTE: These header values are old Redlib code, and are only tested on GET requests.
+	for &key in &["Range", "If-Modified-Since", "Cache-Control"] {
+		if let Some(value) = req.headers().get(key) {
+			new_headers.insert(key, value.clone());
+		}
+	}
+	*req.headers_mut() = new_headers;
+
 	let req: reqwest::Request = req.map(|body| reqwest::Body::wrap_stream(body.into_data_stream())).try_into().map_err(&into_api_error)?;
-	let response: reqwest::Response = CLIENTX.execute(req).await.and_then(reqwest::Response::error_for_status).map_err(&into_api_error)?;
+	let response: reqwest::Response = CLIENTX
+		.execute(req)
+		.await
+		.and_then(reqwest::Response::error_for_status)
+		.map(|mut res| {
+			let mut rm = |key: &str| res.headers_mut().remove(key);
+			rm("access-control-expose-headers");
+			rm("server");
+			rm("vary");
+			rm("etag");
+			rm("x-cdn");
+			rm("x-cdn-client-region");
+			rm("x-cdn-name");
+			rm("x-cdn-server-region");
+			rm("x-reddit-cdn");
+			rm("x-reddit-video-features");
+			rm("Nel");
+			rm("Report-To");
+			res
+		})
+		.map_err(&into_api_error)?;
 	Ok::<axum::http::response::Response<reqwest::Body>, ApiError>(response.into())
 }
 

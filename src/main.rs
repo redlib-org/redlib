@@ -10,7 +10,7 @@ use hyper::Uri;
 use hyper::{body::Bytes, header::HeaderValue, Body, Request, Response};
 use log::{info, warn};
 use once_cell::sync::Lazy;
-use redlib::client::{canonical_path, into_api_error, proxy, proxyx, rate_limit_check, CLIENT};
+use redlib::client::{canonical_path, into_api_error, proxy, proxy_get, rate_limit_check, CLIENT};
 use redlib::server::{self, RequestExt};
 use redlib::utils::{error, redirect, ThemeAssets};
 use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user, utils};
@@ -490,7 +490,7 @@ async fn main() {
 	// `auto_curry`, which uses procedural macros, and isn't very featureful
 	macro_rules! proxy {
 		($fmtstr:expr) => {
-			|parameters: axum::extract::Path<std::collections::HashMap<String, String>>, req: axum::extract::Request| proxyx(parameters, req, $fmtstr)
+			|parameters: axum::extract::Path<std::collections::HashMap<String, String>>, req: axum::extract::Request| proxy_get(parameters, req, $fmtstr)
 		};
 	}
 
