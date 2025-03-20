@@ -61,6 +61,7 @@ futures-util = "0.3.31"
 axum= { version = "0.8" }
 tower-default-headers = "0.2.0"
 reqwest = {  version = "0.12.15", features = ["stream"] }
+strfmt = "0.2.4"
 
 
 [dev-dependencies]

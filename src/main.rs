@@ -504,10 +504,7 @@ async fn main() {
 		.route("/copy.js", get(cached_static_resource!("../static/copy.js", "text/javascript")))
 		.route("/commits.atom", get(proxy_commit_infox))
 		.route("/instances.json", get(proxy_instancesx))
-		.route(
-			"/vid/{id}/{size}",
-			get(|axum::extract::Path((id, size)): axum::extract::Path<(String, String)>| proxyx(format!("https://v.redd.it/{id}/DASH_{size}"))),
-		)
+		.route("/vid/{id}/{size}", get(|path: axum::extract::Path<_>| proxyx(path, "https://v.redd.it/{id}/DASH_{size}")))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
@@ -524,7 +521,6 @@ async fn main() {
 		eprintln!("Server error: {e}");
 	}
 }
-
 pub async fn proxy_commit_info() -> Result<Response<Body>, hyper::Error> {
 	Ok(
 		Response::builder()

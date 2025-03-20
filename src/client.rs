@@ -12,16 +12,16 @@ use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
+use crate::dbg_msg;
+use crate::oauth::{force_refresh_token, token_daemon, Oauth};
+use crate::server::RequestExt;
+use crate::utils::{fetch_reqwest, format_url, Post};
 use http_api_problem::ApiError;
 use reqwest;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::{io, result::Result};
-
-use crate::dbg_msg;
-use crate::oauth::{force_refresh_token, token_daemon, Oauth};
-use crate::server::RequestExt;
-use crate::utils::{fetch_reqwest, format_url, Post};
+use strfmt;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -179,9 +179,17 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 	stream(&url, &req).await
 }
 
-pub async fn proxyx(url: impl reqwest::IntoUrl) -> impl axum::response::IntoResponse {
+pub async fn proxyx(axum::extract::Path(parameters): axum::extract::Path<std::collections::HashMap<String, String>>, fmtstr: &str) -> impl axum::response::IntoResponse {
+	let url = strfmt::strfmt(fmtstr, &parameters).map_err(|e| {
+		// Should fail only if the passed fmtstr parameter if formatted wrong. See fmtstr docs.
+		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+			.title("Internal Server Error")
+			.message("Could not rewrite url: {e}")
+			.source(e)
+			.finish()
+	})?;
 	let response: reqwest::Response = fetch_reqwest(url).await.map_err(&into_api_error)?;
-	let mut response_builder = axum::http::Response::builder().status(response.status()); // See https://github.com/tokio-rs/axum/blob/main/examples/reqwest-response/src/main.rs#L62C5-L67C18
+	let mut response_builder = axum::http::Response::builder().status(response.status()); // See https://github.com/tokio-rs/axum/blob/15917c6dbcb4a48707a20e9cfd021992a279a662/examples/reqwest-response/src/main.rs#L62-L67
 	*response_builder.headers_mut().unwrap() = response.headers().clone();
 	Ok::<_, ApiError>(response_builder.body(axum::body::Body::from_stream(response.bytes_stream())).map_err(|e| {
 		ApiError::builder(http_api_problem::StatusCode::BAD_GATEWAY) //502
