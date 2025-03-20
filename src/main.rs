@@ -19,9 +19,8 @@ use redlib::client::OAUTH_CLIENT;
 
 use futures_util::future::TryFutureExt;
 
-use axum::http;
-use axum::http::header::{HeaderMap, HeaderName, HeaderValue as HeaderValuex};
-use axum::{routing::get, routing::post};
+use axum::http::header::{HeaderMap, HeaderValue as HeaderValuex};
+use axum::routing::get;
 use tower_default_headers::DefaultHeadersLayer;
 // Create Services
 
