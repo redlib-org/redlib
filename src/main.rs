@@ -491,6 +491,7 @@ async fn main() {
 	}
 
 	let appx: axum::routing::Router<()> = axum::routing::Router::new()
+		.without_v07_checks() // Remove unnecessary backward compatibility
 		// Static resources
 		.route("/style.css", get(stylex))
 		.route("/manifest.json", get(cached_static_resource!("../static/manifest.json", "application/json")))
