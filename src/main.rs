@@ -483,7 +483,15 @@ async fn main() {
 	// Default service in case no routes match
 	app.at("/*").get(|req| error(req, "Nothing here").boxed());
 
+	// Helper macro to create a direct reverse proxy with formatted outcome
+	macro_rules! proxy {
+		($fmtstr:expr) => {
+			|path: axum::extract::Path<_>| proxyx(path, $fmtstr)
+		};
+	}
+
 	let appx: axum::routing::Router<()> = axum::routing::Router::new()
+		// Static resources
 		.route("/style.css", get(stylex))
 		.route("/manifest.json", get(cached_static_resource!("../static/manifest.json", "application/json")))
 		.route("/robots.txt", get(robots))
@@ -503,7 +511,23 @@ async fn main() {
 		.route("/copy.js", get(cached_static_resource!("../static/copy.js", "text/javascript")))
 		.route("/commits.atom", get(proxy_commit_infox))
 		.route("/instances.json", get(proxy_instancesx))
+		// Direct proxies
 		.route("/vid/{id}/{size}", get(|path: axum::extract::Path<_>| proxyx(path, "https://v.redd.it/{id}/DASH_{size}")))
+		.route("/hls/{id}/{*path}", get(proxy!("https://v.redd.it/{id}/{path}")))
+		.route("/img/{*path}", get(proxy!("https://i.redd.it/{path}")))
+		.route("/thumb/{point}/{id}", get(proxy!("https://{point}.thumbs.redditmedia.com/{id}")))
+		.route("/emoji/{id}/{name}", get(proxy!("https://emoji.redditmedia.com/{id}/{name}")))
+		.route(
+			"/emote/{subreddit_id}/{filename}",
+			get(proxy!("https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/{subreddit_id}/{filename}")),
+		)
+		.route(
+			"/preview/{loc}/award_images/{fullname}/{id}",
+			get(proxy!("https://{loc}view.redd.it/award_images/{fullname}/{id}")),
+		)
+		.route("/preview/{loc}/{id}", get(proxy!("https://{loc}view.redd.it/{id}")))
+		.route("/style/{*path}", get(proxy!("https://styles.redditmedia.com/{path}")))
+		.route("/static/{*path}", get(proxy!("https://www.redditstatic.com/{path}")))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
