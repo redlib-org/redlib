@@ -483,10 +483,14 @@ async fn main() {
 	// Default service in case no routes match
 	app.at("/*").get(|req| error(req, "Nothing here").boxed());
 
-	// Helper macro to create a direct reverse proxy with formatted outcome
+	/// Helper macro to create a direct reverse proxy with formatted outcome
+	/// Effectively, we want to curry the proxy function. This is achieved manually using this macro.
+	// There are two other "currying" crates:
+	// `currying`, which unfortunately depends on unstable features
+	// `auto_curry`, which uses procedural macros, and isn't very featureful
 	macro_rules! proxy {
 		($fmtstr:expr) => {
-			|path: axum::extract::Path<_>| proxyx(path, $fmtstr)
+			|parameters: axum::extract::Path<std::collections::HashMap<String, String>>, req: axum::extract::Request| proxyx(parameters, req, $fmtstr)
 		};
 	}
 
@@ -513,7 +517,7 @@ async fn main() {
 		.route("/commits.atom", get(proxy_commit_infox))
 		.route("/instances.json", get(proxy_instancesx))
 		// Direct proxies
-		.route("/vid/{id}/{size}", get(|path: axum::extract::Path<_>| proxyx(path, "https://v.redd.it/{id}/DASH_{size}")))
+		.route("/vid/{id}/{size}", get(proxy!("https://v.redd.it/{id}/DASH_{size}")))
 		.route("/hls/{id}/{*path}", get(proxy!("https://v.redd.it/{id}/{path}")))
 		.route("/img/{*path}", get(proxy!("https://i.redd.it/{path}")))
 		.route("/thumb/{point}/{id}", get(proxy!("https://{point}.thumbs.redditmedia.com/{id}")))

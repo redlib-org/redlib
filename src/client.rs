@@ -179,25 +179,38 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 	stream(&url, &req).await
 }
 
-pub async fn proxyx(axum::extract::Path(parameters): axum::extract::Path<std::collections::HashMap<String, String>>, fmtstr: &str) -> impl axum::response::IntoResponse {
-	let url = strfmt::strfmt(fmtstr, &parameters).map_err(|e| {
-		// Should fail only if the passed fmtstr parameter if formatted wrong. See fmtstr docs.
-		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
-			.title("Internal Server Error")
-			.message("Could not rewrite url: {e}")
+pub async fn proxyx(
+	axum::extract::Path(parameters): axum::extract::Path<std::collections::HashMap<String, String>>,
+	mut req: axum::extract::Request,
+	fmtstr: &str,
+) -> impl axum::response::IntoResponse {
+	// Format URI from fmtstr, then append any queries from the request.
+	let uri = format!(
+		"{}?{}",
+		strfmt::strfmt(fmtstr, &parameters) // Format given uri, then append any queries
+			.map_err(|e| {
+				// Should fail only if the passed fmtstr parameter if formatted wrong. See fmtstr docs.
+				ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+					.title("Internal Server Error")
+					.message(format!("Could not rewrite url: {e}"))
+					.source(e)
+					.finish()
+			})?,
+		req.uri().query().unwrap_or_default()
+	);
+	log::debug!("Forwarding {} request: {} to {}", req.method(), req.uri(), uri);
+	// Change req URI
+	*req.uri_mut() = axum::http::Uri::try_from(uri).map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::BAD_REQUEST) // 400
+			.title("Bad Request")
+			.message(format!("Could not read uri: {e}"))
 			.source(e)
 			.finish()
 	})?;
-	let response: reqwest::Response = fetch_reqwest(url).await.map_err(&into_api_error)?;
-	let mut response_builder = axum::http::Response::builder().status(response.status()); // See https://github.com/tokio-rs/axum/blob/15917c6dbcb4a48707a20e9cfd021992a279a662/examples/reqwest-response/src/main.rs#L62-L67
-	*response_builder.headers_mut().unwrap() = response.headers().clone();
-	Ok::<_, ApiError>(response_builder.body(axum::body::Body::from_stream(response.bytes_stream())).map_err(|e| {
-		ApiError::builder(http_api_problem::StatusCode::BAD_GATEWAY) //502
-			.title("Bad Gateway")
-			.message(format!("Could not forward response: {e}"))
-			.source(e)
-			.finish()
-	})?)
+
+	let req: reqwest::Request = req.map(|body| reqwest::Body::wrap_stream(body.into_data_stream())).try_into().map_err(&into_api_error)?;
+	let response: reqwest::Response = CLIENTX.execute(req).await.and_then(reqwest::Response::error_for_status).map_err(&into_api_error)?;
+	Ok::<axum::http::response::Response<reqwest::Body>, ApiError>(response.into())
 }
 
 async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String> {
