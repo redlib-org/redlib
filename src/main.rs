@@ -495,7 +495,7 @@ async fn main() {
 	}
 
 	let appx: axum::routing::Router<()> = axum::routing::Router::new()
-		.without_v07_checks() // Remove unnecessary backward compatibility
+		.without_v07_checks() // Remove unnecessary backward compatibility checks
 		// Static resources
 		.route("/style.css", get(stylex))
 		.route("/manifest.json", get(cached_static_resource!("../static/manifest.json", "application/json")))
@@ -533,6 +533,11 @@ async fn main() {
 		.route("/preview/{loc}/{id}", get(proxy!("https://{loc}view.redd.it/{id}")))
 		.route("/style/{*path}", get(proxy!("https://styles.redditmedia.com/{path}")))
 		.route("/static/{*path}", get(proxy!("https://www.redditstatic.com/{path}")))
+		// User profile
+		.route(
+			"/u/{name}",
+			get(|axum::extract::Path(name): axum::extract::Path<String>| async move { axum::response::Redirect::temporary(format!("/user/{}", name).as_str()) }),
+		)
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
