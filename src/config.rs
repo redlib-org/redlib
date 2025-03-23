@@ -267,8 +267,8 @@ fn test_default_filters() {
 #[test]
 #[sealed_test]
 fn test_pushshift() {
-	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://api.pushshift.io""#;
+	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://ihsoyct.github.io""#;
 	write("redlib.toml", config_to_write).unwrap();
 	assert!(get_setting("REDLIB_PUSHSHIFT_FRONTEND").is_some());
-	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://api.pushshift.io".into()));
+	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://ihsoyct.github.io".into()));
 }
