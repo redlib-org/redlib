@@ -1,11 +1,10 @@
 use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 
 use crate::{
-	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
+	client::{CLIENTX, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
-use hyper::{client, Body, Method, Request};
 use log::{error, info, trace};
 use serde_json::json;
 use tegen::tegen::TextGenerator;
@@ -69,12 +68,10 @@ impl Oauth {
 	async fn login(&mut self) -> Option<()> {
 		// Construct URL for OAuth token
 		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
-		let mut builder = Request::builder().method(Method::POST).uri(&url);
-
+		let mut builder = CLIENTX.request(reqwest::Method::POST, &url);
 		// Add headers from spoofed client
-		for (key, value) in &self.initial_headers {
-			builder = builder.header(key, value);
-		}
+		builder = builder.headers((&self.initial_headers).try_into().unwrap());
+
 		// Set up HTTP Basic Auth - basically just the const OAuth ID's with no password,
 		// Base64-encoded. https://en.wikipedia.org/wiki/Basic_access_authentication
 		// This could be constant, but I don't think it's worth it. OAuth ID's can change
@@ -83,19 +80,14 @@ impl Oauth {
 		builder = builder.header("Authorization", format!("Basic {auth}"));
 
 		// Set JSON body. I couldn't tell you what this means. But that's what the client sends
-		let json = json!({
-				"scopes": ["*","email", "pii"]
-		});
-		let body = Body::from(json.to_string());
+		let builder = builder.json(&json!(
+			{"scopes": ["*","email", "pii"]}
+		));
 
-		// Build request
-		let request = builder.body(body).unwrap();
-
-		trace!("Sending token request...\n\n{request:?}");
+		trace!("Sending token request...\n\n{builder:?}");
 
 		// Send request
-		let client: &once_cell::sync::Lazy<client::Client<_, Body>> = &CLIENT;
-		let resp = client.request(request).await.ok()?;
+		let resp = builder.send().await.ok()?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
 		trace!("OAuth headers: {:#?}", resp.headers());
@@ -117,7 +109,7 @@ impl Oauth {
 		trace!("Serializing response...");
 
 		// Serialize response
-		let body_bytes = hyper::body::to_bytes(resp.into_body()).await.ok()?;
+		let body_bytes = resp.bytes().await.ok()?;
 		let json: serde_json::Value = serde_json::from_slice(&body_bytes).ok()?;
 
 		trace!("Accessing relevant fields...");

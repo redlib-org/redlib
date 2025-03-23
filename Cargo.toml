@@ -60,7 +60,7 @@ http-api-problem = { version = "0.60", features = ["axum", "api-error"] }
 futures-util = "0.3.31"
 axum= { version = "0.8" }
 tower-default-headers = "0.2.0"
-reqwest = {  version = "0.12.15", features = ["stream"] }
+reqwest = {  version = "0.12.15", features = ["stream", "json"] }
 strfmt = "0.2.4"
 
 
