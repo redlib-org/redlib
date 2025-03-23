@@ -54,7 +54,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// Log the post ID being fetched in debug mode
 	#[cfg(debug_assertions)]
-	req.param("id").unwrap_or_default();
+	let post_id = req.param("id").unwrap_or_default();
 
 	let single_thread = req.param("comment_id").is_some();
 	let highlighted_comment = &req.param("comment_id").unwrap_or_default();
@@ -84,9 +84,10 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
-				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
-				_ => query_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &query, &req),
+			    "" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req, post_id.clone()),
+			    _ => query_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &query, &req, post_id.clone()),
 			};
+
 
 			// Use the Post and Comment structs to generate a website to show users
 			Ok(template(&PostTemplate {
@@ -114,7 +115,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 // COMMENTS
 
-fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, req: &Request<Body>) -> Vec<Comment> {
+fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, req: &Request<Body>, post_id: String) -> Vec<Comment> {
 	// Parse the comment JSON into a Vector of Comments
 	let comments = json["data"]["children"].as_array().map_or(Vec::new(), std::borrow::ToOwned::to_owned);
 
@@ -124,11 +125,11 @@ fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, 
 		.map(|comment| {
 			let data = &comment["data"];
 			let replies: Vec<Comment> = if data["replies"].is_object() {
-				parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, req)
+				parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, req, post_id.clone())
 			} else {
 				Vec::new()
 			};
-			build_comment(&comment, data, replies, post_link, post_author, highlighted_comment, filters, req)
+			build_comment(&comment, data, replies, post_link, post_author, highlighted_comment, filters, req, post_id.clone())
 		})
 		.collect()
 }
@@ -141,6 +142,7 @@ fn query_comments(
 	filters: &HashSet<String>,
 	query: &str,
 	req: &Request<Body>,
+	post_id: String,
 ) -> Vec<Comment> {
 	let comments = json["data"]["children"].as_array().map_or(Vec::new(), std::borrow::ToOwned::to_owned);
 	let mut results = Vec::new();
@@ -150,10 +152,10 @@ fn query_comments(
 
 		// If this comment contains replies, handle those too
 		if data["replies"].is_object() {
-			results.append(&mut query_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, query, req));
+			results.append(&mut query_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, query, req, post_id.clone()));
 		}
 
-		let c = build_comment(&comment, data, Vec::new(), post_link, post_author, highlighted_comment, filters, req);
+		let c = build_comment(&comment, data, Vec::new(), post_link, post_author, highlighted_comment, filters, req, post_id.clone());
 		if c.body.to_lowercase().contains(&query.to_lowercase()) {
 			results.push(c);
 		}
@@ -171,12 +173,13 @@ fn build_comment(
 	highlighted_comment: &str,
 	filters: &HashSet<String>,
 	req: &Request<Body>,
+	post_id: String,
 ) -> Comment {
 	let id = val(comment, "id");
 
 	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
 		format!(
-			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
+			"<div class=\"md\"><p>[removed] — <a href=\"https://{}?comments={post_id}\">view removed comment</a></p></div>",
 			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
