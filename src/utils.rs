@@ -627,7 +627,9 @@ pub struct Preferences {
 	#[serde(skip_serializing, skip_deserializing)]
 	pub available_themes: Vec<String>,
 	#[revision(start = 1)]
-	pub theme: String,
+	pub theme_light: String,
+	#[revision(start = 1)]
+	pub theme_dark: String,
 	#[revision(start = 1)]
 	pub front_page: String,
 	#[revision(start = 1)]
@@ -699,15 +701,15 @@ impl Preferences {
 	// Build preferences from cookies
 	pub fn new(req: &Request<Body>) -> Self {
 		// Read available theme names from embedded css files.
-		// Always make the default "system" theme available.
-		let mut themes = vec!["system".to_string()];
+		let mut themes = Vec::new();
 		for file in ThemeAssets::iter() {
 			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
 			themes.push(chunks[0].to_owned());
 		}
 		Self {
 			available_themes: themes,
-			theme: setting(req, "theme"),
+			theme_light: setting(req, "theme_light"),
+			theme_dark: setting(req, "theme_dark"),
 			front_page: setting(req, "front_page"),
 			layout: setting(req, "layout"),
 			wide: setting(req, "wide"),
@@ -1526,7 +1528,8 @@ mod tests {
 	fn serialize_prefs() {
 		let prefs = Preferences {
 			available_themes: vec![],
-			theme: "laserwave".to_owned(),
+			theme_light: "laserwave".to_owned(),
+			theme_dark: "laserwave".to_owned(),
 			front_page: "default".to_owned(),
 			layout: "compact".to_owned(),
 			wide: "on".to_owned(),
