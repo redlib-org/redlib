@@ -1,5 +1,5 @@
 /* Libreddit light theme setting */
-.libredditLight {
+.light-libreddit {
 	--accent: #009a9a;
 	--green: #00a229;
 	--text: black;
@@ -13,7 +13,7 @@
 	--shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-html:has(> .libredditLight) {
+html:has(> .light-libreddit) {
   /* Hint color theme to browser for scrollbar */
   color-scheme: light;
 }

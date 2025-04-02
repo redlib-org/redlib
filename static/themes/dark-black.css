@@ -1,6 +1,6 @@
-/* Libreddit black theme setting */
-.libredditBlack {
-	--accent: #009a9a;
+/* Black theme setting */
+.dark-black {
+	--accent: #bb2b3b;
 	--green: #00a229;
 	--text: white;
 	--foreground: #0f0f0f;
