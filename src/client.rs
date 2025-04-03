@@ -210,7 +210,6 @@ pub async fn proxy_get(
 
 	// Filter request headers
 	let mut new_headers = axum::http::HeaderMap::new();
-
 	// NOTE: These header values are old Redlib code, and are only tested on GET requests.
 	for &key in &["Range", "If-Modified-Since", "Cache-Control"] {
 		if let Some(value) = req.headers().get(key) {
@@ -225,6 +224,7 @@ pub async fn proxy_get(
 		.await
 		.and_then(reqwest::Response::error_for_status)
 		.map(|mut res| {
+			// Remove unwanted headers
 			let mut rm = |key: &str| res.headers_mut().remove(key);
 			rm("access-control-expose-headers");
 			rm("server");
@@ -292,6 +292,10 @@ fn reddit_get(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, St
 	request(&Method::GET, path, true, quarantine, REDDIT_URL_BASE, REDDIT_URL_BASE_HOST)
 }
 
+async fn reddit_getx(path: &str, quarantine: bool) -> Result<reqwest::Response, ApiError> {
+	reddit_request(reqwest::Method::GET, path, quarantine, REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST).await
+}
+
 /// Makes a HEAD request to Reddit at `path, using the short URL base. This will not follow redirects.
 fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<Response<Body>, String>> {
 	request(&Method::HEAD, path, false, quarantine, base_path, host)
@@ -302,6 +306,35 @@ fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, ho
 // 	request(&Method::HEAD, path, false, quarantine, false)
 // }
 // Unused - reddit_head is only ever called in the context of a short URL
+
+async fn reddit_request(method: reqwest::Method, path: &str, quarantine: bool, base_path: &'static str, host: &'static str) -> Result<reqwest::Response, ApiError> {
+	let url = format!("{base_path}{path}");
+
+	// Build request to Reddit. Reqwest handles gzip encoding. Reddit does not yet support Brotli encoding.
+	use reqwest::header;
+	use reqwest::header::{HeaderMap, HeaderValue};
+	let mut headers: HeaderMap = HeaderMap::new();
+	headers.append(header::HOST, HeaderValue::from_static(host)); // FIXME: Reddit can fingerprint. Either shuffle headers, or add dynamic headers.
+	if quarantine {
+		headers.append(
+			header::COOKIE,
+			HeaderValue::from_static("_options=%7B%22pref_quarantine_optin%22%3A%20true%2C%20%22pref_gated_sr_optin%22%3A%20true%7D"),
+		);
+	}
+
+	let client = OAUTH_CLIENT.load();
+	let headermap2: HeaderMap<HeaderValue> = HeaderMap::try_from(&client.headers_map).expect("Invalid hashmap of headers");
+	headers.extend(headermap2);
+
+	let result = CLIENTX
+		.request(method, url)
+		.headers(headers)
+		.send()
+		.await
+		.and_then(reqwest::Response::error_for_status)
+		.map_err(&into_api_error)?;
+	Ok(result)
+}
 
 /// Makes a request to Reddit. If `redirect` is `true`, `request_with_redirect`
 /// will recurse on the URL that Reddit provides in the Location HTTP header
@@ -449,6 +482,65 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 		}
 	}
 	.boxed()
+}
+
+#[cached(size = 100, time = 30, result = true)]
+pub async fn jsonx(path: String, quarantine: bool) -> Result<Value, ApiError> {
+	// First, handle rolling over the OAUTH_CLIENT if need be.
+	let current_rate_limit = OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst);
+	let is_rolling_over = OAUTH_IS_ROLLING_OVER.load(Ordering::SeqCst);
+	if current_rate_limit < 10 && !is_rolling_over {
+		log::info!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
+		tokio::spawn(force_refresh_token());
+	}
+	OAUTH_RATELIMIT_REMAINING.fetch_sub(1, Ordering::SeqCst);
+
+	let response = reddit_getx(&path, quarantine).await?;
+
+	// Handle OAUTH stuff
+	let reset = response.headers().get("x-ratelimit-reset").map(|val| String::from_utf8_lossy(val.as_bytes()));
+	let remaining = response.headers().get("x-ratelimit-remaining").map(|val| String::from_utf8_lossy(val.as_bytes()));
+	let used = response.headers().get("x-ratelimit-used").map(|val| String::from_utf8_lossy(val.as_bytes()));
+	trace!(
+		"Ratelimit remaining: Header says {}, we have {current_rate_limit}. Resets in {}. Rollover: {}. Ratelimit used: {}",
+		remaining.as_deref().unwrap_or_default(),
+		reset.as_deref().unwrap_or_default(),
+		if is_rolling_over { "yes" } else { "no" },
+		used.as_deref().unwrap_or_default(),
+	);
+	if let Some(val) = remaining.and_then(|s| s.parse::<f32>().ok()) {
+		OAUTH_RATELIMIT_REMAINING.store(val.round() as u16, Ordering::SeqCst);
+	}
+
+	// Work with the JSON.
+	let json: Value = response.json().await.map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::BAD_GATEWAY) // 502
+			.title("Bad Gateway")
+			.message(format!("Failed to parse page JSON data: {e}"))
+			.source(e)
+			.finish()
+	})?;
+
+	// FIXME: If we get http 401, with error message "Unauthorized", force a token refresh. Currently 401 is handled by `into_api_error`. Perphaps reddit_request can handle oauth stuff
+
+	if let Some(true) = json["data"]["is_suspended"].as_bool() {
+		return Err(
+			ApiError::builder(http_api_problem::StatusCode::NOT_FOUND)
+				.title("Suspended")
+				.message("user is suspended")
+				.finish(),
+		);
+	}
+	if let Some(error_code) = json["error"].as_i64() {
+		// Err(format!("Reddit error {} \"{}\": {} | {path}", json["error"], json["reason"], json["message"]));
+		return Err(
+			ApiError::builder(http_api_problem::StatusCode::NOT_FOUND)
+				.title(format!("Reddit Error {error_code}: {}", json["reason"]))
+				.message(json["message"].as_str().unwrap_or_default())
+				.finish(),
+		);
+	}
+	Ok(json)
 }
 
 // Make a request to a Reddit API and parse the JSON response
