@@ -914,52 +914,36 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
 
 	// If this was called with "subscriptions" and the "subscriptions" cookie has a value
-	if name == "subscriptions" && req.cookie("subscriptions").is_some() {
+	if let ("subscriptions", Some(subscriptions_cookie)) = (name, req.cookie("subscriptions")) {
+		// NOTE: the numbered subcriptions will not be registered if subscriptions cookie is empty. Unclear whether intended behaviour.
 		// Create subscriptions string
 		let mut subscriptions = String::new();
+		subscriptions.push_str(subscriptions_cookie.value_trimmed());
 
-		// Default subscriptions cookie
-		if req.cookie("subscriptions").is_some() {
-			subscriptions.push_str(req.cookie("subscriptions").unwrap().value());
-		}
-
-		// Start with first numbered subscription cookie
+		// append all subscriptionsNUMBER cookies
 		let mut subscriptions_number = 1;
-
-		// While whatever subscriptionsNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+		while let Some(cookie_i) = req.cookie(&format!("subscriptions{}", subscriptions_number)) {
 			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
-			subscriptions.push_str(req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value());
-
-			// Increment subscription cookie number
+			subscriptions.push_str(cookie_i.value_trimmed());
 			subscriptions_number += 1;
 		}
-
 		// Return the subscriptions cookies as one large string
 		subscriptions
 	}
 	// If this was called with "filters" and the "filters" cookie has a value
-	else if name == "filters" && req.cookie("filters").is_some() {
+	else if let ("filters", Some(filters_cookie)) = (name, req.cookie("filters")) {
+		// NOTE: the numbered filters will not be registered if filters cookie is empty. Unclear whether intended behaviour.
 		// Create filters string
 		let mut filters = String::new();
+		filters.push_str(filters_cookie.value_trimmed());
 
-		// Default filters cookie
-		if req.cookie("filters").is_some() {
-			filters.push_str(req.cookie("filters").unwrap().value());
-		}
-
-		// Start with first numbered filters cookie
+		// append all filtersNUMBER cookies
 		let mut filters_number = 1;
-
-		// While whatever filtersNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+		while let Some(cookie_i) = req.cookie(&format!("filters{}", filters_number)) {
 			// Push whatever filtersNUMBER cookie we're looking at into the filters string
-			filters.push_str(req.cookie(&format!("filters{}", filters_number)).unwrap().value());
-
-			// Increment filters cookie number
+			filters.push_str(cookie_i.value_trimmed());
 			filters_number += 1;
 		}
-
 		// Return the filters cookies as one large string
 		filters
 	}
