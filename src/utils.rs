@@ -810,7 +810,7 @@ pub async fn parse_post(post: &Value) -> Post {
 	let body = if val(post, "removed_by_category") == "moderator" {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{permalink}\">view removed post</a></p></div>",
-			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(config::DEFAULT_PUSHSHIFT_FRONTEND),
 		)
 	} else {
 		let selftext = val(post, "selftext");

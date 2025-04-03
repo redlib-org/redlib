@@ -177,7 +177,7 @@ fn build_comment(
 	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
-			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
+			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(crate::config::DEFAULT_PUSHSHIFT_FRONTEND),
 		)
 	} else {
 		rewrite_emotes(&data["media_metadata"], val(comment, "body_html"))

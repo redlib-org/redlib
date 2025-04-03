@@ -133,7 +133,10 @@ impl Config {
 			// Return the first non-`None` value
 			// If all are `None`, return `None`
 			let legacy_key = key.replace("REDLIB_", "LIBREDDIT_");
-			var(key).ok().or_else(|| var(legacy_key).ok()).or_else(|| get_setting_from_config(key, &config))
+			var(key)
+				.ok()
+				.or_else(|| var(legacy_key).ok())
+				.or_else(|| get_setting_from_config(key, &config).map(|s| s.to_string()))
 		};
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),
@@ -164,38 +167,40 @@ impl Config {
 	}
 }
 
-fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
+fn get_setting_from_config<'a>(name: &str, config: &'a Config) -> Option<&'a str> {
 	match name {
-		"REDLIB_SFW_ONLY" => config.sfw_only.clone(),
-		"REDLIB_DEFAULT_THEME" => config.default_theme.clone(),
-		"REDLIB_DEFAULT_FRONT_PAGE" => config.default_front_page.clone(),
-		"REDLIB_DEFAULT_LAYOUT" => config.default_layout.clone(),
-		"REDLIB_DEFAULT_COMMENT_SORT" => config.default_comment_sort.clone(),
-		"REDLIB_DEFAULT_POST_SORT" => config.default_post_sort.clone(),
-		"REDLIB_DEFAULT_BLUR_SPOILER" => config.default_blur_spoiler.clone(),
-		"REDLIB_DEFAULT_SHOW_NSFW" => config.default_show_nsfw.clone(),
-		"REDLIB_DEFAULT_BLUR_NSFW" => config.default_blur_nsfw.clone(),
-		"REDLIB_DEFAULT_USE_HLS" => config.default_use_hls.clone(),
-		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => config.default_hide_hls_notification.clone(),
-		"REDLIB_DEFAULT_WIDE" => config.default_wide.clone(),
-		"REDLIB_DEFAULT_HIDE_AWARDS" => config.default_hide_awards.clone(),
-		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => config.default_hide_sidebar_and_summary.clone(),
-		"REDLIB_DEFAULT_HIDE_SCORE" => config.default_hide_score.clone(),
-		"REDLIB_DEFAULT_SUBSCRIPTIONS" => config.default_subscriptions.clone(),
-		"REDLIB_DEFAULT_FILTERS" => config.default_filters.clone(),
-		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => config.default_disable_visit_reddit_confirmation.clone(),
-		"REDLIB_BANNER" => config.banner.clone(),
-		"REDLIB_ROBOTS_DISABLE_INDEXING" => config.robots_disable_indexing.clone(),
-		"REDLIB_PUSHSHIFT_FRONTEND" => config.pushshift.clone(),
-		"REDLIB_ENABLE_RSS" => config.enable_rss.clone(),
-		"REDLIB_FULL_URL" => config.full_url.clone(),
-		"REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS" => config.default_remove_default_feeds.clone(),
-		_ => None,
+		"REDLIB_SFW_ONLY" => &config.sfw_only,
+		"REDLIB_DEFAULT_THEME" => &config.default_theme,
+		"REDLIB_DEFAULT_FRONT_PAGE" => &config.default_front_page,
+		"REDLIB_DEFAULT_LAYOUT" => &config.default_layout,
+		"REDLIB_DEFAULT_COMMENT_SORT" => &config.default_comment_sort,
+		"REDLIB_DEFAULT_POST_SORT" => &config.default_post_sort,
+		"REDLIB_DEFAULT_BLUR_SPOILER" => &config.default_blur_spoiler,
+		"REDLIB_DEFAULT_SHOW_NSFW" => &config.default_show_nsfw,
+		"REDLIB_DEFAULT_BLUR_NSFW" => &config.default_blur_nsfw,
+		"REDLIB_DEFAULT_USE_HLS" => &config.default_use_hls,
+		"REDLIB_DEFAULT_HIDE_HLS_NOTIFICATION" => &config.default_hide_hls_notification,
+		"REDLIB_DEFAULT_WIDE" => &config.default_wide,
+		"REDLIB_DEFAULT_HIDE_AWARDS" => &config.default_hide_awards,
+		"REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY" => &config.default_hide_sidebar_and_summary,
+		"REDLIB_DEFAULT_HIDE_SCORE" => &config.default_hide_score,
+		"REDLIB_DEFAULT_SUBSCRIPTIONS" => &config.default_subscriptions,
+		"REDLIB_DEFAULT_FILTERS" => &config.default_filters,
+		"REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION" => &config.default_disable_visit_reddit_confirmation,
+		"REDLIB_BANNER" => &config.banner,
+		"REDLIB_ROBOTS_DISABLE_INDEXING" => &config.robots_disable_indexing,
+		"REDLIB_PUSHSHIFT_FRONTEND" => &config.pushshift,
+		"REDLIB_ENABLE_RSS" => &config.enable_rss,
+		"REDLIB_FULL_URL" => &config.full_url,
+		"REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS" => &config.default_remove_default_feeds,
+		_ => &None,
 	}
+	.as_ref()
+	.map(String::as_str)
 }
 
 /// Retrieves setting from environment variable or config file.
-pub fn get_setting(name: &str) -> Option<String> {
+pub fn get_setting(name: &str) -> Option<&'static str> {
 	get_setting_from_config(name, &CONFIG)
 }
 
