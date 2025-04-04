@@ -25,6 +25,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
+use std::sync::OnceLock;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -493,6 +494,102 @@ pub struct Comment {
 	pub prefs: Preferences,
 }
 
+impl Comment {
+	fn build(
+		comment: &serde_json::Value,
+		data: &serde_json::Value,
+		replies: Vec<Self>,
+		post_link: &str,
+		post_author: &str,
+		highlighted_comment: &str,
+		filters: &HashSet<String>,
+		cookies: &CookieJar,
+	) -> Self {
+		let id = val(comment, "id");
+
+		let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
+			format!(
+				"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
+				get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(crate::config::DEFAULT_PUSHSHIFT_FRONTEND),
+			)
+		} else {
+			rewrite_emotes(&data["media_metadata"], val(comment, "body_html"))
+		};
+		let kind = comment["kind"].as_str().unwrap_or_default().to_string();
+
+		let unix_time = data["created_utc"].as_f64().unwrap_or_default();
+		let (rel_time, created) = time(unix_time);
+
+		let edited = data["edited"].as_f64().map_or((String::new(), String::new()), time);
+
+		let score = data["score"].as_i64().unwrap_or(0);
+
+		// The JSON API only provides comments up to some threshold.
+		// Further comments have to be loaded by subsequent requests.
+		// The "kind" value will be "more" and the "count"
+		// shows how many more (sub-)comments exist in the respective nesting level.
+		// Note that in certain (seemingly random) cases, the count is simply wrong.
+		let more_count = data["count"].as_i64().unwrap_or_default();
+
+		let awards: Awards = Awards::parse(&data["all_awardings"]);
+
+		let parent_kind_and_id = val(comment, "parent_id");
+		let parent_info = parent_kind_and_id.split('_').collect::<Vec<&str>>();
+
+		let highlighted = id == highlighted_comment;
+
+		let author = Author {
+			name: val(comment, "author"),
+			flair: Flair {
+				flair_parts: FlairPart::parse(
+					data["author_flair_type"].as_str().unwrap_or_default(),
+					data["author_flair_richtext"].as_array(),
+					data["author_flair_text"].as_str(),
+				),
+				text: val(comment, "link_flair_text"),
+				background_color: val(comment, "author_flair_background_color"),
+				foreground_color: val(comment, "author_flair_text_color"),
+			},
+			distinguished: val(comment, "distinguished"),
+		};
+		let is_filtered = filters.contains(&["u_", author.name.as_str()].concat());
+
+		// Many subreddits have a default comment posted about the sub's rules etc.
+		// Many Redlib users do not wish to see this kind of comment by default.
+		// Reddit does not tell us which users are "bots", so a good heuristic is to
+		// collapse stickied moderator comments.
+		let is_moderator_comment = data["distinguished"].as_str().unwrap_or_default() == "moderator";
+		let is_stickied = data["stickied"].as_bool().unwrap_or_default();
+		let collapsed = (is_moderator_comment && is_stickied) || is_filtered;
+
+		Comment {
+			id,
+			kind,
+			parent_id: parent_info[1].to_string(),
+			parent_kind: parent_info[0].to_string(),
+			post_link: post_link.to_string(),
+			post_author: post_author.to_string(),
+			body,
+			author,
+			score: if data["score_hidden"].as_bool().unwrap_or_default() {
+				("\u{2022}".to_string(), "Hidden".to_string())
+			} else {
+				format_num(score)
+			},
+			rel_time,
+			created,
+			edited,
+			replies,
+			highlighted,
+			awards,
+			collapsed,
+			is_filtered,
+			more_count,
+			prefs: Preferences::build(cookies),
+		}
+	}
+}
+
 #[derive(Default, Clone, Serialize)]
 pub struct Award {
 	pub name: String,
@@ -733,6 +830,88 @@ impl Preferences {
 		}
 	}
 
+	pub fn build(cookies: &CookieJar) -> Self {
+		// Read available theme names from embedded css files.
+		// Always make the default "system" theme available.
+		/*let mut themes = vec!["system".to_string()];
+		for file in ThemeAssets::iter() {
+			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
+			themes.push(chunks[0].to_owned());
+		}*/
+		static THEMES: OnceLock<Vec<String>> = OnceLock::new();
+		Self {
+			available_themes: THEMES
+				.get_or_init(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect())
+				.clone(),
+			theme: setting_from_cookiejar(cookies, "theme").into_owned(),
+			front_page: setting_from_cookiejar(cookies, "front_page").into_owned(),
+			layout: setting_from_cookiejar(cookies, "layout").into_owned(),
+			wide: setting_from_cookiejar(cookies, "wide").into_owned(),
+			blur_spoiler: setting_from_cookiejar(cookies, "blur_spoiler").into_owned(),
+			show_nsfw: setting_from_cookiejar(cookies, "show_nsfw").into_owned(),
+			hide_sidebar_and_summary: setting_from_cookiejar(cookies, "hide_sidebar_and_summary").into_owned(),
+			blur_nsfw: setting_from_cookiejar(cookies, "blur_nsfw").into_owned(),
+			use_hls: setting_from_cookiejar(cookies, "use_hls").into_owned(),
+			hide_hls_notification: setting_from_cookiejar(cookies, "hide_hls_notification").into_owned(),
+			video_quality: setting_from_cookiejar(cookies, "video_quality").into_owned(),
+			autoplay_videos: setting_from_cookiejar(cookies, "autoplay_videos").into_owned(),
+			fixed_navbar: setting_from_cookiejar_or_default(cookies, "fixed_navbar", Cow::from("on")).into_owned(),
+			disable_visit_reddit_confirmation: setting_from_cookiejar(cookies, "disable_visit_reddit_confirmation").into_owned(),
+			comment_sort: setting_from_cookiejar(cookies, "comment_sort").into_owned(),
+			post_sort: setting_from_cookiejar(cookies, "post_sort").into_owned(),
+			subscriptions: setting_from_cookiejar(cookies, "subscriptions")
+				.split('+')
+				.filter(|s| !s.is_empty())
+				.map(String::from)
+				.collect(),
+			filters: setting_from_cookiejar(cookies, "filters").split('+').filter(|s| !s.is_empty()).map(String::from).collect(),
+			hide_awards: setting_from_cookiejar(cookies, "hide_awards").into_owned(),
+			hide_score: setting_from_cookiejar(cookies, "hide_score").into_owned(),
+			remove_default_feeds: setting_from_cookiejar(cookies, "remove_default_feeds").into_owned(),
+		}
+	}
+
+	pub fn build(cookies: &CookieJar) -> Self {
+		// Read available theme names from embedded css files.
+		// Always make the default "system" theme available.
+		/*let mut themes = vec!["system".to_string()];
+		for file in ThemeAssets::iter() {
+			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
+			themes.push(chunks[0].to_owned());
+		}*/
+		static THEMES: OnceLock<Vec<String>> = OnceLock::new();
+		Self {
+			available_themes: THEMES
+				.get_or_init(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect())
+				.clone(),
+			theme: setting_from_cookiejar(cookies, "theme").into_owned(),
+			front_page: setting_from_cookiejar(cookies, "front_page").into_owned(),
+			layout: setting_from_cookiejar(cookies, "layout").into_owned(),
+			wide: setting_from_cookiejar(cookies, "wide").into_owned(),
+			blur_spoiler: setting_from_cookiejar(cookies, "blur_spoiler").into_owned(),
+			show_nsfw: setting_from_cookiejar(cookies, "show_nsfw").into_owned(),
+			hide_sidebar_and_summary: setting_from_cookiejar(cookies, "hide_sidebar_and_summary").into_owned(),
+			blur_nsfw: setting_from_cookiejar(cookies, "blur_nsfw").into_owned(),
+			use_hls: setting_from_cookiejar(cookies, "use_hls").into_owned(),
+			hide_hls_notification: setting_from_cookiejar(cookies, "hide_hls_notification").into_owned(),
+			video_quality: setting_from_cookiejar(cookies, "video_quality").into_owned(),
+			autoplay_videos: setting_from_cookiejar(cookies, "autoplay_videos").into_owned(),
+			fixed_navbar: setting_from_cookiejar_or_default(cookies, "fixed_navbar", Cow::from("on")).into_owned(),
+			disable_visit_reddit_confirmation: setting_from_cookiejar(cookies, "disable_visit_reddit_confirmation").into_owned(),
+			comment_sort: setting_from_cookiejar(cookies, "comment_sort").into_owned(),
+			post_sort: setting_from_cookiejar(cookies, "post_sort").into_owned(),
+			subscriptions: setting_from_cookiejar(cookies, "subscriptions")
+				.split('+')
+				.filter(|s| !s.is_empty())
+				.map(String::from)
+				.collect(),
+			filters: setting_from_cookiejar(cookies, "filters").split('+').filter(|s| !s.is_empty()).map(String::from).collect(),
+			hide_awards: setting_from_cookiejar(cookies, "hide_awards").into_owned(),
+			hide_score: setting_from_cookiejar(cookies, "hide_score").into_owned(),
+			remove_default_feeds: setting_from_cookiejar(cookies, "remove_default_feeds").into_owned(),
+		}
+	}
+
 	pub fn to_urlencoded(&self) -> Result<String, serde_urlencoded::ser::Error> {
 		serde_urlencoded::to_string(self)
 	}
@@ -925,6 +1104,8 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 }
 
 // Retrieve the value of a setting by name
+// If cookie is empty, fetches it from config
+// Defaults to empty string
 pub fn setting_from_cookiejar<'a>(cookies: &'a CookieJar, name: &str) -> Cow<'a, str> {
 	// Parse a cookie value from request
 
@@ -962,7 +1143,7 @@ pub fn setting_from_cookiejar<'a>(cookies: &'a CookieJar, name: &str) -> Cow<'a,
 	}
 	// The above two still come to this if there was no existing value
 	else {
-		Cow::from( 
+		Cow::from(
 			cookies
 				.get(name)
 				.map(|cookie| cookie.value())
@@ -975,6 +1156,15 @@ pub fn setting_from_cookiejar<'a>(cookies: &'a CookieJar, name: &str) -> Cow<'a,
 // Retrieve the value of a setting by name or the default value
 pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> String {
 	let value = setting(req, name);
+	if value.is_empty() {
+		default
+	} else {
+		value
+	}
+}
+
+pub fn setting_from_cookiejar_or_default<'a>(cookies: &'a CookieJar, name: &str, default: Cow<'a, str>) -> Cow<'a, str> {
+	let value = setting_from_cookiejar(cookies, name);
 	if value.is_empty() {
 		default
 	} else {
