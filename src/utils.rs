@@ -940,6 +940,18 @@ pub fn deflate_decompress(i: Vec<u8>) -> Result<Vec<u8>, std::io::Error> {
 	Ok(out)
 }
 
+/// Convert an old http<1 req into a CookieJar
+/// DEPRECATED
+pub fn cookie_jar_from_oldreq(req: &Request<Body>) -> CookieJar {
+	CookieJar::from_headers(&{
+		let mut headers = axum::http::header::HeaderMap::new();
+		if let Some(cookie_header) = req.headers().get("Cookie") {
+			headers.insert("Cookie", cookie_header.as_bytes().try_into().unwrap()); // This should never panic
+		}
+		headers
+	})
+}
+
 /// Gets a `HashSet` of filters from the cookie in the given `Request`.
 pub fn get_filters(req: &Request<Body>) -> HashSet<String> {
 	setting(req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect::<HashSet<String>>()
@@ -1093,13 +1105,7 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 // Deprecated. Please use setting_from_cookiejar
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// http crate versions do not match. use this "unsafe" conversion.
-	let cookies = CookieJar::from_headers(&{
-		let mut headers = axum::http::header::HeaderMap::new();
-		if let Some(cookie_header) = req.headers().get("Cookie") {
-			headers.insert("Cookie", cookie_header.as_bytes().try_into().unwrap()); // This should never panic
-		}
-		headers
-	});
+	let cookies = cookie_jar_from_oldreq(req);
 	setting_from_cookiejar(&cookies, name).to_string()
 }
 
