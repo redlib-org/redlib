@@ -2,12 +2,13 @@
 #![allow(clippy::cmp_owned)]
 
 use crate::config::{self, get_setting};
+use std::borrow::Cow;
 //
 // CRATES
 //
 use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
-use cookie::Cookie;
+use axum_extra::extract::CookieJar;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
@@ -910,38 +911,50 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 }
 
 // Retrieve the value of a setting by name
+// Deprecated. Please use setting_from_cookiejar
 pub fn setting(req: &Request<Body>, name: &str) -> String {
+	// http crate versions do not match. use this "unsafe" conversion.
+	let cookies = CookieJar::from_headers(&{
+		let mut headers = axum::http::header::HeaderMap::new();
+		if let Some(cookie_header) = req.headers().get("Cookie") {
+			headers.insert("Cookie", cookie_header.as_bytes().try_into().unwrap()); // This should never panic
+		}
+		headers
+	});
+	setting_from_cookiejar(&cookies, name).to_string()
+}
+
+// Retrieve the value of a setting by name
+pub fn setting_from_cookiejar<'a>(cookies: &'a CookieJar, name: &str) -> Cow<'a, str> {
 	// Parse a cookie value from request
 
 	// If this was called with "subscriptions" and the "subscriptions" cookie has a value
-	if let ("subscriptions", Some(subscriptions_cookie)) = (name, req.cookie("subscriptions")) {
-		// NOTE: the numbered subcriptions will not be registered if subscriptions cookie is empty. Unclear whether intended behaviour.
+	if let ("subscriptions", Some(subscriptions_cookie)) = (name, cookies.get("subscriptions")) {
+		// NOTE: the numbered subcription cookies will not be registered if "subscriptions" cookie is empty. Unclear whether intended behaviour.
 		// Create subscriptions string
-		let mut subscriptions = String::new();
-		subscriptions.push_str(subscriptions_cookie.value_trimmed());
+		let mut subscriptions = Cow::from(subscriptions_cookie.value_trimmed());
 
 		// append all subscriptionsNUMBER cookies
 		let mut subscriptions_number = 1;
-		while let Some(cookie_i) = req.cookie(&format!("subscriptions{}", subscriptions_number)) {
+		while let Some(cookie_i) = cookies.get(&format!("subscriptions{}", subscriptions_number)) {
 			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
-			subscriptions.push_str(cookie_i.value_trimmed());
+			subscriptions.to_mut().push_str(cookie_i.value_trimmed());
 			subscriptions_number += 1;
 		}
 		// Return the subscriptions cookies as one large string
 		subscriptions
 	}
 	// If this was called with "filters" and the "filters" cookie has a value
-	else if let ("filters", Some(filters_cookie)) = (name, req.cookie("filters")) {
-		// NOTE: the numbered filters will not be registered if filters cookie is empty. Unclear whether intended behaviour.
+	else if let ("filters", Some(filters_cookie)) = (name, cookies.get("filters")) {
+		// NOTE: the numbered filter cookies will not be registered if "filters" cookie is empty. Unclear whether intended behaviour.
 		// Create filters string
-		let mut filters = String::new();
-		filters.push_str(filters_cookie.value_trimmed());
+		let mut filters = Cow::from(filters_cookie.value_trimmed());
 
 		// append all filtersNUMBER cookies
 		let mut filters_number = 1;
-		while let Some(cookie_i) = req.cookie(&format!("filters{}", filters_number)) {
+		while let Some(cookie_i) = cookies.get(&format!("filters{}", filters_number)) {
 			// Push whatever filtersNUMBER cookie we're looking at into the filters string
-			filters.push_str(cookie_i.value_trimmed());
+			filters.to_mut().push_str(cookie_i.value_trimmed());
 			filters_number += 1;
 		}
 		// Return the filters cookies as one large string
@@ -949,18 +962,13 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 	}
 	// The above two still come to this if there was no existing value
 	else {
-		req
-			.cookie(name)
-			.unwrap_or_else(|| {
-				// If there is no cookie for this setting, try receiving a default from the config
-				if let Some(default) = get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())) {
-					Cookie::new(name, default)
-				} else {
-					Cookie::from(name)
-				}
-			})
-			.value()
-			.to_string()
+		Cow::from( 
+			cookies
+				.get(name)
+				.map(|cookie| cookie.value())
+				.or_else(|| get_setting(&format!("REDLIB_DEFAULT_{}", name.to_uppercase())))
+				.unwrap_or_default(),
+		)
 	}
 }
 
