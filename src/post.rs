@@ -114,25 +114,28 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 
 // COMMENTS
 
+/// A Vec of all comments defined in a json response
 fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, req: &Request<Body>) -> Vec<Comment> {
-	// Parse the comment JSON into a Vector of Comments
-	let comments = json["data"]["children"].as_array().map_or(Vec::new(), std::borrow::ToOwned::to_owned);
-
-	// For each comment, retrieve the values to build a Comment object
-	comments
-		.into_iter()
-		.map(|comment| {
-			let data = &comment["data"];
-			let replies: Vec<Comment> = if data["replies"].is_object() {
-				parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, req)
-			} else {
-				Vec::new()
-			};
-			build_comment(&comment, data, replies, post_link, post_author, highlighted_comment, filters, req)
-		})
-		.collect()
+	let comments = json["data"]["children"].as_array();
+	if let Some(comments) = comments {
+		comments
+			.into_iter()
+			.map(|comment| {
+				let data = &comment["data"];
+				let replies: Vec<Comment> = if data["replies"].is_object() {
+					parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, req)
+				} else {
+					Vec::new()
+				};
+				build_comment(&comment, data, replies, post_link, post_author, highlighted_comment, filters, req)
+			})
+			.collect()
+	} else {
+		Vec::new()
+	}
 }
 
+/// like parse_comments, but filters comment body by query parameter.
 fn query_comments(
 	json: &serde_json::Value,
 	post_link: &str,
@@ -142,24 +145,11 @@ fn query_comments(
 	query: &str,
 	req: &Request<Body>,
 ) -> Vec<Comment> {
-	let comments = json["data"]["children"].as_array().map_or(Vec::new(), std::borrow::ToOwned::to_owned);
-	let mut results = Vec::new();
-
-	for comment in comments {
-		let data = &comment["data"];
-
-		// If this comment contains replies, handle those too
-		if data["replies"].is_object() {
-			results.append(&mut query_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, query, req));
-		}
-
-		let c = build_comment(&comment, data, Vec::new(), post_link, post_author, highlighted_comment, filters, req);
-		if c.body.to_lowercase().contains(&query.to_lowercase()) {
-			results.push(c);
-		}
-	}
-
-	results
+	let query_lc = query.to_lowercase();
+	parse_comments(json, post_link, post_author, highlighted_comment, filters, req)
+		.into_iter()
+		.filter(|c| c.body.to_lowercase().contains(&query_lc))
+		.collect()
 }
 #[allow(clippy::too_many_arguments)]
 fn build_comment(
