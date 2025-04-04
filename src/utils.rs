@@ -27,6 +27,7 @@ use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
 use std::sync::OnceLock;
+use axum::response::IntoResponse;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -1564,6 +1565,7 @@ pub fn should_be_nsfw_gatedx(cookies: &CookieJar, RawQuery(query): RawQuery) -> 
 
 /// Renders the landing page for NSFW content when the user has not enabled
 /// "show NSFW posts" in settings.
+/// DEPRECATED
 pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Response<Body>, String> {
 	let res_type: ResourceType;
 
@@ -1591,6 +1593,22 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
+
+pub async fn nsfw_landingx(cookies: &CookieJar, query: axum::extract::Query<HashMap<String, String>>, req_url: String) -> impl IntoResponse {
+	let res_type: ResourceType;
+
+	// Determine from the request URL if the resource is a subreddit, a user
+	// page, or a post.
+}
+
+#[derive(Deserialize)]
+pub struct PathParameters {
+	pub name: String,
+	pub id: String,
+	pub title: String,
+	pub comment_id: Option<String>,
+}
+
 
 // Returns the last (non-empty) segment of a path string
 pub fn url_path_basename(path: &str) -> String {
