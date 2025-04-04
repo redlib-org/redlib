@@ -5,15 +5,17 @@ use crate::client::json;
 use crate::config::get_setting;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
-use crate::utils::{
-	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
-};
+use crate::utils::{cookie_jar_from_oldreq, error, get_filters, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, Post, Preferences};
 use hyper::{Body, Request, Response};
 
+use axum::RequestExt as AxumRequestExt;
+use axum_extra::extract::cookie::CookieJar;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rinja::Template;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+use unwrap_infallible::UnwrapInfallible;
 
 // STRUCTS
 #[derive(Template)]
@@ -84,8 +86,23 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
-				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
-				_ => query_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &query, &req),
+				"" => parse_comments(
+					&response[1],
+					&post.permalink,
+					&post.author.name,
+					highlighted_comment,
+					&get_filters(&req),
+					&cookie_jar_from_oldreq(&req),
+				),
+				_ => query_comments(
+					&response[1],
+					&post.permalink,
+					&post.author.name,
+					highlighted_comment,
+					&get_filters(&req),
+					&query,
+					&cookie_jar_from_oldreq(&req),
+				),
 			};
 
 			// Use the Post and Comment structs to generate a website to show users
@@ -115,7 +132,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 // COMMENTS
 
 /// A Vec of all comments defined in a json response
-fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, req: &Request<Body>) -> Vec<Comment> {
+fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, cookies: &CookieJar) -> Vec<Comment> {
 	let comments = json["data"]["children"].as_array();
 	if let Some(comments) = comments {
 		comments
@@ -123,11 +140,11 @@ fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, 
 			.map(|comment| {
 				let data = &comment["data"];
 				let replies: Vec<Comment> = if data["replies"].is_object() {
-					parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, req)
+					parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, cookies)
 				} else {
 					Vec::new()
 				};
-				build_comment(&comment, data, replies, post_link, post_author, highlighted_comment, filters, req)
+				Comment::build(&comment, data, replies, post_link, post_author, highlighted_comment, filters, cookies)
 			})
 			.collect()
 	} else {
@@ -143,105 +160,11 @@ fn query_comments(
 	highlighted_comment: &str,
 	filters: &HashSet<String>,
 	query: &str,
-	req: &Request<Body>,
+	cookies: &CookieJar,
 ) -> Vec<Comment> {
 	let query_lc = query.to_lowercase();
-	parse_comments(json, post_link, post_author, highlighted_comment, filters, req)
+	parse_comments(json, post_link, post_author, highlighted_comment, filters, cookies)
 		.into_iter()
 		.filter(|c| c.body.to_lowercase().contains(&query_lc))
 		.collect()
-}
-#[allow(clippy::too_many_arguments)]
-fn build_comment(
-	comment: &serde_json::Value,
-	data: &serde_json::Value,
-	replies: Vec<Comment>,
-	post_link: &str,
-	post_author: &str,
-	highlighted_comment: &str,
-	filters: &HashSet<String>,
-	req: &Request<Body>,
-) -> Comment {
-	let id = val(comment, "id");
-
-	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
-		format!(
-			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
-			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or(crate::config::DEFAULT_PUSHSHIFT_FRONTEND),
-		)
-	} else {
-		rewrite_emotes(&data["media_metadata"], val(comment, "body_html"))
-	};
-	let kind = comment["kind"].as_str().unwrap_or_default().to_string();
-
-	let unix_time = data["created_utc"].as_f64().unwrap_or_default();
-	let (rel_time, created) = time(unix_time);
-
-	let edited = data["edited"].as_f64().map_or((String::new(), String::new()), time);
-
-	let score = data["score"].as_i64().unwrap_or(0);
-
-	// The JSON API only provides comments up to some threshold.
-	// Further comments have to be loaded by subsequent requests.
-	// The "kind" value will be "more" and the "count"
-	// shows how many more (sub-)comments exist in the respective nesting level.
-	// Note that in certain (seemingly random) cases, the count is simply wrong.
-	let more_count = data["count"].as_i64().unwrap_or_default();
-
-	let awards: Awards = Awards::parse(&data["all_awardings"]);
-
-	let parent_kind_and_id = val(comment, "parent_id");
-	let parent_info = parent_kind_and_id.split('_').collect::<Vec<&str>>();
-
-	let highlighted = id == highlighted_comment;
-
-	let author = Author {
-		name: val(comment, "author"),
-		flair: Flair {
-			flair_parts: FlairPart::parse(
-				data["author_flair_type"].as_str().unwrap_or_default(),
-				data["author_flair_richtext"].as_array(),
-				data["author_flair_text"].as_str(),
-			),
-			text: val(comment, "link_flair_text"),
-			background_color: val(comment, "author_flair_background_color"),
-			foreground_color: val(comment, "author_flair_text_color"),
-		},
-		distinguished: val(comment, "distinguished"),
-	};
-	let is_filtered = filters.contains(&["u_", author.name.as_str()].concat());
-
-	// Many subreddits have a default comment posted about the sub's rules etc.
-	// Many Redlib users do not wish to see this kind of comment by default.
-	// Reddit does not tell us which users are "bots", so a good heuristic is to
-	// collapse stickied moderator comments.
-	let is_moderator_comment = data["distinguished"].as_str().unwrap_or_default() == "moderator";
-	let is_stickied = data["stickied"].as_bool().unwrap_or_default();
-	let collapsed = (is_moderator_comment && is_stickied) || is_filtered;
-
-	Comment {
-		id,
-		kind,
-		parent_id: parent_info[1].to_string(),
-		parent_kind: parent_info[0].to_string(),
-		post_link: post_link.to_string(),
-		post_author: post_author.to_string(),
-		body,
-		author,
-		score: if data["score_hidden"].as_bool().unwrap_or_default() {
-			("\u{2022}".to_string(), "Hidden".to_string())
-		} else {
-			format_num(score)
-		},
-		rel_time,
-		created,
-		edited,
-		replies,
-		highlighted,
-		awards,
-		collapsed,
-		is_filtered,
-		more_count,
-		prefs: Preferences::new(req),
-	}
 }

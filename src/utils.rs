@@ -957,6 +957,14 @@ pub fn get_filters(req: &Request<Body>) -> HashSet<String> {
 	setting(req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect::<HashSet<String>>()
 }
 
+pub fn get_filtersx(cookies: &CookieJar) -> HashSet<String> {
+	setting_from_cookiejar(cookies, "filters")
+		.split('+')
+		.filter(|s| !s.is_empty())
+		.map(String::from)
+		.collect::<HashSet<String>>()
+}
+
 /// Filters a `Vec<Post>` by the given `HashSet` of filters (each filter being
 /// a subreddit name or a user name). If a `Post`'s subreddit or author is
 /// found in the filters, it is removed.
