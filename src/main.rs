@@ -538,6 +538,7 @@ async fn main() {
 			"/u/{name}",
 			get(|axum::extract::Path(name): axum::extract::Path<String>| async move { axum::response::Redirect::temporary(format!("/user/{}", name).as_str()) }),
 		)
+		.route("/u/{:name}/comments/{:id}/{:title}", get(post::itemx))
 		.route("/", get(|| async { "hello, world!" }))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 

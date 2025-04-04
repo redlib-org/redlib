@@ -8,6 +8,7 @@ use std::borrow::Cow;
 //
 use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
+use axum::extract::RawQuery;
 use axum_extra::extract::CookieJar;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
@@ -495,7 +496,7 @@ pub struct Comment {
 }
 
 impl Comment {
-	fn build(
+	pub fn build(
 		comment: &serde_json::Value,
 		data: &serde_json::Value,
 		replies: Vec<Self>,
@@ -827,47 +828,6 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 			remove_default_feeds: setting(req, "remove_default_feeds"),
-		}
-	}
-
-	pub fn build(cookies: &CookieJar) -> Self {
-		// Read available theme names from embedded css files.
-		// Always make the default "system" theme available.
-		/*let mut themes = vec!["system".to_string()];
-		for file in ThemeAssets::iter() {
-			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
-			themes.push(chunks[0].to_owned());
-		}*/
-		static THEMES: OnceLock<Vec<String>> = OnceLock::new();
-		Self {
-			available_themes: THEMES
-				.get_or_init(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect())
-				.clone(),
-			theme: setting_from_cookiejar(cookies, "theme").into_owned(),
-			front_page: setting_from_cookiejar(cookies, "front_page").into_owned(),
-			layout: setting_from_cookiejar(cookies, "layout").into_owned(),
-			wide: setting_from_cookiejar(cookies, "wide").into_owned(),
-			blur_spoiler: setting_from_cookiejar(cookies, "blur_spoiler").into_owned(),
-			show_nsfw: setting_from_cookiejar(cookies, "show_nsfw").into_owned(),
-			hide_sidebar_and_summary: setting_from_cookiejar(cookies, "hide_sidebar_and_summary").into_owned(),
-			blur_nsfw: setting_from_cookiejar(cookies, "blur_nsfw").into_owned(),
-			use_hls: setting_from_cookiejar(cookies, "use_hls").into_owned(),
-			hide_hls_notification: setting_from_cookiejar(cookies, "hide_hls_notification").into_owned(),
-			video_quality: setting_from_cookiejar(cookies, "video_quality").into_owned(),
-			autoplay_videos: setting_from_cookiejar(cookies, "autoplay_videos").into_owned(),
-			fixed_navbar: setting_from_cookiejar_or_default(cookies, "fixed_navbar", Cow::from("on")).into_owned(),
-			disable_visit_reddit_confirmation: setting_from_cookiejar(cookies, "disable_visit_reddit_confirmation").into_owned(),
-			comment_sort: setting_from_cookiejar(cookies, "comment_sort").into_owned(),
-			post_sort: setting_from_cookiejar(cookies, "post_sort").into_owned(),
-			subscriptions: setting_from_cookiejar(cookies, "subscriptions")
-				.split('+')
-				.filter(|s| !s.is_empty())
-				.map(String::from)
-				.collect(),
-			filters: setting_from_cookiejar(cookies, "filters").split('+').filter(|s| !s.is_empty()).map(String::from).collect(),
-			hide_awards: setting_from_cookiejar(cookies, "hide_awards").into_owned(),
-			hide_score: setting_from_cookiejar(cookies, "hide_score").into_owned(),
-			remove_default_feeds: setting_from_cookiejar(cookies, "remove_default_feeds").into_owned(),
 		}
 	}
 
@@ -1590,6 +1550,16 @@ pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
 	let bypass_gate = !sfw_instance && req_url.contains("&bypass_nsfw_landing");
 
 	gate_nsfw && !bypass_gate
+}
+
+pub fn should_be_nsfw_gatedx(cookies: &CookieJar, RawQuery(query): RawQuery) -> bool {
+	let sfw_instance = sfw_only();
+	let gate_nsfw = setting_from_cookiejar(cookies, "show_nsfw") != "on";
+
+	// Nsfw landing gate should not be bypassed on a sfw only instance,
+	let bypass_gate: bool = query.map_or(false, |s| s.starts_with("bypass_nsfw_landing=") || s.contains("&bypass_nsfw_landing=")); // TODO: Test if the equals sign breaks the pattern matching
+
+	sfw_instance || (gate_nsfw && !bypass_gate)
 }
 
 /// Renders the landing page for NSFW content when the user has not enabled

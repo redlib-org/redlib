@@ -1,11 +1,12 @@
 #![allow(clippy::cmp_owned)]
 
 // CRATES
-use crate::client::json;
-use crate::config::get_setting;
+use crate::client::{json, jsonx};
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
-use crate::utils::{cookie_jar_from_oldreq, error, get_filters, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, Post, Preferences};
+use crate::utils::{
+	cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, Post, Preferences,
+};
 use hyper::{Body, Request, Response};
 
 use axum::RequestExt as AxumRequestExt;
@@ -33,6 +34,63 @@ struct PostTemplate {
 
 static COMMENT_SEARCH_CAPTURE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
 
+pub async fn itemx(
+	axum::extract::Path((name, id, title, comment_id)): axum::extract::Path<(String, String, String, Option<String>)>,
+	axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
+	axum::extract::Query(query): axum::extract::Query<HashMap<String, String>>,
+	cookies: CookieJar,
+	mut req: axum::extract::Request,
+) -> impl axum::response::IntoResponse {
+	let mut url: String = format!("u/{name}/comments/{id}/{title}.json?{}&raw_json=1", raw_query.unwrap_or_default()); //FIXME: /u or /r?; Query?
+
+	let quarantined: bool = setting_from_cookiejar(&cookies, &format!("allow_quaran_{}", name.to_lowercase()))
+		.parse::<bool>()
+		.unwrap_or_default(); // default is false
+
+	// Set sort to sort query parameter
+	let sort: Cow<str> = query
+		.get("sort") // NOTE: as a cookie value 'y', not a whole 'x=y' parameter
+		.map(Cow::from)
+		.unwrap_or_else(|| {
+			// Grab default comment sort method from Cookies
+			let res = setting_from_cookiejar(&cookies, "comment_sort");
+			if !res.is_empty() {
+				// If the query does not have a sort parameter, add it so that it can be forwarded to reddit
+				url.push_str("&sort="); // NOTE: path already has '?' to start query parameters.
+				url.push_str(res.as_ref());
+			}
+			res
+		});
+
+	let json = jsonx(url, quarantined).await?;
+
+	let post = parse_post(&json[0]["data"]["children"][0]).await;
+
+	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&cookies, req.extract_parts::<axum::extract::RawQuery>().await.unwrap_infallible()) {
+		return Ok("nsfw_landing"); // FIXME
+	}
+
+	let comments = match query.get("q").map(String::as_str) {
+		None | Some("") => parse_comments(
+			&json[1],
+			&post.permalink,
+			&post.author.name,
+			&comment_id.unwrap_or_default(),
+			&get_filtersx(&cookies),
+			&cookies,
+		),
+		Some(pattern) => query_comments(
+			&json[1],
+			&post.permalink,
+			&post.author.name,
+			&comment_id.unwrap_or_default(),
+			&get_filtersx(&cookies),
+			pattern,
+			&cookies,
+		),
+	};
+	Ok::<_, http_api_problem::ApiError>("Response from post and comment struct") // FIXME
+}
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
 	let mut path: String = format!("{}.json?{}&raw_json=1", req.uri().path(), req.uri().query().unwrap_or_default());
