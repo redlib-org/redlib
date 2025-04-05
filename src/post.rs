@@ -7,12 +7,11 @@ use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
 	cookie_jar_from_oldreq, error, nsfw_landing, nsfw_landingx, param, parse_post, setting_from_cookiejar, template, Comment, PathParameters, Post, Preferences,
 };
-use axum::response::IntoResponse;
+use axum::response::{Html, IntoResponse};
 use hyper::{Body, Request, Response};
 
 use askama::Template;
-use axum::extract::{OriginalUri, Path};
-use axum::RequestExt as AxumRequestExt;
+use axum::extract::{OriginalUri, Path, Query, RawQuery};
 use axum_extra::extract::cookie::CookieJar;
 use http_api_problem::ApiError;
 use once_cell::sync::Lazy;
@@ -20,7 +19,6 @@ use regex::Regex;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
-use unwrap_infallible::UnwrapInfallible;
 
 // STRUCTS
 #[derive(Template)]
@@ -29,7 +27,7 @@ struct PostTemplate {
 	comments: Vec<Comment>,
 	post: Post,
 	sort: String,
-	prefs: Preferences,
+	prefs: Arc<Preferences>,
 	single_thread: bool,
 	url: String,
 	url_without_query: String,
@@ -39,13 +37,12 @@ struct PostTemplate {
 static COMMENT_SEARCH_CAPTURE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
 
 pub async fn itemx(
-	axum::extract::Path(parameters): axum::extract::Path<PathParameters>,
-	axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
-	query: axum::extract::Query<HashMap<String, String>>,
+	Path(parameters): Path<PathParameters>,
+	RawQuery(raw_query): RawQuery,
+	query: Query<HashMap<String, String>>,
 	cookies: CookieJar,
 	prefs: Preferences,
 	original_uri: OriginalUri,
-	mut req: axum::extract::Request,
 ) -> Result<axum::response::Response, ApiError> {
 	let prefs = Arc::new(prefs);
 	let mut url: String = format!(
@@ -85,10 +82,41 @@ pub async fn itemx(
 	}
 
 	let comments = match query.get("q").map(String::as_str) {
-		None | Some("") => parse_comments(&json[1], &post.permalink, &post.author.name, &parameters.comment_id.unwrap_or_default(), prefs),
-		Some(pattern) => query_comments(&json[1], &post.permalink, &post.author.name, &parameters.comment_id.unwrap_or_default(), prefs, pattern),
+		None | Some("") => parse_comments(
+			&json[1],
+			&post.permalink,
+			&post.author.name,
+			parameters.comment_id.as_ref().map(String::as_str).unwrap_or_default(),
+			prefs.clone(),
+		),
+		Some(pattern) => query_comments(
+			&json[1],
+			&post.permalink,
+			&post.author.name,
+			parameters.comment_id.as_ref().map(String::as_str).unwrap_or_default(),
+			prefs.clone(),
+			pattern,
+		),
 	};
-	Ok::<_, ApiError>("Response from post and comment struct".into_response()) // FIXME
+	let body = PostTemplate {
+		comments,
+		post,
+		url_without_query: original_uri.to_string(),
+		sort: sort.to_string(),
+		prefs: prefs.clone(),
+		single_thread: parameters.comment_id.is_some(),
+		url: original_uri.to_string(),
+		comment_query: query.get("q").cloned().unwrap_or_default(),
+	}
+		.render()
+		.map_err(|e| {
+			ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+				.title("Error rendering Post")
+				.message(&e)
+				.source(e)
+				.finish()
+		})?;
+	Ok(Html(body).into_response())
 }
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	let prefs = Arc::new(Preferences::build(&cookie_jar_from_oldreq(&req)));
@@ -154,7 +182,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				post,
 				url_without_query: url.clone().trim_end_matches(&format!("?q={query}&type=comment")).to_string(),
 				sort,
-				prefs: Preferences::new(&req),
+				prefs: Arc::new(Preferences::build(&cookie_jar_from_oldreq(&req))),
 				single_thread,
 				url: req_url,
 				comment_query: query,
