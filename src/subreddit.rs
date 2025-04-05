@@ -7,10 +7,10 @@ use crate::utils::{
 	Subreddit,
 };
 use crate::{client::json, server::RequestExt, server::ResponseExt};
+use askama::Template;
 use cookie::Cookie;
 use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
-use rinja::Template;
 
 use chrono::DateTime;
 use once_cell::sync::Lazy;

@@ -4,14 +4,17 @@
 use crate::client::{json, jsonx};
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
-use crate::utils::{cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, PathParameters, Post, Preferences};
+use crate::utils::{
+	cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, PathParameters, Post,
+	Preferences,
+};
 use hyper::{Body, Request, Response};
 
+use askama::Template;
 use axum::RequestExt as AxumRequestExt;
 use axum_extra::extract::cookie::CookieJar;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rinja::Template;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use unwrap_infallible::UnwrapInfallible;
@@ -39,7 +42,13 @@ pub async fn itemx(
 	cookies: CookieJar,
 	mut req: axum::extract::Request,
 ) -> impl axum::response::IntoResponse {
-	let mut url: String = format!("u/{}/comments/{}/{}.json?{}&raw_json=1", parameters.name, parameters.id, parameters.title, raw_query.unwrap_or_default()); //FIXME: /u or /r?; Query?
+	let mut url: String = format!(
+		"u/{}/comments/{}/{}.json?{}&raw_json=1",
+		parameters.name,
+		parameters.id,
+		parameters.title,
+		raw_query.unwrap_or_default()
+	); //FIXME: /u or /r?; Query?
 
 	let quarantined: bool = setting_from_cookiejar(&cookies, &format!("allow_quaran_{}", parameters.name.to_lowercase()))
 		.parse::<bool>()

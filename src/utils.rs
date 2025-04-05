@@ -8,7 +8,10 @@ use std::borrow::Cow;
 //
 use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
-use axum::extract::RawQuery;
+use askama::Template;
+use axum::extract::{FromRequestParts, RawQuery};
+use axum::http::request::Parts;
+use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
@@ -16,18 +19,17 @@ use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use revision::revisioned;
-use rinja::Template;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use serde_json_path::{JsonPath, JsonPathExt};
 use std::collections::{HashMap, HashSet};
+use std::convert::Infallible;
 use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
 use std::sync::OnceLock;
-use axum::response::IntoResponse;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -773,6 +775,19 @@ pub struct Preferences {
 	pub remove_default_feeds: String,
 }
 
+impl<S> FromRequestParts<S> for Preferences
+where
+	S: Send + Sync,
+{
+	type Rejection = Infallible;
+
+	async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+		Ok(
+			Preferences::build(parts.extensions.get::<CookieJar>().unwrap_or(&CookieJar::new()))
+		)
+	}
+}
+
 fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
 where
 	S: Serializer,
@@ -835,11 +850,6 @@ impl Preferences {
 	pub fn build(cookies: &CookieJar) -> Self {
 		// Read available theme names from embedded css files.
 		// Always make the default "system" theme available.
-		/*let mut themes = vec!["system".to_string()];
-		for file in ThemeAssets::iter() {
-			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
-			themes.push(chunks[0].to_owned());
-		}*/
 		static THEMES: OnceLock<Vec<String>> = OnceLock::new();
 		Self {
 			available_themes: THEMES
@@ -1594,12 +1604,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-pub async fn nsfw_landingx(cookies: &CookieJar, query: axum::extract::Query<HashMap<String, String>>, req_url: String) -> impl IntoResponse {
-	let res_type: ResourceType;
-
-	// Determine from the request URL if the resource is a subreddit, a user
-	// page, or a post.
-}
+pub async fn nsfw_landingx(cookies: &CookieJar, query: axum::extract::Query<HashMap<String, String>>, req_url: String) -> impl IntoResponse {}
 
 #[derive(Deserialize)]
 pub struct PathParameters {
@@ -1607,8 +1612,23 @@ pub struct PathParameters {
 	pub id: String,
 	pub title: String,
 	pub comment_id: Option<String>,
+	pub sub: Option<String>,
 }
 
+impl PathParameters {
+	/// Different paths correspond to different resource types
+	pub fn resource_type(&self) -> Option<ResourceType> {
+		if !self.name.is_empty() {
+			Some(ResourceType::User)
+		} else if !self.id.is_empty() {
+			Some(ResourceType::Post)
+		} else if self.sub.is_some() {
+			Some(ResourceType::Subreddit)
+		} else {
+			None
+		}
+	}
+}
 
 // Returns the last (non-empty) segment of a path string
 pub fn url_path_basename(path: &str) -> String {
