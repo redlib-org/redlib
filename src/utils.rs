@@ -927,6 +927,7 @@ pub fn get_filters(req: &Request<Body>) -> HashSet<String> {
 	setting(req, "filters").split('+').map(String::from).filter(|s| !s.is_empty()).collect::<HashSet<String>>()
 }
 
+// If available, use Preferences.filters
 pub fn get_filtersx(cookies: &CookieJar) -> HashSet<String> {
 	setting_from_cookiejar(cookies, "filters")
 		.split('+')
@@ -1562,9 +1563,9 @@ pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
 	gate_nsfw && !bypass_gate
 }
 
-pub fn should_be_nsfw_gatedx(cookies: &CookieJar, query: &Query<HashMap<String, String>>) -> bool {
+pub fn should_be_nsfw_gatedx(prefs: &Preferences, query: &Query<HashMap<String, String>>) -> bool {
 	let sfw_instance = sfw_only();
-	let gate_nsfw = setting_from_cookiejar(cookies, "show_nsfw") != "on";
+	let gate_nsfw = prefs.show_nsfw != "on";
 
 	// Nsfw landing gate should not be bypassed on a sfw only instance,
 	let bypass_gate: bool = query.get("bypass_nsfw_landing").is_some();

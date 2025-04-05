@@ -5,14 +5,17 @@ use crate::client::{json, jsonx};
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, param, parse_post, setting, setting_from_cookiejar, template, Comment, PathParameters, Post,
-	Preferences,
+	cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, nsfw_landingx, param, parse_post, setting, setting_from_cookiejar, template, Comment,
+	PathParameters, Post, Preferences,
 };
+use axum::response::IntoResponse;
 use hyper::{Body, Request, Response};
 
 use askama::Template;
+use axum::extract::{OriginalUri, Path};
 use axum::RequestExt as AxumRequestExt;
 use axum_extra::extract::cookie::CookieJar;
+use http_api_problem::ApiError;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::borrow::Cow;
@@ -40,8 +43,10 @@ pub async fn itemx(
 	axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
 	query: axum::extract::Query<HashMap<String, String>>,
 	cookies: CookieJar,
+	prefs: Preferences,
+	original_uri: OriginalUri,
 	mut req: axum::extract::Request,
-) -> impl axum::response::IntoResponse {
+) -> Result<axum::response::Response, ApiError> {
 	let mut url: String = format!(
 		"u/{}/comments/{}/{}.json?{}&raw_json=1",
 		parameters.name,
@@ -60,21 +65,22 @@ pub async fn itemx(
 		.map(Cow::from)
 		.unwrap_or_else(|| {
 			// Grab default comment sort method from Cookies
-			let res = setting_from_cookiejar(&cookies, "comment_sort");
+			let res = &prefs.comment_sort;
 			if !res.is_empty() {
 				// If the query does not have a sort parameter, add it so that it can be forwarded to reddit
 				url.push_str("&sort="); // NOTE: path already has '?' to start query parameters.
-				url.push_str(res.as_ref());
+				url.push_str(res);
 			}
-			res
+			Cow::from(res)
 		});
 
 	let json = jsonx(url, quarantined).await?;
 
 	let post = parse_post(&json[0]["data"]["children"][0]).await;
 
-	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&cookies, &query) {
-		return Ok("nsfw_landing"); // FIXME
+	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&prefs, &query) {
+		// nsfw_landingx is an axum::Handler, but we don't have to reallocate memory
+		return Ok(nsfw_landingx(prefs, Path(parameters), original_uri).await?.into_response());
 	}
 
 	let comments = match query.get("q").map(String::as_str) {
@@ -83,7 +89,7 @@ pub async fn itemx(
 			&post.permalink,
 			&post.author.name,
 			&parameters.comment_id.unwrap_or_default(),
-			&get_filtersx(&cookies),
+			&HashSet::from_iter(prefs.filters),
 			&cookies,
 		),
 		Some(pattern) => query_comments(
@@ -91,12 +97,12 @@ pub async fn itemx(
 			&post.permalink,
 			&post.author.name,
 			&parameters.comment_id.unwrap_or_default(),
-			&get_filtersx(&cookies),
+			&HashSet::from_iter(prefs.filters),
 			pattern,
 			&cookies,
 		),
 	};
-	Ok::<_, http_api_problem::ApiError>("Response from post and comment struct") // FIXME
+	Ok::<_, ApiError>("Response from post and comment struct".into_response()) // FIXME
 }
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
