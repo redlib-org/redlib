@@ -1637,7 +1637,7 @@ pub async fn nsfw_landingx(
 pub struct PathParameters {
 	pub name: String,
 	pub id: String,
-	pub title: String,
+	pub title: Option<String>,
 	pub comment_id: Option<String>,
 	pub sub: Option<String>,
 }

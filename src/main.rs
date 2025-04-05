@@ -542,6 +542,7 @@ async fn main() {
 		)
 		.route("/user/{name}/comments/{id}/{title}", get(post::itemx))
 		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
+		.route("/user/{name}/comments/{id}", get(post::itemx))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
 	let appx = tower_http::normalize_path::NormalizePathLayer::trim_trailing_slash().layer(appx);

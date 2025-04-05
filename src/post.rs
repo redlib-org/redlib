@@ -46,10 +46,10 @@ pub async fn itemx(
 ) -> Result<axum::response::Response, ApiError> {
 	let prefs = Arc::new(prefs);
 	let mut url: String = format!(
-		"u/{}/comments/{}/{}.json?{}&raw_json=1",
+		"u/{}/comments/{}{}.json?{}&raw_json=1",
 		parameters.name,
 		parameters.id,
-		parameters.title,
+		parameters.title.as_ref().map(|t| format!("/{}", t)).unwrap_or_default(),
 		raw_query.unwrap_or_default()
 	); //FIXME: /u or /r?; Query?
 
