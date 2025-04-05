@@ -21,6 +21,8 @@ use futures_util::future::TryFutureExt;
 
 use axum::http::header::{HeaderMap, HeaderValue as HeaderValuex};
 use axum::routing::get;
+use axum::ServiceExt;
+use tower::Layer;
 use tower_default_headers::DefaultHeadersLayer;
 // Create Services
 
@@ -539,12 +541,14 @@ async fn main() {
 			get(|axum::extract::Path(name): axum::extract::Path<String>| async move { axum::response::Redirect::temporary(format!("/user/{}", name).as_str()) }),
 		)
 		.route("/user/{name}/comments/{id}/{title}", get(post::itemx))
-		.route("/", get(|| async { "hello, world!" }))
+		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
 		.layer(DefaultHeadersLayer::new(default_headersx));
+
+	let appx = tower_http::normalize_path::NormalizePathLayer::trim_trailing_slash().layer(appx);
 
 	// Temporary listener for the axum server:
 	let listenerx = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-	axum::serve(listenerx, appx).await.unwrap();
+	axum::serve(listenerx, ServiceExt::<axum::extract::Request>::into_make_service(appx)).await.unwrap();
 
 	println!("Running Redlib v{} on {listener}!", env!("CARGO_PKG_VERSION"));
 

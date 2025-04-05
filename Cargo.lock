@@ -1833,7 +1833,9 @@ dependencies = [
  "time",
  "tokio",
  "toml",
+ "tower",
  "tower-default-headers",
+ "tower-http",
  "unwrap-infallible",
  "url",
  "uuid",
@@ -2737,6 +2739,20 @@ dependencies = [
  "futures-util",
  "http 1.3.1",
  "pin-project",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
+name = "tower-http"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "403fa3b783d4b626a8ad51d766ab03cb6d2dbfc46b1c5d4448395e6628dc9697"
+dependencies = [
+ "bitflags",
+ "bytes",
+ "http 1.3.1",
+ "pin-project-lite",
  "tower-layer",
  "tower-service",
 ]

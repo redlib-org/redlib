@@ -108,14 +108,14 @@ pub async fn itemx(
 		url: original_uri.to_string(),
 		comment_query: query.get("q").cloned().unwrap_or_default(),
 	}
-		.render()
-		.map_err(|e| {
-			ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
-				.title("Error rendering Post")
-				.message(&e)
-				.source(e)
-				.finish()
-		})?;
+	.render()
+	.map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+			.title("Error rendering Post")
+			.message(&e)
+			.source(e)
+			.finish()
+	})?;
 	Ok(Html(body).into_response())
 }
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
