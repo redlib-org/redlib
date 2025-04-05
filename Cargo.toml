@@ -62,7 +62,6 @@ tower-default-headers = "0.2.0"
 reqwest = {  version = "0.12.15", features = ["stream", "json", "gzip"] }
 strfmt = "0.2.4"
 axum-extra = { version = "0.10.0", features = ["cookie"] }
-unwrap-infallible = "0.1.5"
 askama = "0.13.0"
 tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["normalize-path"] }
