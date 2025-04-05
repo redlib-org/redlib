@@ -30,7 +30,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::OnceLock;
+use std::sync::{Arc, LazyLock};
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -496,7 +496,7 @@ pub struct Comment {
 	pub collapsed: bool,
 	pub is_filtered: bool,
 	pub more_count: i64,
-	pub prefs: Preferences,
+	pub prefs: Arc<Preferences>,
 }
 
 impl Comment {
@@ -507,8 +507,7 @@ impl Comment {
 		post_link: &str,
 		post_author: &str,
 		highlighted_comment: &str,
-		filters: &HashSet<String>,
-		cookies: &CookieJar,
+		prefs: Arc<Preferences>,
 	) -> Self {
 		let id = val(comment, "id");
 
@@ -557,7 +556,7 @@ impl Comment {
 			},
 			distinguished: val(comment, "distinguished"),
 		};
-		let is_filtered = filters.contains(&["u_", author.name.as_str()].concat());
+		let is_filtered = prefs.filters.contains(&["u_", author.name.as_str()].concat());
 
 		// Many subreddits have a default comment posted about the sub's rules etc.
 		// Many Redlib users do not wish to see this kind of comment by default.
@@ -590,7 +589,7 @@ impl Comment {
 			collapsed,
 			is_filtered,
 			more_count,
-			prefs: Preferences::build(cookies),
+			prefs,
 		}
 	}
 }
@@ -680,7 +679,7 @@ pub struct NSFWLandingTemplate {
 	pub res_type: ResourceType,
 
 	/// User preferences.
-	pub prefs: Preferences,
+	pub prefs: Arc<Preferences>,
 
 	/// Request URL.
 	pub url: String,
@@ -724,7 +723,7 @@ pub struct Params {
 	pub before: Option<String>,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 #[revisioned(revision = 1)]
 pub struct Preferences {
 	#[revision(start = 1)]
@@ -849,11 +848,9 @@ impl Preferences {
 	pub fn build(cookies: &CookieJar) -> Self {
 		// Read available theme names from embedded css files.
 		// Always make the default "system" theme available.
-		static THEMES: OnceLock<Vec<String>> = OnceLock::new();
+		static THEMES: LazyLock<Vec<String>> = LazyLock::new(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect());
 		Self {
-			available_themes: THEMES
-				.get_or_init(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect())
-				.clone(),
+			available_themes: THEMES.clone(),
 			theme: setting_from_cookiejar(cookies, "theme").into_owned(),
 			front_page: setting_from_cookiejar(cookies, "front_page").into_owned(),
 			layout: setting_from_cookiejar(cookies, "layout").into_owned(),
@@ -1595,7 +1592,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	let body = NSFWLandingTemplate {
 		res: resource,
 		res_type,
-		prefs: Preferences::new(&req),
+		prefs: Arc::new(Preferences::new(&req)),
 		url: req_url,
 	}
 	.render()
@@ -1605,7 +1602,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 }
 
 pub async fn nsfw_landingx(
-	prefs: Preferences,
+	prefs: Arc<Preferences>,
 	Path(params): Path<PathParameters>,
 	axum::extract::OriginalUri(uri): axum::extract::OriginalUri,
 ) -> Result<impl IntoResponse, ApiError> {

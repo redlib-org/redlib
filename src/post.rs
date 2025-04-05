@@ -5,8 +5,7 @@ use crate::client::{json, jsonx};
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	cookie_jar_from_oldreq, error, get_filters, get_filtersx, nsfw_landing, nsfw_landingx, param, parse_post, setting, setting_from_cookiejar, template, Comment,
-	PathParameters, Post, Preferences,
+	cookie_jar_from_oldreq, error, nsfw_landing, nsfw_landingx, param, parse_post, setting_from_cookiejar, template, Comment, PathParameters, Post, Preferences,
 };
 use axum::response::IntoResponse;
 use hyper::{Body, Request, Response};
@@ -19,7 +18,8 @@ use http_api_problem::ApiError;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::sync::Arc;
 use unwrap_infallible::UnwrapInfallible;
 
 // STRUCTS
@@ -47,6 +47,7 @@ pub async fn itemx(
 	original_uri: OriginalUri,
 	mut req: axum::extract::Request,
 ) -> Result<axum::response::Response, ApiError> {
+	let prefs = Arc::new(prefs);
 	let mut url: String = format!(
 		"u/{}/comments/{}/{}.json?{}&raw_json=1",
 		parameters.name,
@@ -84,27 +85,13 @@ pub async fn itemx(
 	}
 
 	let comments = match query.get("q").map(String::as_str) {
-		None | Some("") => parse_comments(
-			&json[1],
-			&post.permalink,
-			&post.author.name,
-			&parameters.comment_id.unwrap_or_default(),
-			&HashSet::from_iter(prefs.filters),
-			&cookies,
-		),
-		Some(pattern) => query_comments(
-			&json[1],
-			&post.permalink,
-			&post.author.name,
-			&parameters.comment_id.unwrap_or_default(),
-			&HashSet::from_iter(prefs.filters),
-			pattern,
-			&cookies,
-		),
+		None | Some("") => parse_comments(&json[1], &post.permalink, &post.author.name, &parameters.comment_id.unwrap_or_default(), prefs),
+		Some(pattern) => query_comments(&json[1], &post.permalink, &post.author.name, &parameters.comment_id.unwrap_or_default(), prefs, pattern),
 	};
 	Ok::<_, ApiError>("Response from post and comment struct".into_response()) // FIXME
 }
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
+	let prefs = Arc::new(Preferences::build(&cookie_jar_from_oldreq(&req)));
 	// Build Reddit API path
 	let mut path: String = format!("{}.json?{}&raw_json=1", req.uri().path(), req.uri().query().unwrap_or_default());
 	let sub = req.param("sub").unwrap_or_default();
@@ -114,7 +101,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Set sort to sort query parameter
 	let sort = param(&path, "sort").unwrap_or_else(|| {
 		// Grab default comment sort method from Cookies
-		let default_sort = setting(&req, "comment_sort");
+		let default_sort = prefs.comment_sort.clone();
 
 		// If there's no sort query but there's a default sort, set sort to default_sort
 		if default_sort.is_empty() {
@@ -157,23 +144,8 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
-				"" => parse_comments(
-					&response[1],
-					&post.permalink,
-					&post.author.name,
-					highlighted_comment,
-					&get_filters(&req),
-					&cookie_jar_from_oldreq(&req),
-				),
-				_ => query_comments(
-					&response[1],
-					&post.permalink,
-					&post.author.name,
-					highlighted_comment,
-					&get_filters(&req),
-					&query,
-					&cookie_jar_from_oldreq(&req),
-				),
+				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, prefs),
+				_ => query_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, prefs, &query),
 			};
 
 			// Use the Post and Comment structs to generate a website to show users
@@ -203,7 +175,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 // COMMENTS
 
 /// A Vec of all comments defined in a json response
-fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, filters: &HashSet<String>, cookies: &CookieJar) -> Vec<Comment> {
+fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, prefs: Arc<Preferences>) -> Vec<Comment> {
 	let comments = json["data"]["children"].as_array();
 	if let Some(comments) = comments {
 		comments
@@ -211,11 +183,11 @@ fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, 
 			.map(|comment| {
 				let data = &comment["data"];
 				let replies: Vec<Comment> = if data["replies"].is_object() {
-					parse_comments(&data["replies"], post_link, post_author, highlighted_comment, filters, cookies)
+					parse_comments(&data["replies"], post_link, post_author, highlighted_comment, prefs.clone())
 				} else {
 					Vec::new()
 				};
-				Comment::build(&comment, data, replies, post_link, post_author, highlighted_comment, filters, cookies)
+				Comment::build(&comment, data, replies, post_link, post_author, highlighted_comment, prefs.clone())
 			})
 			.collect()
 	} else {
@@ -224,17 +196,9 @@ fn parse_comments(json: &serde_json::Value, post_link: &str, post_author: &str, 
 }
 
 /// like parse_comments, but filters comment body by query parameter.
-fn query_comments(
-	json: &serde_json::Value,
-	post_link: &str,
-	post_author: &str,
-	highlighted_comment: &str,
-	filters: &HashSet<String>,
-	query: &str,
-	cookies: &CookieJar,
-) -> Vec<Comment> {
+fn query_comments(json: &serde_json::Value, post_link: &str, post_author: &str, highlighted_comment: &str, prefs: Arc<Preferences>, query: &str) -> Vec<Comment> {
 	let query_lc = query.to_lowercase();
-	parse_comments(json, post_link, post_author, highlighted_comment, filters, cookies)
+	parse_comments(json, post_link, post_author, highlighted_comment, prefs)
 		.into_iter()
 		.filter(|c| c.body.to_lowercase().contains(&query_lc))
 		.collect()
