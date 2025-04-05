@@ -296,7 +296,7 @@ fn reddit_get(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, St
 }
 
 async fn reddit_getx(path: &str, quarantine: bool) -> Result<reqwest::Response, ApiError> {
-	reddit_request(reqwest::Method::GET, path, quarantine, REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST).await
+	reddit_request(reqwest::Method::GET, path, quarantine, REDDIT_URL_BASE, REDDIT_URL_BASE_HOST).await
 }
 
 /// Makes a HEAD request to Reddit at `path, using the short URL base. This will not follow redirects.
