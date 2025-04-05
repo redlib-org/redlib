@@ -73,7 +73,7 @@ pub async fn itemx(
 
 	let post = parse_post(&json[0]["data"]["children"][0]).await;
 
-	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&cookies, req.extract_parts::<axum::extract::RawQuery>().await.unwrap_infallible()) {
+	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&cookies, &query) {
 		return Ok("nsfw_landing"); // FIXME
 	}
 

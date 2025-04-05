@@ -9,10 +9,11 @@ use std::borrow::Cow;
 use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
 use askama::Template;
-use axum::extract::{FromRequestParts, RawQuery};
+use axum::extract::{FromRequestParts, Path, Query};
 use axum::http::request::Parts;
 use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
+use http_api_problem::ApiError;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
@@ -782,9 +783,7 @@ where
 	type Rejection = Infallible;
 
 	async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-		Ok(
-			Preferences::build(parts.extensions.get::<CookieJar>().unwrap_or(&CookieJar::new()))
-		)
+		Ok(Preferences::build(parts.extensions.get::<CookieJar>().unwrap_or(&CookieJar::new())))
 	}
 }
 
@@ -1563,12 +1562,12 @@ pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
 	gate_nsfw && !bypass_gate
 }
 
-pub fn should_be_nsfw_gatedx(cookies: &CookieJar, RawQuery(query): RawQuery) -> bool {
+pub fn should_be_nsfw_gatedx(cookies: &CookieJar, query: &Query<HashMap<String, String>>) -> bool {
 	let sfw_instance = sfw_only();
 	let gate_nsfw = setting_from_cookiejar(cookies, "show_nsfw") != "on";
 
 	// Nsfw landing gate should not be bypassed on a sfw only instance,
-	let bypass_gate: bool = query.map_or(false, |s| s.starts_with("bypass_nsfw_landing=") || s.contains("&bypass_nsfw_landing=")); // TODO: Test if the equals sign breaks the pattern matching
+	let bypass_gate: bool = query.get("bypass_nsfw_landing").is_some();
 
 	sfw_instance || (gate_nsfw && !bypass_gate)
 }
@@ -1604,7 +1603,37 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-pub async fn nsfw_landingx(cookies: &CookieJar, query: axum::extract::Query<HashMap<String, String>>, req_url: String) -> impl IntoResponse {}
+pub async fn nsfw_landingx(
+	prefs: Preferences,
+	Path(params): Path<PathParameters>,
+	axum::extract::OriginalUri(uri): axum::extract::OriginalUri,
+) -> Result<impl IntoResponse, ApiError> {
+	let res_type = params.resource_type().unwrap_or(ResourceType::Subreddit);
+	let res = match res_type {
+		ResourceType::User => params.name,
+		ResourceType::Post => params.id,
+		ResourceType::Subreddit => params.sub.unwrap_or_default(),
+	};
+	let body = NSFWLandingTemplate {
+		res,
+		res_type,
+		prefs,
+		url: uri.to_string(),
+	}
+	.render() //render into HTML String
+	// Handle rendering errors
+	.map_err(|e| {
+		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+			.title("Error rendering NSFW landing page")
+			.message(&e)
+			.source(e)
+			.finish()
+	})?;
+	Ok((
+		axum::http::status::StatusCode::FORBIDDEN, // set status code 403
+		axum::response::Html(body),
+	))
+}
 
 #[derive(Deserialize)]
 pub struct PathParameters {
