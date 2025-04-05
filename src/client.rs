@@ -55,6 +55,9 @@ pub fn into_api_error(e: reqwest::Error) -> ApiError {
 		let status = e.status().unwrap();
 		ApiError::try_builder(status.as_u16())
 			.expect("reqwest considers this HTTP status to be an error status, but http_api_problem does not.")
+			.title(format!("Reddit Error {}", status))
+			.message(format!("{e}"))
+			.source(e)
 			.finish()
 	} else {
 		ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR) // 500
@@ -308,7 +311,7 @@ fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, ho
 // Unused - reddit_head is only ever called in the context of a short URL
 
 async fn reddit_request(method: reqwest::Method, path: &str, quarantine: bool, base_path: &'static str, host: &'static str) -> Result<reqwest::Response, ApiError> {
-	let url = format!("{base_path}{path}");
+	let url = format!("{base_path}/{path}");
 
 	// Build request to Reddit. Reqwest handles gzip encoding. Reddit does not yet support Brotli encoding.
 	use reqwest::header;
