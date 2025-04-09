@@ -11,7 +11,7 @@ pub static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 
 // This serves as the frontend for an archival API - on removed comments, this URL
 // will be the base of a link, to display removed content (on another site).
-pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "undelete.pullpush.io";
+pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "ihsoyct.github.io";
 
 /// Stores the configuration parsed from the environment variables and the
 /// config file. `Config::Default()` contains None for each setting.
@@ -267,8 +267,8 @@ fn test_default_filters() {
 #[test]
 #[sealed_test]
 fn test_pushshift() {
-	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://api.pushshift.io""#;
+	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://ihsoyct.github.io""#;
 	write("redlib.toml", config_to_write).unwrap();
 	assert!(get_setting("REDLIB_PUSHSHIFT_FRONTEND").is_some());
-	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://api.pushshift.io".into()));
+	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://ihsoyct.github.io".into()));
 }
