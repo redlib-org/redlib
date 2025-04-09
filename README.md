@@ -370,7 +370,7 @@ REDLIB_DEFAULT_SHOW_NSFW=on redlib
 ```
 
 ```bash
-REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME=dark redlib -r
+REDLIB_DEFAULT_WIDE=on REDLIB_DEFAULT_THEME_DARK=dark redlib -r
 ```
 
 You can also configure Redlib with a configuration file named `redlib.toml`. For example:
@@ -423,7 +423,8 @@ Assign a default value for each user-modifiable setting by passing environment v
 
 | Name                                | Possible values                                                                                                                    | Default value |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `THEME`                             | `["system", "light", "dark", "black", "dracula", "nord", "laserwave", "violet", "gold", "rosebox", "gruvboxdark", "gruvboxlight", "tokyoNight", "icebergDark", "doomone", "libredditBlack", "libredditDark", "libredditLight"]` | `system`      |
+| `THEME_LIGHT`                       | `["dark-black","dark-doomone","dark-dracula","dark-gold","dark-gruvbox","dark-iceberg","dark-laserwave","dark-libreddit","dark-libredditBlack","dark-midnightPurple","dark-nord","dark-rosebox","dark-tokyoNight","dark-violet","dark","light-gruvbox","light-libreddit","light"]` | `light`     |
+| `THEME_DARK`                        | `["dark-black","dark-doomone","dark-dracula","dark-gold","dark-gruvbox","dark-iceberg","dark-laserwave","dark-libreddit","dark-libredditBlack","dark-midnightPurple","dark-nord","dark-rosebox","dark-tokyoNight","dark-violet","dark","light-gruvbox","light-libreddit","light"]` | `dark`      |
 | `FRONT_PAGE`                        | `["default", "popular", "all"]`                                                                                                    | `default`     |
 | `LAYOUT`                            | `["card", "clean", "compact"]`                                                                                                     | `card`        |
 | `WIDE`                              | `["on", "off"]`                                                                                                                    | `off`         |
@@ -436,6 +437,7 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_HLS_NOTIFICATION`             | `["on", "off"]`                                                                                                                    | `off`         |
 | `AUTOPLAY_VIDEOS`                   | `["on", "off"]`                                                                                                                    | `off`         |
 | `SUBSCRIPTIONS`                     | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      |
+| `FILTERS`                           | `+`-delimited list of subreddits (`sub1+sub2+sub3+...`)                                                                            | _(none)_      |
 | `HIDE_AWARDS`                       | `["on", "off"]`                                                                                                                    | `off`         |
 | `DISABLE_VISIT_REDDIT_CONFIRMATION` | `["on", "off"]`                                                                                                                    | `off`         |
 | `HIDE_SCORE`                        | `["on", "off"]`                                                                                                                    | `off`         |
