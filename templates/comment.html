@@ -41,7 +41,7 @@
 		<div class="comment_body {% if highlighted %}highlighted{% endif %}">{{ body|safe }}</div>
 		{% endif %}
 		<blockquote class="replies">{% for c in replies -%}{{ c.render().unwrap()|safe }}{%- endfor %}
-		</bockquote>
+		</blockquote>
 	</details>
 </div>
 {% endif %}
