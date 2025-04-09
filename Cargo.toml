@@ -27,7 +27,7 @@ hyper = { version = "0.14.31", features = ["full"] }
 percent-encoding = "2.3.1"
 route-recognizer = "0.3.1"
 serde_json = "1.0.133"
-tokio = { version = "1.35.1", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 time = { version = "0.3.31", features = ["local-offset"] }
 url = "2.5.0"
 rust-embed = { version = "8.1.0", features = ["include-exclude"] }
