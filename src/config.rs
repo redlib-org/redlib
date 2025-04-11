@@ -26,6 +26,8 @@ pub struct Config {
 
 	#[serde(rename = "REDLIB_DEFAULT_THEME_LIGHT")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_THEME_LIGHT")]
+	#[serde(alias = "REDLIB_DEFAULT_THEME")]
+	#[serde(alias = "LIBREDDIT_DEFAULT_THEME")]
 	pub(crate) default_theme_light: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_THEME_DARK")]

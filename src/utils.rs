@@ -12,7 +12,7 @@ use libflate::deflate::{Decoder, Encoder};
 use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use revision::revisioned;
+use revision::{revisioned, Error};
 use rinja::Template;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -621,14 +621,16 @@ pub struct Params {
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
-#[revisioned(revision = 1)]
+#[revisioned(revision = 2)]
 pub struct Preferences {
 	#[revision(start = 1)]
 	#[serde(skip_serializing, skip_deserializing)]
 	pub available_themes: Vec<String>,
-	#[revision(start = 1)]
+	#[revision(start = 1, end = 2, convert_fn="convert_theme")]
+	pub theme: String,
+	#[revision(start = 2)]
 	pub theme_light: String,
-	#[revision(start = 1)]
+	#[revision(start = 2)]
 	pub theme_dark: String,
 	#[revision(start = 1)]
 	pub front_page: String,
@@ -745,6 +747,11 @@ impl Preferences {
 	}
 	pub fn to_bincode_str(&self) -> Result<String, String> {
 		Ok(base2048::encode(&self.to_compressed_bincode()?))
+	}
+	fn convert_theme(&mut self, _revision: u16, value:String) -> Result<(), Error> {
+		self.theme_light = value.clone();
+		self.theme_dark = value.clone();
+		Ok(())
 	}
 }
 
