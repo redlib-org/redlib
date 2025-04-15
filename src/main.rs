@@ -173,6 +173,13 @@ async fn main() {
 		}
 	}
 
+	#[cfg(feature = "p2p")]
+	{
+		tokio::spawn(async move {
+			let _ = redlib::p2p::main().await;
+		});
+	}
+
 	let address = matches.get_one::<String>("address").unwrap();
 	let port = matches.get_one::<String>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
