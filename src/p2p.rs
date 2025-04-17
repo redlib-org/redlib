@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+	str::FromStr,
+	sync::atomic::{AtomicBool, Ordering},
+};
 
 use bytes::Bytes;
 use dashmap::DashMap;
@@ -6,19 +9,18 @@ use ed25519_dalek::Signature;
 use futures_lite::StreamExt;
 use iroh::{protocol::Router, Endpoint, NodeAddr, PublicKey, SecretKey};
 use iroh_gossip::{
-	net::{Event, Gossip, GossipEvent, GossipReceiver},
+	net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender},
 	proto::TopicId,
 	ALPN as GOSSIP_ALPN,
 };
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tokio::task;
+use tokio::{task, time::sleep};
 
 use crate::config;
 
-static TICKET: &str = "";
-
-static DASHMAP: Lazy<DashMap<String, bool>> = Lazy::new(DashMap::new);
+pub static DASHMAP: Lazy<DashMap<String, bool>> = Lazy::new(DashMap::new);
+pub static ONLINE: Lazy<AtomicBool> = Lazy::new(AtomicBool::default);
 
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let endpoint = Endpoint::builder().discovery_n0().bind().await?;
@@ -27,8 +29,19 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let gossip = Gossip::builder().spawn(builder.endpoint().clone()).await?;
 	let _router: Router = builder.accept(GOSSIP_ALPN, gossip.clone()).spawn().await?;
 
-	let (topic, peers) = {
-		let Ticket { topic, peers } = Ticket::from_str(TICKET)?;
+	// there are two ways to run the p2p chat
+	// 1. "bootstrap" mode - this requires REDLIB_P2P_BOOTSTRAP=true and REDLIB_P2P_TOPIC set to the topic ID you want to use
+	//    in this mode, the node will create the topic and start a chat room
+	// 2. "join" mode - this requires REDLIB_P2P_BOOTSTRAP=false (or unset) and REDLIB_P2P_TICKET set to a ticket.
+	//    in this mode, the node will join the existing chat room with the given topic ID, and connect to the peers listed
+	//    in the ticket
+	let (topic, peers) = if std::env::var("REDLIB_P2P_BOOTSTRAP").unwrap_or_default() == "true" {
+		let topic = std::env::var("REDLIB_P2P_TOPIC").map(|s| TopicId::from_str(&s).unwrap()).unwrap();
+		println!("> opening chat room for topic {topic}");
+		(topic, vec![])
+	} else {
+		let ticket_str = std::env::var("REDLIB_P2P_TICKET").expect("REDLIB_P2P_TICKET not set");
+		let Ticket { topic, peers } = Ticket::from_str(&ticket_str)?;
 		println!("> joining chat room for topic {topic}");
 		(topic, peers)
 	};
@@ -53,14 +66,18 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let (sender, receiver) = gossip.subscribe_and_join(topic, peer_ids).await?.split();
 	println!("> connected!");
 
+	let secret_key = endpoint.secret_key().clone();
+
 	let message = Message {
 		hostname: config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
 		online: true,
 	};
-	let encoded_message = SignedMessage::sign_and_encode(endpoint.secret_key(), &message)?;
+	let encoded_message = SignedMessage::sign_and_encode(&secret_key, &message)?;
 	sender.broadcast(encoded_message).await?;
 
 	task::spawn(subscribe_loop(receiver));
+
+	task::spawn(sender_loop(sender, secret_key));
 
 	Ok(())
 }
@@ -78,6 +95,19 @@ async fn subscribe_loop(mut receiver: GossipReceiver) {
 			// Update dashmap with message's hostname and alive status
 			DASHMAP.insert(message.hostname.clone(), message.online);
 		}
+	}
+}
+
+async fn sender_loop(sender: GossipSender, secret_key: SecretKey) {
+	loop {
+		let message = Message {
+			hostname: config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
+			online: ONLINE.load(Ordering::SeqCst),
+		};
+		let encoded_message = SignedMessage::sign_and_encode(&secret_key, &message).unwrap();
+		let _ = sender.broadcast(encoded_message).await;
+
+		sleep(std::time::Duration::from_secs(10)).await;
 	}
 }
 

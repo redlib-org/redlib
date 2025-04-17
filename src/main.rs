@@ -4,7 +4,9 @@
 
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
+use redlib::p2p::ONLINE;
 use std::str::FromStr;
+use std::sync::atomic::Ordering;
 
 use futures_lite::FutureExt;
 use hyper::Uri;
@@ -226,6 +228,16 @@ async fn main() {
 			app.default_headers.insert("Strict-Transport-Security", val);
 		}
 	}
+
+	// Manual overrides for online value
+	app.at("/force_offline").get(|_| {
+		ONLINE.store(false, Ordering::SeqCst);
+		resource("", "text/plain", false).boxed()
+	});
+	app.at("/force_online").get(|_| {
+		ONLINE.store(true, Ordering::SeqCst);
+		resource("", "text/plain", false).boxed()
+	});
 
 	// Read static files
 	app.at("/style.css").get(|_| style().boxed());

@@ -18,6 +18,7 @@ use std::{io, result::Result};
 
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth};
+use crate::p2p::ONLINE;
 use crate::server::RequestExt;
 use crate::utils::{format_url, Post};
 
@@ -466,6 +467,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 							if status.is_server_error() {
 								Err("Reddit is having issues, check if there's an outage".to_string())
 							} else {
+								ONLINE.store(false, Ordering::SeqCst);
 								err("Failed to parse page JSON data", e.to_string(), path)
 							}
 						}
