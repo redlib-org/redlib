@@ -1603,20 +1603,15 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 
 pub async fn nsfw_landingx(
 	prefs: Arc<Preferences>,
-	Path(params): Path<PathParameters>,
-	axum::extract::OriginalUri(uri): axum::extract::OriginalUri,
-) -> Result<impl IntoResponse, ApiError> {
-	let res_type = params.resource_type().unwrap_or(ResourceType::Subreddit);
-	let res = match res_type {
-		ResourceType::User => params.name,
-		ResourceType::Post => params.id,
-		ResourceType::Subreddit => params.sub.unwrap_or_default(),
-	};
+	resource_id: String,
+	resource_type: ResourceType,
+	uri: String,
+) -> Result<axum::response::Html<String>, ApiError> {
 	let body = NSFWLandingTemplate {
-		res,
-		res_type,
+		res: resource_id,
+		res_type: resource_type,
 		prefs,
-		url: uri.to_string(),
+		url: uri,
 	}
 	.render() //render into HTML String
 	// Handle rendering errors
@@ -1627,10 +1622,7 @@ pub async fn nsfw_landingx(
 			.source(e)
 			.finish()
 	})?;
-	Ok((
-		axum::http::status::StatusCode::FORBIDDEN, // set status code 403
-		axum::response::Html(body),
-	))
+	Ok(axum::response::Html(body))
 }
 
 #[derive(Deserialize)]

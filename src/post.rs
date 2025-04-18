@@ -43,7 +43,7 @@ pub async fn itemx(
 	cookies: CookieJar,
 	prefs: Preferences,
 	original_uri: OriginalUri,
-) -> Result<axum::response::Response, ApiError> {
+) -> Result<impl IntoResponse, ApiError> {
 	let prefs = Arc::new(prefs);
 	let mut url: String = format!(
 		"u/{}/comments/{}{}.json?{}&raw_json=1",
@@ -77,8 +77,7 @@ pub async fn itemx(
 	let post = parse_post(&json[0]["data"]["children"][0]).await;
 
 	if post.nsfw && crate::utils::should_be_nsfw_gatedx(&prefs, &query) {
-		// nsfw_landingx is an axum::Handler, but we don't have to reallocate memory
-		return Ok(nsfw_landingx(prefs, Path(parameters), original_uri).await?.into_response());
+		return nsfw_landingx(prefs, parameters.id, ResourceType::Post, original_uri.to_string()).await;
 	}
 
 	let comments = match query.get("q").map(String::as_str) {
@@ -116,7 +115,7 @@ pub async fn itemx(
 			.source(e)
 			.finish()
 	})?;
-	Ok(Html(body).into_response())
+	Ok(Html(body))
 }
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	let prefs = Arc::new(Preferences::build(&cookie_jar_from_oldreq(&req)));
