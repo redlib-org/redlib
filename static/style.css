@@ -1756,7 +1756,7 @@ input[type="submit"] {
 }
 
 .md > * {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .md h1 {
@@ -1779,7 +1779,7 @@ input[type="submit"] {
 }
 
 .md h1, h2, h3, h4, h5, h6 {
-    margin: 1rem 0 .5rem;
+    margin: 1.25rem 0 .75rem;
 }
 
 .md blockquote {
