@@ -137,8 +137,12 @@
                 // update view list
                 const view = document.getElementById(`view-${idx}`);
                 if (view) {
-                    const lines = nodes.map((n2, j) => `${j + 1}: ${node.view[n2.host]?.online ? 'online' : 'offline'}`);
-                    view.textContent = lines.join('\n');
+                    const lines = nodes.map((n2, j) => {
+                        const online = node.view[n2.host]?.online;
+                        const color = online ? 'text-green-600' : 'text-red-600';
+                        return `<span class="${color}">${j + 1}: ${online ? 'online' : 'offline'}</span>`;
+                    });
+                    view.innerHTML = lines.join('<br>');
                 }
             }
         }
@@ -220,8 +224,8 @@
         // ─────────────────────────────────────────────────────────────────────
         // Timers
         // ─────────────────────────────────────────────────────────────────────
-        setInterval(pollLogs, 2000);  // every 2s
-        setInterval(pollMaps, 3000);  // every 3s
+        setInterval(pollLogs, 1000);  // every 1
+        setInterval(pollMaps, 1000);  // every 1
     </script>
 </body>
 
