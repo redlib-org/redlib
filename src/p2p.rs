@@ -111,7 +111,7 @@ async fn sender_loop(sender: GossipSender, endpoint: Endpoint) {
 		let message_delivery = sender.broadcast(encoded_message).await;
 		println!("> sent message: {message:?}: {message_delivery:?}");
 
-		sleep(std::time::Duration::from_secs(3)).await;
+		sleep(std::time::Duration::from_secs(1)).await;
 	}
 }
 
