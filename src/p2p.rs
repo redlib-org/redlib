@@ -18,7 +18,7 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::{task, time::sleep};
 
-use crate::config;
+use crate::{config, p2p_mon::{Message, MessageLog}};
 
 pub static DASHMAP: Lazy<DashMap<String, bool>> = Lazy::new(DashMap::new);
 pub static ONLINE: Lazy<AtomicBool> = Lazy::new(AtomicBool::default);
@@ -92,6 +92,7 @@ async fn subscribe_loop(mut receiver: GossipReceiver) {
 					break;
 				}
 			};
+			let message=  message.message;
 			// Update dashmap with message's hostname and alive status
 			DASHMAP.insert(message.hostname.clone(), message.online);
 		}
@@ -104,6 +105,8 @@ async fn sender_loop(sender: GossipSender, endpoint: Endpoint) {
 			hostname: config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
 			online: ONLINE.load(Ordering::SeqCst),
 		};
+		DASHMAP.insert(message.hostname.clone(), message.online);
+		let message: MessageLog = message.into();
 		let encoded_message = SignedMessage::sign_and_encode(endpoint.secret_key(), &message).unwrap();
 		let message_delivery = sender.broadcast(encoded_message).await;
 		println!("> sent message: {message:?}: {message_delivery:?}");
@@ -152,15 +155,15 @@ struct SignedMessage {
 }
 
 impl SignedMessage {
-	pub fn verify_and_decode(bytes: &[u8]) -> anyhow::Result<(PublicKey, Message)> {
+	pub fn verify_and_decode(bytes: &[u8]) -> anyhow::Result<(PublicKey, MessageLog)> {
 		let signed_message: Self = postcard::from_bytes(bytes)?;
 		let key: PublicKey = signed_message.from;
 		key.verify(&signed_message.data, &signed_message.signature)?;
-		let message: Message = postcard::from_bytes(&signed_message.data)?;
+		let message: MessageLog = postcard::from_bytes(&signed_message.data)?;
 		Ok((signed_message.from, message))
 	}
 
-	pub fn sign_and_encode(secret_key: &SecretKey, message: &Message) -> anyhow::Result<Bytes> {
+	pub fn sign_and_encode(secret_key: &SecretKey, message: &MessageLog) -> anyhow::Result<Bytes> {
 		let data: Bytes = postcard::to_stdvec(&message)?.into();
 		let signature = secret_key.sign(&data);
 		let from: PublicKey = secret_key.public();
@@ -170,11 +173,6 @@ impl SignedMessage {
 	}
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Message {
-	hostname: String,
-	online: bool,
-}
 
 pub async fn map_json() -> Result<Response<Body>, String> {
 	let map = &*DASHMAP;

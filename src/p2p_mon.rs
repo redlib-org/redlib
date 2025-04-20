@@ -109,25 +109,25 @@ struct SignedMessage {
 }
 
 impl SignedMessage {
-	pub fn verify_and_decode(bytes: &[u8]) -> anyhow::Result<(PublicKey, Message)> {
+	pub fn verify_and_decode(bytes: &[u8]) -> anyhow::Result<(PublicKey, MessageLog)> {
 		let signed_message: Self = postcard::from_bytes(bytes)?;
 		let key: PublicKey = signed_message.from;
 		key.verify(&signed_message.data, &signed_message.signature)?;
-		let message: Message = postcard::from_bytes(&signed_message.data)?;
+		let message: MessageLog = postcard::from_bytes(&signed_message.data)?;
 		Ok((signed_message.from, message))
 	}
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Message {
-	hostname: String,
-	online: bool,
+pub struct Message {
+	pub hostname: String,
+	pub online: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MessageLog {
-	timestamp: u64,
-	message: Message,
+pub struct MessageLog {
+	pub timestamp: u64,
+	pub message: Message,
 }
 impl From<Message> for MessageLog {
 	fn from(message: Message) -> Self {
