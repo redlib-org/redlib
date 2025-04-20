@@ -4,7 +4,7 @@
 
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
-use redlib::p2p::ONLINE;
+use redlib::p2p::{map_json, ONLINE};
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 
@@ -238,6 +238,8 @@ async fn main() {
 		ONLINE.store(true, Ordering::SeqCst);
 		resource("", "text/plain", false).boxed()
 	});
+
+	app.at("/map.json").get(|_| async move { map_json().await }.boxed());
 
 	// Read static files
 	app.at("/style.css").get(|_| style().boxed());

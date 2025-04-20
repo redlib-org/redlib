@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cluster Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="p-6 font-sans select-none">
+    <div class="flex">
+        <div id="setupPanel" class="w-1/3 border-4 border-red-500 p-6">
+            <h2 class="text-3xl font-semibold mb-6">Node setup</h2>
+
+            <div id="nodesContainer" class="space-y-6"></div>
+
+            <button id="addNodeBtn" class="mt-4 text-blue-600 hover:underline">+ Add node</button>
+        </div>
+
+        <div class="border-l-4 border-red-500 mx-6"></div>
+
+        <div class="flex-1 relative">
+            <div id="circlesContainer" class="flex justify-around flex-wrap gap-12 pt-4"></div>
+
+            <div id="messagesBox"
+                class="border-4 border-red-500 p-4 w-80 absolute bottom-0 right-0 mb-4 mr-4 bg-white/80 backdrop-blur">
+                <h3 class="text-xl font-semibold mb-2">Messages</h3>
+                <div id="messagesList" class="text-red-600 font-mono space-y-1 text-sm max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─────────────────────────────────────────────────────────────────────
+        // Application state
+        // ─────────────────────────────────────────────────────────────────────
+        const nodes = [];              // [{name, host, online, view:{}}]
+        let baseTimestamp = null;      // first log timestamp → time origin
+        let processedLines = 0;        // tracks #lines already handled in /log.json
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Utility helpers
+        // ─────────────────────────────────────────────────────────────────────
+        const fmtTime = (seconds) => {
+            const m = String(Math.floor(seconds / 60)).padStart(1, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        };
+
+        const byHostname = (hostname) => nodes.find(n => (new URL(n.host)).host === hostname);
+
+        const colourForState = (online) => online ? 'border-green-400' : 'border-red-500';
+
+        // ─────────────────────────────────────────────────────────────────────
+        // DOM creation helpers
+        // ─────────────────────────────────────────────────────────────────────
+        function buildNodeRow(node, idx) {
+            const row = document.createElement('div');
+
+            // label
+            const label = document.createElement('label');
+            label.textContent = node.name;
+            label.className = 'block font-medium';
+            row.appendChild(label);
+
+            // host input
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = node.host;
+            input.className = 'w-full border px-2 py-1 rounded mt-1 text-sm';
+            input.addEventListener('change', () => {
+                node.host = input.value.trim();
+            });
+            row.appendChild(input);
+
+            // force buttons wrapper
+            const btnWrap = document.createElement('div');
+            btnWrap.className = 'grid grid-cols-2 gap-1 mt-2';
+
+            const offlineBtn = document.createElement('button');
+            offlineBtn.textContent = 'Force Offline';
+            offlineBtn.className = 'w-full py-1 bg-red-600 text-white rounded';
+            offlineBtn.onclick = () => fetch(node.host + '/force_offline').catch(console.error);
+
+            const onlineBtn = document.createElement('button');
+            onlineBtn.textContent = 'Force Online';
+            onlineBtn.className = 'w-full py-1 bg-green-600 text-white rounded';
+            onlineBtn.onclick = () => fetch(node.host + '/force_online').catch(console.error);
+
+            btnWrap.append(offlineBtn, onlineBtn);
+            row.appendChild(btnWrap);
+
+            return row;
+        }
+
+        function buildCircle(node, idx) {
+            const circle = document.createElement('div');
+            circle.id = `circle-${idx}`;
+            circle.className = `w-40 h-40 rounded-full flex flex-col items-center justify-center border-4 ${colourForState(node.online)} transition-colors`;
+
+            const title = document.createElement('div');
+            title.textContent = node.name;
+            title.className = 'font-medium';
+            circle.appendChild(title);
+
+            const list = document.createElement('div');
+            list.id = `view-${idx}`;
+            list.className = 'text-xs mt-1 text-center whitespace-pre';
+            circle.appendChild(list);
+
+            return circle;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Rendering functions
+        // ─────────────────────────────────────────────────────────────────────
+        function renderNodesPanel() {
+            const container = document.getElementById('nodesContainer');
+            container.innerHTML = '';
+            nodes.forEach((n, i) => container.appendChild(buildNodeRow(n, i)));
+        }
+
+        function renderCircles() {
+            const container = document.getElementById('circlesContainer');
+            container.innerHTML = '';
+            nodes.forEach((n, i) => container.appendChild(buildCircle(n, i)));
+        }
+
+        function refreshCircle(idx) {
+            const node = nodes[idx];
+            // border colour
+            const circle = document.getElementById(`circle-${idx}`);
+            if (circle) {
+                circle.className = circle.className.replace(/border-(green|red)-[0-9]+/g, '') + ' ' + colourForState(node.online);
+                // update view list
+                const view = document.getElementById(`view-${idx}`);
+                if (view) {
+                    const lines = nodes.map((n2, j) => `${j + 1}: ${node.view[n2.host]?.online ? 'online' : 'offline'}`);
+                    view.textContent = lines.join('\n');
+                }
+            }
+        }
+
+        function appendMessage(line, nodeIdx) {
+            const list = document.getElementById('messagesList');
+            const div = document.createElement('div');
+            div.textContent = line;
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Polling: /log.json
+        // ─────────────────────────────────────────────────────────────────────
+        async function pollLogs() {
+            try {
+                const res = await fetch('/log.json', { cache: 'no-store' });
+                const text = await res.text();
+                const lines = text.trim().split(/\n+/);
+                for (let i = processedLines; i < lines.length; i++) {
+                    const obj = JSON.parse(lines[i]);
+
+                    if (baseTimestamp === null) baseTimestamp = obj.timestamp;
+
+                    const secondsSinceStart = obj.timestamp - baseTimestamp;
+                    const node = byHostname(obj.message.hostname);
+                    if (!node) continue;
+                    node.online = obj.message.online;
+                    const idx = nodes.indexOf(node);
+                    refreshCircle(idx);
+
+                    const statusText = node.online ? 'online' : 'offline';
+                    appendMessage(`${fmtTime(secondsSinceStart)}: ${node.name} ${statusText}`, idx);
+                }
+                processedLines = lines.length;
+            } catch (err) {
+                console.error('log poll error', err);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Poll each node's /map.json
+        // ─────────────────────────────────────────────────────────────────────
+        async function pollMaps() {
+            await Promise.all(nodes.map(async (node, idx) => {
+                try {
+                    const res = await fetch(node.host + '/map.json', { cache: 'no-store' });
+                    const data = await res.json(); // {hostname: bool}
+                    node.view = {};
+                    for (const [host, online] of Object.entries(data)) {
+                        node.view[host] = { online };
+                    }
+                    refreshCircle(idx);
+                } catch (err) {
+                    console.error('map poll error', node.host, err);
+                }
+            }));
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Add‑node button logic & initial population
+        // ─────────────────────────────────────────────────────────────────────
+        document.getElementById('addNodeBtn').addEventListener('click', () => {
+            const nextIdx = nodes.length + 1;
+            const defaultHost = `http://localhost:808${nextIdx - 1}`; // 8080, 8081 ...
+            nodes.push({ name: `Node ${nextIdx}`, host: defaultHost, online: false, view: {} });
+            renderNodesPanel();
+            renderCircles();
+        });
+
+        // bootstrap with 3 nodes
+        [0, 1, 2].forEach(i => {
+            nodes.push({ name: `Node ${i + 1}`, host: `http://localhost:808${i}`, online: false, view: {} });
+        });
+        renderNodesPanel();
+        renderCircles();
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Timers
+        // ─────────────────────────────────────────────────────────────────────
+        setInterval(pollLogs, 2000);  // every 2s
+        setInterval(pollMaps, 3000);  // every 3s
+    </script>
+</body>
+
+</html>

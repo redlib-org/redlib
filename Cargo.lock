@@ -779,6 +779,7 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
+ "serde",
 ]
 
 [[package]]

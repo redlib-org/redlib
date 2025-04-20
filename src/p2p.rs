@@ -7,6 +7,7 @@ use bytes::Bytes;
 use dashmap::DashMap;
 use ed25519_dalek::Signature;
 use futures_lite::StreamExt;
+use hyper::{Body, Response};
 use iroh::{protocol::Router, Endpoint, NodeAddr, PublicKey, SecretKey};
 use iroh_gossip::{
 	net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender},
@@ -60,30 +61,29 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		println!("> trying to connect to {} peers...", peers.len());
 		// add the peer addrs from the ticket to our endpoint's addressbook so that they can be dialed
 		for peer in peers.into_iter() {
-			endpoint.add_node_addr(peer)?;
+			let result = endpoint.add_node_addr(peer);
+			if let Err(e) = result {
+				println!("> failed to add peer: {e}");
+			}
 		}
 	};
 	let (sender, receiver) = gossip.subscribe_and_join(topic, peer_ids).await?.split();
 	println!("> connected!");
 
-	let secret_key = endpoint.secret_key().clone();
-
-	let message = Message {
-		hostname: config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
-		online: true,
-	};
-	let encoded_message = SignedMessage::sign_and_encode(&secret_key, &message)?;
-	sender.broadcast(encoded_message).await?;
-
-	task::spawn(subscribe_loop(receiver));
-
-	task::spawn(sender_loop(sender, secret_key));
+	let join_handle = task::spawn(subscribe_loop(receiver));
+	let sender_handle = task::spawn(sender_loop(sender, endpoint.clone()));
+	let ctrl_c_handle = task::spawn(async move {
+		tokio::signal::ctrl_c().await.unwrap();
+		println!("> received ctrl-c, exiting");
+	});
+	let _ = tokio::join!(join_handle, sender_handle, ctrl_c_handle);
 
 	Ok(())
 }
 
 async fn subscribe_loop(mut receiver: GossipReceiver) {
 	while let Ok(Some(event)) = receiver.try_next().await {
+		eprintln!("received event!: {event:?}");
 		if let Event::Gossip(GossipEvent::Received(msg)) = event {
 			let (_from, message) = match SignedMessage::verify_and_decode(&msg.content) {
 				Ok(v) => v,
@@ -98,16 +98,17 @@ async fn subscribe_loop(mut receiver: GossipReceiver) {
 	}
 }
 
-async fn sender_loop(sender: GossipSender, secret_key: SecretKey) {
+async fn sender_loop(sender: GossipSender, endpoint: Endpoint) {
 	loop {
 		let message = Message {
 			hostname: config::get_setting("REDLIB_FULL_URL").unwrap_or_default(),
 			online: ONLINE.load(Ordering::SeqCst),
 		};
-		let encoded_message = SignedMessage::sign_and_encode(&secret_key, &message).unwrap();
-		let _ = sender.broadcast(encoded_message).await;
+		let encoded_message = SignedMessage::sign_and_encode(endpoint.secret_key(), &message).unwrap();
+		let message_delivery = sender.broadcast(encoded_message).await;
+		println!("> sent message: {message:?}: {message_delivery:?}");
 
-		sleep(std::time::Duration::from_secs(10)).await;
+		sleep(std::time::Duration::from_secs(3)).await;
 	}
 }
 
@@ -173,4 +174,16 @@ impl SignedMessage {
 struct Message {
 	hostname: String,
 	online: bool,
+}
+
+pub async fn map_json() -> Result<Response<Body>, String> {
+	let map = &*DASHMAP;
+	let map = serde_json::to_string(map).unwrap();
+	Ok(
+		Response::builder()
+			.status(200)
+			.header("content-type", "application/json")
+			.body(map.into())
+			.unwrap_or_default(),
+	)
 }
