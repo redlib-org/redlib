@@ -234,6 +234,14 @@ async fn user(name: &str) -> Result<User, String> {
 	})
 }
 
+#[inline]
+pub async fn user_deleted_error() -> ApiError {
+	ApiError::builder(http_api_problem::StatusCode::NOT_FOUND)
+		.title("User has deleted their account")
+		.message("The user you are looking for does not exist or has been deleted.")
+		.finish()
+}
+
 pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 	if config::get_setting("REDLIB_ENABLE_RSS").is_none() {
 		return Ok(error(req, "RSS is disabled on this instance.").await.unwrap_or_default());

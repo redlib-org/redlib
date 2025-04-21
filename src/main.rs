@@ -22,6 +22,7 @@ use futures_util::future::TryFutureExt;
 use axum::http::header::{HeaderMap, HeaderValue as HeaderValuex};
 use axum::routing::get;
 use axum::ServiceExt;
+use redlib::user::user_deleted_error;
 use tower::Layer;
 use tower_default_headers::DefaultHeadersLayer;
 // Create Services
@@ -543,6 +544,7 @@ async fn main() {
 		.route("/user/{name}/comments/{id}/{title}", get(post::itemx))
 		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
 		.route("/user/{name}/comments/{id}", get(post::itemx))
+		.route("/user/[deleted]", get(user_deleted_error))
 		.route("/user/{name}", get(user::profilex))
 		.route("/user/{name}/{listing}", get(user::profilex))
 		.layer(DefaultHeadersLayer::new(default_headersx));
