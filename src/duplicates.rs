@@ -43,7 +43,7 @@ struct DuplicatesTemplate {
 
 	/// num_posts_filtered counts how many posts were filtered from the
 	/// duplicates list.
-	num_posts_filtered: u64,
+	num_posts_filtered: usize,
 
 	/// all_posts_filtered is true if every duplicate was filtered. This is an
 	/// edge case but can still happen.
@@ -221,7 +221,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 }
 
 // DUPLICATES
-async fn parse_duplicates(json: &Value, filters: &HashSet<String>) -> (Vec<Post>, u64, bool) {
+async fn parse_duplicates(json: &Value, filters: &HashSet<String>) -> (Vec<Post>, usize, bool) {
 	let post_duplicates: &Vec<Value> = &json["data"]["children"].as_array().map_or(Vec::new(), ToOwned::to_owned);
 	let mut duplicates: Vec<Post> = Vec::new();
 

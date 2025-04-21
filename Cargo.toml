@@ -65,6 +65,7 @@ axum-extra = { version = "0.10.0", features = ["cookie"] }
 askama = "0.13.0"
 tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["normalize-path"] }
+serde-inline-default = "0.2.3"
 
 
 [dev-dependencies]

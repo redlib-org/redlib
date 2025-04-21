@@ -3,12 +3,19 @@
 // CRATES
 use crate::client::json;
 use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
+use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, nsfw_landingx, param, setting, template, Post, Preferences, ResourceType, User};
 use crate::{config, utils};
 use askama::Template;
+use axum::extract::{OriginalUri, Path, Query, RawQuery};
+use axum::response::Html;
 use chrono::DateTime;
 use htmlescape::decode_html;
+use http_api_problem::ApiError;
 use hyper::{Body, Request, Response};
+use serde::Deserialize;
+use serde_inline_default::serde_inline_default;
+use std::collections::HashMap;
+use std::sync::Arc;
 use time::{macros::format_description, OffsetDateTime};
 
 // STRUCTS
@@ -20,8 +27,8 @@ struct UserTemplate {
 	sort: (String, String),
 	ends: (String, String),
 	/// "overview", "comments", or "submitted"
-	listing: String,
-	prefs: Preferences,
+	listing: String, // TODO turn into an enum
+	prefs: Arc<Preferences>,
 	url: String,
 	redirect_url: String,
 	/// Whether the user themself is filtered.
@@ -70,7 +77,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 			sort: (sort, param(&path, "t").unwrap_or_default()),
 			ends: (param(&path, "after").unwrap_or_default(), String::new()),
 			listing,
-			prefs: Preferences::new(&req),
+			prefs: Arc::new(Preferences::new(&req)),
 			url,
 			redirect_url,
 			is_filtered: true,
@@ -91,7 +98,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 					sort: (sort, param(&path, "t").unwrap_or_default()),
 					ends: (param(&path, "after").unwrap_or_default(), after),
 					listing,
-					prefs: Preferences::new(&req),
+					prefs: Arc::new(Preferences::new(&req)),
 					url,
 					redirect_url,
 					is_filtered: false,
@@ -106,7 +113,100 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 	}
 }
 
+#[serde_inline_default]
+#[derive(Deserialize)]
+pub struct ProfilePathParameters {
+	pub name: String,
+	#[serde_inline_default("overview".into())]
+	pub listing: String, // TODO convert to enum
+}
+pub async fn profilex(
+	Path(parameters): Path<ProfilePathParameters>,
+	RawQuery(raw_query): RawQuery,
+	query: Query<HashMap<String, String>>,
+	prefs: Preferences,
+	original_uri: OriginalUri,
+) -> Result<Html<String>, ApiError> {
+	let prefs = Arc::new(prefs);
+	let url: String = format!("/user/{}/{}.json?{}&raw_json=1", parameters.name, parameters.listing, raw_query.unwrap_or_default());
+
+	let path_and_query_url = original_uri
+		.path_and_query()
+		.expect("We had path parameters, therefore we should have a path at least")
+		.as_str();
+	// As the above should never be empty, the below code (designed to remove leading "/") should never panic.
+	// Using a url_encoding crate is potentially expensive, so use this for now (which has worked fine for many years since LibReddit).
+	// TODO: if the query contains url-encoded "?" or "&", they will probably be decoded too early.
+	// TODO: This should proabably be redesigned to avoid this unsafe slice. `user.html` needs to be refactored.
+	let redirect_url = path_and_query_url[1..].replace('?', "%3F").replace('&', "%26");
+	let user = user(&parameters.name).await.unwrap_or_default();
+	let sort = query.get("sort").cloned().unwrap_or_default();
+
+	if user.nsfw && crate::utils::should_be_nsfw_gatedx(&prefs, &query) {
+		return nsfw_landingx(prefs, parameters.name, ResourceType::User, original_uri.to_string()).await;
+	}
+
+	//RANDOM STUFF BELOW !!!
+
+	if prefs.filters.contains(&format!("u_{}", parameters.name)) {
+		Ok(Html(
+			UserTemplate {
+				user,
+				posts: Vec::new(), // Return empty vector because user is filtered
+				sort: (sort, query.get("t").cloned().unwrap_or_default()),
+				ends: (query.get("after").cloned().unwrap_or_default(), String::new()),
+				listing: parameters.listing,
+				prefs, // We can move prefs. Otherwise stick to prefs.clone()
+				url: path_and_query_url.to_string(),
+				redirect_url,
+				is_filtered: true,
+				all_posts_filtered: false,
+				all_posts_hidden_nsfw: false,
+				no_posts: false,
+			}
+			.render()
+			.unwrap(),
+		)) //FIXME: is this unwrap safe?
+	} else {
+		// Request user posts/comments from Reddit
+		match Post::fetch(&url, false).await {
+			Ok((mut posts, after)) => {
+				let (_, all_posts_filtered) = filter_posts(&mut posts, &prefs.get_filters_hashset());
+				let no_posts = posts.is_empty();
+				//TODO: Currently the actual nsfw filtering happens in the user template. It's better to bring that functionality here.
+				let all_posts_hidden_nsfw = !no_posts && prefs.show_nsfw != "on" && posts.iter().all(|p| p.flags.nsfw);
+				Ok(Html(
+					UserTemplate {
+						user,
+						posts,
+						sort: (sort, query.get("t").cloned().unwrap_or_default()),
+						ends: (query.get("after").cloned().unwrap_or_default(), after),
+						listing: parameters.listing,
+						prefs,
+						url: path_and_query_url.to_string(),
+						redirect_url,
+						is_filtered: false,
+						all_posts_filtered,
+						all_posts_hidden_nsfw,
+						no_posts,
+					}
+					.render()
+					.unwrap(),
+				)) //FIXME: is this unwrap safe?
+			}
+			// If there is an error show error page
+			Err(msg) => Err(
+				ApiError::builder(http_api_problem::StatusCode::INTERNAL_SERVER_ERROR)
+					.title("Temporary error while error messages are migrated") //FIXME
+					.message(msg)
+					.finish(),
+			),
+		}
+	}
+}
+
 // USER
+// TODO: reimplement this helper function
 async fn user(name: &str) -> Result<User, String> {
 	// Build the Reddit JSON API path
 	let path: String = format!("/user/{name}/about.json?raw_json=1");

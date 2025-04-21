@@ -5,7 +5,7 @@ use crate::client::{json, jsonx};
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	cookie_jar_from_oldreq, error, nsfw_landing, nsfw_landingx, param, parse_post, setting_from_cookiejar, template, Comment, PathParameters, Post, Preferences,
+	cookie_jar_from_oldreq, error, nsfw_landing, nsfw_landingx, param, parse_post, setting_from_cookiejar, template, Comment, PathParameters, Post, Preferences, ResourceType,
 };
 use axum::response::{Html, IntoResponse};
 use hyper::{Body, Request, Response};

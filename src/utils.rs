@@ -9,9 +9,8 @@ use std::borrow::Cow;
 use crate::client::CLIENTX;
 use crate::{client::json, server::RequestExt};
 use askama::Template;
-use axum::extract::{FromRequestParts, Path, Query};
+use axum::extract::{FromRequestParts, Query};
 use axum::http::request::Parts;
-use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
 use http_api_problem::ApiError;
 use hyper::{Body, Request, Response};
@@ -52,7 +51,7 @@ macro_rules! dbg_msg {
 /// Identifies whether or not the page is a subreddit, a user page, or a post.
 /// This is used by the NSFW landing template to determine the mesage to convey
 /// to the user.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum ResourceType {
 	Subreddit,
 	User,
@@ -363,7 +362,8 @@ pub struct Post {
 }
 
 impl Post {
-	// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
+	// TODO: Wow, look at this spaghetti. Migrate to reqwest and serde.
+	/// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
 	pub async fn fetch(path: &str, quarantine: bool) -> Result<(Vec<Self>, String), String> {
 		// Send a request to the url
 		let res = match json(path.to_string(), quarantine).await {
@@ -740,6 +740,7 @@ pub struct Preferences {
 	#[revision(start = 1)]
 	pub blur_spoiler: String,
 	#[revision(start = 1)]
+	//TODO: convert to boolean
 	pub show_nsfw: String,
 	#[revision(start = 1)]
 	pub blur_nsfw: String,
@@ -773,6 +774,16 @@ pub struct Preferences {
 	pub hide_score: String,
 	#[revision(start = 1)]
 	pub remove_default_feeds: String,
+}
+
+impl Preferences {
+	// TODO: It's better if filters is of type Hashset from the start
+	// The builder definitely supports this
+	// Currently not implemented because there are quite a few instances of using filters as an iterator in legacy code.
+	/// Will be deprecated
+	pub fn get_filters_hashset(&self) -> HashSet<String> {
+		self.filters.clone().into_iter().collect()
+	}
 }
 
 impl<S> FromRequestParts<S> for Preferences
@@ -939,18 +950,20 @@ pub fn get_filtersx(cookies: &CookieJar) -> HashSet<String> {
 ///
 /// The first value of the return tuple is the number of posts filtered. The
 /// second return value is `true` if all posts were filtered.
-pub fn filter_posts(posts: &mut Vec<Post>, filters: &HashSet<String>) -> (u64, bool) {
+/// The second value always returns `false` if the posts argument is empty.
+/// This is a MUTATING method.
+pub fn filter_posts(posts: &mut Vec<Post>, filters: &HashSet<String>) -> (usize, bool) {
 	// This is the length of the Vec<Post> prior to applying the filter.
-	let lb: u64 = posts.len().try_into().unwrap_or(0);
+	let lb = posts.len();
 
 	if posts.is_empty() {
 		(0, false)
 	} else {
-		posts.retain(|p| !(filters.contains(&p.community) || filters.contains(&["u_", &p.author.name].concat())));
+		posts.retain(|p| !(filters.contains(&p.community) || filters.contains(&format!("u_{}", p.author.name))));
 
 		// Get the length of the Vec<Post> after applying the filter.
 		// If lb > la, then at least one post was removed.
-		let la: u64 = posts.len().try_into().unwrap_or(0);
+		let la = posts.len();
 
 		(lb - la, posts.is_empty())
 	}
@@ -1601,12 +1614,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-pub async fn nsfw_landingx(
-	prefs: Arc<Preferences>,
-	resource_id: String,
-	resource_type: ResourceType,
-	uri: String,
-) -> Result<axum::response::Html<String>, ApiError> {
+pub async fn nsfw_landingx(prefs: Arc<Preferences>, resource_id: String, resource_type: ResourceType, uri: String) -> Result<axum::response::Html<String>, ApiError> {
 	let body = NSFWLandingTemplate {
 		res: resource_id,
 		res_type: resource_type,
@@ -1628,6 +1636,7 @@ pub async fn nsfw_landingx(
 #[derive(Deserialize)]
 pub struct PathParameters {
 	pub name: String,
+	pub listing: Option<String>,
 	pub id: String,
 	pub title: Option<String>,
 	pub comment_id: Option<String>,
