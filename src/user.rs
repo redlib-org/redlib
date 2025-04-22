@@ -2,15 +2,16 @@
 
 // CRATES
 use crate::client::json;
+use crate::config::CONFIG;
 use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, nsfw_landingx, param, setting, template, Post, Preferences, ResourceType, User};
+use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, nsfw_landingx, param, rewrite_urls, setting, template, Post, Preferences, ResourceType, User};
 use crate::{config, utils};
 use askama::Template;
 use axum::extract::{OriginalUri, Path, Query, RawQuery};
-use axum::response::Html;
+use axum::response::{Html, IntoResponse};
 use chrono::DateTime;
 use htmlescape::decode_html;
-use http_api_problem::ApiError;
+use http_api_problem::{ApiError, StatusCode};
 use hyper::{Body, Request, Response};
 use serde::Deserialize;
 use serde_inline_default::serde_inline_default;
@@ -203,6 +204,49 @@ pub async fn profilex(
 			),
 		}
 	}
+}
+
+// TODO: Why not just use the Reddit RSS Api? This way is very roundabout and I would avoid it if possible.
+pub async fn rssx(Path(params): Path<ProfilePathParameters>, RawQuery(raw_query): RawQuery) -> Result<impl IntoResponse, ApiError> {
+	if CONFIG.enable_rss.is_none() {
+		// I'm a teapot, yay!
+		return Err(
+			ApiError::builder(http_api_problem::StatusCode::IM_A_TEAPOT)
+				.title("RSS is disabled on this instance")
+				.message("The RSS feed is disabled on this instance.")
+				.finish(),
+		);
+	}
+
+	use rss::{ChannelBuilder, Item};
+	let path = format!("/user/{}/{}.json?{}&raw_json=1", &params.name, &params.listing, &raw_query.unwrap_or_default());
+
+	//FIXME: This unwrap is in original code. Should be fixed once this function is reimplemented.
+	let user = user(&params.name).await.unwrap_or_default();
+	let (posts, _) = Post::fetch(&path, false)
+		.await
+		.map_err(|e| ApiError::builder(StatusCode::BAD_GATEWAY).title("Could Not Fetch Posts").message(e))?;
+
+	let channel = ChannelBuilder::default()
+		.title(params.name)
+		.description(user.description)
+		.items(
+			posts
+				.into_iter()
+				.map(|post| Item {
+					title: Some(post.title.to_string()),
+					link: Some(format_url(&utils::get_post_url(&post))),
+					author: Some(post.author.name),
+					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
+					content: Some(rewrite_urls(&decode_html(&post.body).unwrap())),
+					..Default::default()
+				})
+				.collect::<Vec<_>>(),
+		)
+		.build();
+
+	// set content-type
+	Ok(([(axum::http::header::CONTENT_TYPE, "application/rss+xml")], channel.to_string()))
 }
 
 // USER

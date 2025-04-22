@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::cmp_owned)]
 
+// use crate::user::rssx;
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
 use futures_lite::FutureExt;
@@ -545,6 +546,9 @@ async fn main() {
 		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
 		.route("/user/{name}/comments/{id}", get(post::itemx))
 		.route("/user/[deleted]", get(user_deleted_error))
+		//	FIXME: Axum has not yet merged MatchIt 0.8.6 for routing, which introduces postfix matching
+		//		- Waiting for https://github.com/tokio-rs/axum/issues/3140
+		// .route("/user/{name}.rss", get(rssx))
 		.route("/user/{name}", get(user::profilex))
 		.route("/user/{name}/{listing}", get(user::profilex))
 		.layer(DefaultHeadersLayer::new(default_headersx));
