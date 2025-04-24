@@ -538,19 +538,24 @@ async fn main() {
 		.route("/style/{*path}", get(proxy!("https://styles.redditmedia.com/{path}")))
 		.route("/static/{*path}", get(proxy!("https://www.redditstatic.com/{path}")))
 		// User profile
+		// TODO: I have a small emotional attachment to seeing /u in the browser URL bar
+		// 	This can be fixed by either manually definining the same routes for /u
+		// 	or using a nested router
+		// NOTE: Redlib previously did a 302 redirect.
+		// 307 does not support technology from the Cretaceous Era (as well as HTTP 1.0)
 		.route(
 			"/u/{*name}",
 			get(|axum::extract::Path(name): axum::extract::Path<String>| async move { axum::response::Redirect::temporary(format!("/user/{}", name).as_str()) }),
 		)
-		.route("/user/{name}/comments/{id}/{title}", get(post::itemx))
-		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
-		.route("/user/{name}/comments/{id}", get(post::itemx))
 		.route("/user/[deleted]", get(user_deleted_error))
 		//	FIXME: Axum has not yet merged MatchIt 0.8.6 for routing, which introduces postfix matching
 		//		- Waiting for https://github.com/tokio-rs/axum/issues/3140
 		// .route("/user/{name}.rss", get(rssx))
 		.route("/user/{name}", get(user::profilex))
 		.route("/user/{name}/{listing}", get(user::profilex))
+		.route("/user/{name}/comments/{id}", get(post::itemx))
+		.route("/user/{name}/comments/{id}/{title}", get(post::itemx))
+		.route("/user/{name}/comments/{id}/{title}/{comment_id}", get(post::itemx))
 		.layer(DefaultHeadersLayer::new(default_headersx));
 
 	let appx = tower_http::normalize_path::NormalizePathLayer::trim_trailing_slash().layer(appx);
