@@ -825,8 +825,8 @@ impl Preferences {
 	// Build preferences from cookies
 	pub fn new(req: &Request<Body>) -> Self {
 		// Read available theme names from embedded css files.
-		// Always make the default "system" theme available.
-		let mut themes = vec!["system".to_string()];
+		// "system" theme is has a placeholder CSS file.
+		let mut themes = vec![];
 		for file in ThemeAssets::iter() {
 			let chunks: Vec<&str> = file.as_ref().split(".css").collect();
 			themes.push(chunks[0].to_owned());
@@ -859,7 +859,7 @@ impl Preferences {
 
 	pub fn build(cookies: &CookieJar) -> Self {
 		// Read available theme names from embedded css files.
-		// Always make the default "system" theme available.
+		// "system" theme has a placeholder CSS file.
 		static THEMES: LazyLock<Vec<String>> = LazyLock::new(|| ThemeAssets::iter().map(|f| f.split(".css").collect::<Vec<&str>>()[0].to_owned()).collect());
 		Self {
 			available_themes: THEMES.clone(),
