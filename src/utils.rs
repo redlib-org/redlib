@@ -724,6 +724,7 @@ pub struct Params {
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(default)]
 #[revisioned(revision = 1)]
 pub struct Preferences {
 	#[revision(start = 1)]
@@ -792,8 +793,8 @@ where
 {
 	type Rejection = Infallible;
 
-	async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-		Ok(Preferences::build(parts.extensions.get::<CookieJar>().unwrap_or(&CookieJar::new())))
+	async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+		Ok(Preferences::build(&CookieJar::from_request_parts(parts, state).await?))
 	}
 }
 

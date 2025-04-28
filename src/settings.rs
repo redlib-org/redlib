@@ -7,6 +7,9 @@ use crate::server::ResponseExt;
 use crate::subreddit::join_until_size_limit;
 use crate::utils::{deflate_decompress, redirect, template, Preferences};
 use askama::Template;
+use axum::extract::OriginalUri;
+use axum::http::header::HeaderMap;
+use axum::response::{Html, IntoResponse};
 use cookie::Cookie;
 use futures_lite::StreamExt;
 use http_api_problem::ApiError;
@@ -25,7 +28,7 @@ struct SettingsTemplate {
 
 // CONSTANTS
 
-const PREFS: [&str; 19] = [
+const PREFS: [&'static str; 19] = [
 	"theme",
 	"front_page",
 	"layout",
@@ -58,19 +61,45 @@ pub async fn get(req: Request<Body>) -> Result<Response<Body>, String> {
 	}))
 }
 
+pub async fn getx(OriginalUri(uri): OriginalUri, prefs: Preferences) -> impl IntoResponse {
+	Html(SettingsTemplate { prefs, url: uri.to_string() }.render().unwrap())
+}
+
+// Surpringly, the most appropriate http method for this handler is GET, because this handler is Safe and Indempotent.
+// Second-best is PUT. Redlib will generally be like this, because there is currently zero server-side state.
+pub async fn setx(form: axum::extract::Form<HashMap<String, String>>) -> impl IntoResponse {
+	let mut resp_headers = HeaderMap::with_capacity(PREFS.len());
+	// Don't let client set arbitrary cookie values
+	for name in PREFS {
+		match form.get(name).map(String::as_str) {
+			Some("") => {
+				resp_headers.append(
+					axum::http::header::SET_COOKIE,
+					axum::http::HeaderValue::try_from(format!("{name}=; Path=/; HttpOnly; Max-Age=0")).expect("This should have been checked statically"),
+				);
+			}
+			Some(value) => {
+				// 400 days = 34,560,000 seconds
+				// NOTE: AFAICT all Redlib settings are not secure, and there is no reason not to let Javascript access them.
+				// Hence the HttpOnly cookie flag is unnecessary.
+				// It might be proper to set settings cookies client-side anyway.
+				// TODO: let clients set preferences client-side.
+				if let Ok(val) = axum::http::HeaderValue::try_from(format!("{}={}; Path=/; HttpOnly; Max-Age=34560000", name, value)) {
+					resp_headers.append(axum::http::header::SET_COOKIE, val);
+				}
+			}
+			None => {} // Do nothing. The client can specify just one cookie at a time without wiping eveything.
+		};
+	}
+
+	// HTTP 303 See Other
+	(resp_headers, axum::response::Redirect::to("/settings"))
+}
+
 // Set cookies using response "Set-Cookie" header
 pub async fn set(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Split the body into parts
 	let (parts, mut body) = req.into_parts();
-
-	// Grab existing cookies
-	let _cookies: Vec<Cookie<'_>> = parts
-		.headers
-		.get_all("Cookie")
-		.iter()
-		.filter_map(|header| Cookie::parse(header.to_str().unwrap_or_default()).ok())
-		.collect();
-
 	// Aggregate the body...
 	// let whole_body = hyper::body::aggregate(req).await.map_err(|e| e.to_string())?;
 	let body_bytes = body
