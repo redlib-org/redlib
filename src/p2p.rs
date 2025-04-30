@@ -1,6 +1,5 @@
 use std::{
-	str::FromStr,
-	sync::atomic::{AtomicBool, Ordering},
+	collections::HashMap, str::FromStr, sync::atomic::{AtomicBool, Ordering}
 };
 
 use bytes::Bytes;
@@ -21,7 +20,7 @@ use tokio::{task, time::sleep};
 use crate::{config, p2p_mon::{Message, MessageLog}};
 
 pub static DASHMAP: Lazy<DashMap<String, bool>> = Lazy::new(DashMap::new);
-pub static ONLINE: Lazy<AtomicBool> = Lazy::new(AtomicBool::default);
+pub static ONLINE: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(true));
 
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let endpoint = Endpoint::builder().discovery_n0().bind().await?;

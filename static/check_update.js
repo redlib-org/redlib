@@ -41,10 +41,13 @@ async function checkOtherInstances() {
     try {
         const response = await fetch('/instances.json');
         const data = await response.json();
-        const randomInstance = data.instances[Math.floor(Math.random() * data.instances.length)];
-        const instanceUrl = randomInstance.url;
-        // Set the href of the <a> tag to the instance URL with path included
-        document.getElementById('random-instance').href = instanceUrl + window.location.pathname;
+        // will look like {"http://localhost:8082":true,"http://localhost:8080":false,"http://localhost:8081":true}
+        // filter by true values, then select randomly
+        const availableInstances = Object.keys(data).filter(key => data[key]);
+        const randomInstance = availableInstances[Math.floor(Math.random() * availableInstances.length)];
+        // Set the href of the <a> tag to the instance URL with path included, if it exists
+        const pathname = window.location.pathname || '';
+        document.getElementById('random-instance').href = randomInstance + pathname;
         document.getElementById('random-instance').innerText = "Visit Random Instance";
     } catch (error) {
         console.error('Error fetching instances:', error);

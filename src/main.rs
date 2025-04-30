@@ -282,7 +282,7 @@ async fn main() {
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
 
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
-	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
+	app.at("/instances.json").get(|_| async move { map_json().await }.boxed());
 
 	// Proxy media through Redlib
 	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());

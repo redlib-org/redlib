@@ -358,7 +358,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 }
 
 // Make a request to a Reddit API and parse the JSON response
-#[cached(size = 100, time = 30, result = true)]
+// #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
 	let err = |msg: &str, e: String, path: String| -> Result<Value, String> {
@@ -420,6 +420,11 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 					// Parse the response from Reddit as JSON
 					match serde_json::from_reader(body.reader()) {
 						Ok(value) => {
+
+							if !ONLINE.load(Ordering::SeqCst) {
+								return Err("Reddit is having issues, check if there's an outage".to_string());
+							}
+
 							let json: Value = value;
 
 							// If user is suspended
