@@ -7,6 +7,7 @@ use crate::config::{self, get_setting};
 //
 use crate::{client::json, server::RequestExt};
 use askama::Template;
+use clearurls::UrlCleaner;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
@@ -22,7 +23,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex};
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -269,7 +270,7 @@ impl Media {
 		(
 			post_type.to_string(),
 			Self {
-				url: format_url(url_val.as_str().unwrap_or_default()),
+				url: format_url(clean_url(url_val.as_str().unwrap_or_default()).as_str()),
 				alt_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
@@ -1073,6 +1074,22 @@ pub fn format_url(url: &str) -> String {
 			}
 		})
 	}
+}
+
+// Remove tracking query params
+static URL_CLEANER: LazyLock<Mutex<UrlCleaner>> = LazyLock::new(|| Mutex::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
+
+pub fn clean_url(url: &str) -> String {
+	let is_external_url = match Url::parse(url) {
+		Ok(parsed_url) => parsed_url.domain().is_some(),
+		_ => false,
+	};
+	let mut cleaned_url = url.to_owned();
+	if is_external_url {
+		let cleaner = URL_CLEANER.lock().unwrap();
+		cleaned_url = cleaner.clear_single_url_str(url).expect("Unable to clean the URL.").as_ref().to_owned();
+	}
+	cleaned_url
 }
 
 static REGEX_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
