@@ -270,7 +270,7 @@ impl Media {
 		(
 			post_type.to_string(),
 			Self {
-				url: format_url(clean_url(url_val.as_str().unwrap_or_default()).as_str()),
+				url: format_url(url_val.as_str().unwrap_or_default()),
 				alt_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
@@ -671,6 +671,8 @@ pub struct Preferences {
 	pub hide_score: String,
 	#[revision(start = 1)]
 	pub remove_default_feeds: String,
+	#[revision(start = 1)]
+	pub clean_urls: String,
 }
 
 fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
@@ -729,6 +731,7 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 			remove_default_feeds: setting(req, "remove_default_feeds"),
+			clean_urls: setting(req, "clean_urls"),
 		}
 	}
 
@@ -1079,15 +1082,15 @@ pub fn format_url(url: &str) -> String {
 // Remove tracking query params
 static URL_CLEANER: LazyLock<Mutex<UrlCleaner>> = LazyLock::new(|| Mutex::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
 
-pub fn clean_url(url: &str) -> String {
-	let is_external_url = match Url::parse(url) {
+pub fn clean_url(url: String) -> String {
+	let is_external_url = match Url::parse(url.as_str()) {
 		Ok(parsed_url) => parsed_url.domain().is_some(),
 		_ => false,
 	};
-	let mut cleaned_url = url.to_owned();
+	let mut cleaned_url = url.clone();
 	if is_external_url {
 		let cleaner = URL_CLEANER.lock().unwrap();
-		cleaned_url = cleaner.clear_single_url_str(url).expect("Unable to clean the URL.").as_ref().to_owned();
+		cleaned_url = cleaner.clear_single_url_str(&cleaned_url.as_str()).expect("Unable to clean the URL.").as_ref().to_owned();
 	}
 	cleaned_url
 }
@@ -1558,6 +1561,7 @@ mod tests {
 			hide_awards: "off".to_owned(),
 			hide_score: "off".to_owned(),
 			remove_default_feeds: "off".to_owned(),
+			clean_urls: "off".to_owned(),
 		};
 		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
 

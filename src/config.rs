@@ -108,6 +108,9 @@ pub struct Config {
 
 	#[serde(rename = "REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS")]
 	pub(crate) default_remove_default_feeds: Option<String>,
+
+	#[serde(rename = "REDLIB_DEFAULT_CLEAN_URLS")]
+	pub(crate) default_clean_urls: Option<String>,
 }
 
 impl Config {
@@ -156,6 +159,7 @@ impl Config {
 			enable_rss: parse("REDLIB_ENABLE_RSS"),
 			full_url: parse("REDLIB_FULL_URL"),
 			default_remove_default_feeds: parse("REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS"),
+			default_clean_urls: parse("REDLIB_DEFAULT_CLEAN_URLS"),
 		}
 	}
 }
@@ -186,6 +190,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_ENABLE_RSS" => config.enable_rss.clone(),
 		"REDLIB_FULL_URL" => config.full_url.clone(),
 		"REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS" => config.default_remove_default_feeds.clone(),
+		"REDLIB_DEFAULT_CLEAN_URLS" => config.default_clean_urls.clone(),
 		_ => None,
 	}
 }
