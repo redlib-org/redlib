@@ -755,7 +755,7 @@ pub fn deflate_compress(i: Vec<u8>) -> Result<Vec<u8>, String> {
 pub fn deflate_decompress(i: Vec<u8>) -> Result<Vec<u8>, String> {
 	let mut decoder = Decoder::new(&i[..]);
 	let mut out = Vec::new();
-	decoder.read_to_end(&mut out).map_err(|e| format!("Failed to read from gzip decoder: {}", e))?;
+	decoder.read_to_end(&mut out).map_err(|e| format!("Failed to read from gzip decoder: {e}"))?;
 	Ok(out)
 }
 
@@ -926,9 +926,9 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		let mut subscriptions_number = 1;
 
 		// While whatever subscriptionsNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("subscriptions{}", subscriptions_number)).is_some() {
+		while req.cookie(&format!("subscriptions{subscriptions_number}")).is_some() {
 			// Push whatever subscriptionsNUMBER cookie we're looking at into the subscriptions string
-			subscriptions.push_str(req.cookie(&format!("subscriptions{}", subscriptions_number)).unwrap().value());
+			subscriptions.push_str(req.cookie(&format!("subscriptions{subscriptions_number}")).unwrap().value());
 
 			// Increment subscription cookie number
 			subscriptions_number += 1;
@@ -951,9 +951,9 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 		let mut filters_number = 1;
 
 		// While whatever filtersNUMBER cookie we're looking at has a value
-		while req.cookie(&format!("filters{}", filters_number)).is_some() {
+		while req.cookie(&format!("filters{filters_number}")).is_some() {
 			// Push whatever filtersNUMBER cookie we're looking at into the filters string
-			filters.push_str(req.cookie(&format!("filters{}", filters_number)).unwrap().value());
+			filters.push_str(req.cookie(&format!("filters{filters_number}")).unwrap().value());
 
 			// Increment filters cookie number
 			filters_number += 1;

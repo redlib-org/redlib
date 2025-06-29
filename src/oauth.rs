@@ -224,7 +224,7 @@ impl Device {
 
 		let qos = fastrand::u32(1000..=100_000);
 		let qos: f32 = qos as f32 / 1000.0;
-		let qos = format!("{:.3}", qos);
+		let qos = format!("{qos:.3}");
 
 		let codecs = TextGenerator::new().generate("available-codecs=video/avc, video/hevc{, video/x-vnd.on2.vp9|}");
 

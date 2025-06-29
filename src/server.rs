@@ -855,7 +855,7 @@ mod tests {
 
 				CompressionType::Brotli => Box::new(BrotliDecompressor::new(body_cursor, expected_lorem_ipsum.len())),
 
-				_ => panic!("no decompressor for {}", expected_encoding),
+				_ => panic!("no decompressor for {expected_encoding}"),
 			};
 
 			let mut decompressed = Vec::<u8>::new();
