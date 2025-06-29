@@ -27,7 +27,96 @@ use std::{
 };
 use time::OffsetDateTime;
 
-use crate::dbg_msg;
+use crate::{config, dbg_msg};
+
+const BANNED_USER_AGENTS: &[&str] = &[
+	"AI2Bot",
+	"Ai2Bot-Dolma",
+	"Amazonbot",
+	"Andibot",
+	"Applebot",
+	"Applebot-Extended",
+	"Awario",
+	"Brightbot 1.0",
+	"Bytespider",
+	"CCBot",
+	"ChatGPT-User",
+	"Claude-SearchBot",
+	"Claude-User",
+	"Claude-Web",
+	"ClaudeBot",
+	"Cotoyogi",
+	"Crawlspace",
+	"Datenbank Crawler",
+	"Devin",
+	"Diffbot",
+	"DuckAssistBot",
+	"Echobot Bot",
+	"EchoboxBot",
+	"FacebookBot",
+	"Factset_spyderbot",
+	"FirecrawlAgent",
+	"FriendlyCrawler",
+	"GPTBot",
+	"Google-CloudVertexBot",
+	"Google-Extended",
+	"GoogleOther",
+	"GoogleOther-Image",
+	"GoogleOther-Video",
+	"ICC-Crawler",
+	"ISSCyberRiskCrawler",
+	"ImagesiftBot",
+	"Kangaroo Bot",
+	"Meta-ExternalAgent",
+	"Meta-ExternalFetcher",
+	"MistralAI-User",
+	"MistralAI-User/1.0",
+	"MyCentralAIScraperBot",
+	"NovaAct",
+	"OAI-SearchBot",
+	"Operator",
+	"PanguBot",
+	"Panscient",
+	"Perplexity-User",
+	"PerplexityBot",
+	"PetalBot",
+	"PhindBot",
+	"Poseidon Research Crawler",
+	"QualifiedBot",
+	"QuillBot",
+	"SBIntuitionsBot",
+	"Scrapy",
+	"SemrushBot",
+	"SemrushBot-BA",
+	"SemrushBot-CT",
+	"SemrushBot-OCOB",
+	"SemrushBot-SI",
+	"SemrushBot-SWA",
+	"Sidetrade indexer bot",
+	"TikTokSpider",
+	"Timpibot",
+	"VelenPublicWebCrawler",
+	"WARDBot",
+	"Webzio-Extended",
+	"YandexAdditional",
+	"YandexAdditionalBot",
+	"YouBot",
+	"aiHitBot",
+	"anthropic-ai",
+	"bedrockbot",
+	"cohere-ai",
+	"cohere-training-data-crawler",
+	"facebookexternalhit",
+	"iaskspider/2.0",
+	"img2dataset",
+	"meta-externalagent",
+	"meta-externalfetcher",
+	"omgili",
+	"omgilibot",
+	"panscient.com",
+	"quillbot.com",
+	"wpbot",
+];
 
 type BoxResponse = Pin<Box<dyn Future<Output = Result<Response<Body>, String>> + Send>>;
 
@@ -229,6 +318,23 @@ impl Server {
 				Ok::<_, String>(service_fn(move |req: Request<Body>| {
 					let req_headers = req.headers().clone();
 					let def_headers = default_headers.clone();
+
+					// Catch robots.txt-disrespecful bots who still identify themselves
+					// Typically justified as "human triggered" actions.
+					if match config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
+						Some(val) => val == "on",
+						None => false,
+					} {
+						if let Some(user_agent) = req_headers.get("user-agent") {
+							if let Ok(user_agent_str) = user_agent.to_str() {
+								for banned in BANNED_USER_AGENTS {
+									if user_agent_str.contains(banned) {
+										return new_boilerplate(def_headers, req_headers, 403, Body::from("Forbidden")).boxed();
+									}
+								}
+							}
+						}
+					}
 
 					// Remove double slashes and decode encoded slashes
 					let mut path = req.uri().path().replace("//", "/").replace("%2F", "/");
