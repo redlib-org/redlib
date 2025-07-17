@@ -10,6 +10,7 @@ use cookie::Cookie;
 use futures_lite::StreamExt;
 use hyper::{Body, Request, Response};
 use rinja::Template;
+use serde_json;
 use time::{Duration, OffsetDateTime};
 use tokio::time::timeout;
 use url::form_urlencoded;
@@ -295,4 +296,67 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, Strin
 	let url = format!("/settings/restore/?{}", prefs.to_urlencoded()?);
 
 	Ok(redirect(&url))
+}
+
+// Get current user settings as JSON for API consumption
+pub async fn get_json(req: Request<Body>) -> Result<Response<Body>, String> {
+	// Create preferences - this should be safe but we wrap it for completeness
+	let prefs = Preferences::new(&req);
+
+	// Try to encode preferences, but provide fallback if it fails
+	let url_encoded = match prefs.to_urlencoded() {
+		Ok(encoded) => Some(encoded),
+		Err(e) => {
+			eprintln!("Warning: Failed to encode preferences for settings transfer: {e}");
+			None
+		}
+	};
+
+	// Create a response structure with encoded preferences for easy transfer
+	let settings_data = serde_json::json!({
+		"url_encoded": url_encoded,
+		"success": url_encoded.is_some(),
+		"preferences": {
+			"theme": prefs.theme,
+			"front_page": prefs.front_page,
+			"layout": prefs.layout,
+			"wide": prefs.wide,
+			"comment_sort": prefs.comment_sort,
+			"post_sort": prefs.post_sort,
+			"blur_spoiler": prefs.blur_spoiler,
+			"show_nsfw": prefs.show_nsfw,
+			"blur_nsfw": prefs.blur_nsfw,
+			"use_hls": prefs.use_hls,
+			"hide_hls_notification": prefs.hide_hls_notification,
+			"autoplay_videos": prefs.autoplay_videos,
+			"hide_sidebar_and_summary": prefs.hide_sidebar_and_summary,
+			"fixed_navbar": prefs.fixed_navbar,
+			"hide_awards": prefs.hide_awards,
+			"hide_score": prefs.hide_score,
+			"disable_visit_reddit_confirmation": prefs.disable_visit_reddit_confirmation,
+			"video_quality": prefs.video_quality,
+			"remove_default_feeds": prefs.remove_default_feeds,
+			"subscriptions": prefs.subscriptions,
+			"filters": prefs.filters
+		}
+	});
+
+	let body = match serde_json::to_string(&settings_data) {
+		Ok(json) => json,
+		Err(e) => {
+			eprintln!("Error serializing settings to JSON: {e}");
+			return Response::builder()
+				.status(500)
+				.header("content-type", "application/json")
+				.body(r#"{"error": "Failed to serialize settings", "success": false}"#.into())
+				.map_err(|e| format!("Failed to build error response: {e}"));
+		}
+	};
+
+	Response::builder()
+		.status(200)
+		.header("content-type", "application/json")
+		.header("cache-control", "no-cache, no-store, must-revalidate")
+		.body(body.into())
+		.map_err(|e| format!("Failed to build response: {e}"))
 }

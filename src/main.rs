@@ -299,6 +299,7 @@ async fn main() {
 	app.at("/settings/restore").get(|r| settings::restore(r).boxed());
 	app.at("/settings/encoded-restore").post(|r| settings::encoded_restore(r).boxed());
 	app.at("/settings/update").get(|r| settings::update(r).boxed());
+	app.at("/settings.json").get(|r| settings::get_json(r).boxed());
 
 	// RSS Subscriptions
 	app.at("/r/:sub.rss").get(|r| subreddit::rss(r).boxed());
