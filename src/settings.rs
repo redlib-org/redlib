@@ -10,7 +10,6 @@ use cookie::Cookie;
 use futures_lite::StreamExt;
 use hyper::{Body, Request, Response};
 use rinja::Template;
-use serde_json;
 use time::{Duration, OffsetDateTime};
 use tokio::time::timeout;
 use url::form_urlencoded;
