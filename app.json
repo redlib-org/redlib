@@ -11,7 +11,10 @@
   ],
   "stack": "container",
   "env": {
-    "REDLIB_DEFAULT_THEME": {
+    "REDLIB_DEFAULT_THEME_LIGHT": {
+      "required": false
+    },
+    "REDLIB_DEFAULT_THEME_DARK": {
       "required": false
     },
     "REDLIB_DEFAULT_FRONT_PAGE": {
