@@ -40,7 +40,7 @@
    - [Binary](#binary)
      - [Running as a systemd service](#running-as-a-systemd-service)
    - [Building from source](#building-from-source)
-   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
+   - [Replit/Heroku/Fly.io](#replitherokuflyio)
    - [launchd (macOS)](#launchd-macos)
 6. [Configuration](#configuration)
    - [Instance settings](#instance-settings)
@@ -313,13 +313,24 @@ git clone https://github.com/redlib-org/redlib && cd redlib
 cargo run
 ```
 
-## Replit/Heroku
+## Replit/Heroku/Fly.io
 
 > [!WARNING]
 > These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+
+### Fly.io
+Fly.io lets you run an app with 512mb memory for free per month. Don't worry if you see your monthly bill going up, if it's less than $5, they will waive the cost.
+
+- Install flyctl by `brew install flyctl` or see other options at https://fly.io/docs/getting-started/launch/
+- Create an account with `fly auth signup` or log in with `fly auth login`.
+- `git clone https://github.com/redlib-org/redlib && cd redlib`
+- Edit fly.toml to configure your redlib instance
+- `fly deploy`
+- Go to https://replace-this-name.fly.dev and now you have your own redlib instance
+- To upgrade your instance to the latest build, run `fly deploy --image quay.io/redlib/redlib:latest`
 
 ## launchd (macOS)
 
