@@ -1,0 +1,20 @@
+app = "replace-this-name" # Your free redlib instance will be at https://replace-this-name.fly.dev
+primary_region = "sea" # Choose a region closest to you, see https://fly.io/docs/reference/regions/
+
+[build]
+image = "quay.io/redlib/redlib:latest"
+
+[env]
+REDLIB_DEFAULT_THEME = "dark" # Add more env variables here
+
+[http_service]
+auto_start_machines = true
+force_https = true
+internal_port = 8_080
+min_machines_running = 0
+processes = [ "app" ]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory = "512mb"
