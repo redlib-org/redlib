@@ -1,17 +1,21 @@
+use base64::engine::general_purpose;
+use base64::Engine;
 use hyper::client::HttpConnector;
 use hyper::service::Service;
 use hyper::Uri;
+use log::debug;
 use std::env;
 use std::error::Error;
+use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
-use log::debug;
-use std::fmt;
-use base64::Engine;
-use base64::engine::general_purpose;
+
+type BoxError = Box<dyn Error + Send + Sync>;
+type BoxFuture<T> = Pin<Box<dyn Future<Output = Result<T, BoxError>> + Send>>;
+type Credentials = (String, String);
 
 #[derive(Clone)]
 pub enum ProxyConnector {
@@ -33,13 +37,13 @@ impl Error for ProxyError {}
 
 impl Service<Uri> for ProxyConnector {
     type Response = TcpStream;
-    type Error = Box<dyn Error + Send + Sync>;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+    type Error = BoxError;
+    type Future = BoxFuture<Self::Response>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         match self {
             ProxyConnector::NoProxy(connector) => connector.poll_ready(cx).map_err(Into::into),
-            _ => Poll::Ready(Ok(()))
+            _ => Poll::Ready(Ok(())),
         }
     }
 
@@ -48,64 +52,10 @@ impl Service<Uri> for ProxyConnector {
         Box::pin(async move {
             match this {
                 ProxyConnector::NoProxy(mut connector) => {
-                    let stream = connector.call(uri).await.map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-                    Ok(stream)
+                    connector.call(uri).await.map_err(Into::into)
                 }
-                ProxyConnector::Socks(proxy_addr) => {
-                    let (host, port, credentials) = parse_proxy_addr(&proxy_addr)?;
-                    let target_addr = get_target_addr(&uri)?;
-
-                    let stream = match credentials {
-                        Some((username, password)) => {
-                            Socks5Stream::connect_with_password(
-                                (host.as_str(), port),
-                                target_addr,
-                                &username,
-                                &password
-                            ).await
-                        },
-                        None => {
-                            Socks5Stream::connect(
-                                (host.as_str(), port),
-                                target_addr
-                            ).await
-                        }
-                    }.map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-
-                    Ok(stream.into_inner())
-
-                }
-                ProxyConnector::Http(proxy_addr) => {
-                    let (host, port, credentials) = parse_proxy_addr(&proxy_addr)?;
-                    let proxy_stream = TcpStream::connect((host.as_str(), port)).await.map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-
-                    let target_addr = get_target_addr(&uri)?;
-                    let mut connect_req = format!(
-                        "CONNECT {target_addr} HTTP/1.1\r\n\
-                         Host: {target_addr}\r\n\
-                         Connection: keep-alive\r\n"
-                    );
-
-                    if let Some((username, password)) = credentials {
-                        let auth = general_purpose::STANDARD.encode(format!("{}:{}", username, password));
-                        connect_req.push_str(&format!("Proxy-Authorization: Basic {}\r\n", auth));
-                    }
-
-                    connect_req.push_str("\r\n");
-                    proxy_stream.writable().await.map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-                    proxy_stream.try_write(connect_req.as_bytes()).map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-
-                    let mut response = [0u8; 1024];
-                    proxy_stream.readable().await.map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-                    let n = proxy_stream.try_read(&mut response).map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
-
-                    let response = String::from_utf8_lossy(&response[..n]);
-                    if !response.starts_with("HTTP/1.1 200") {
-                        return Err(Box::new(ProxyError(format!("Proxy CONNECT failed: {}", response))) as Box<dyn Error + Send + Sync>);
-                    }
-
-                    Ok(proxy_stream)
-                }
+                ProxyConnector::Socks(proxy_addr) => handle_socks_connection(&proxy_addr, &uri).await,
+                ProxyConnector::Http(proxy_addr) => handle_http_connection(&proxy_addr, &uri).await,
             }
         })
     }
@@ -129,36 +79,99 @@ impl ProxyConnector {
     }
 }
 
-fn parse_proxy_addr(addr: &str) -> Result<(String, u16, Option<(String, String)>), Box<dyn Error + Send + Sync>> {
+async fn handle_socks_connection(proxy_addr: &str, uri: &Uri) -> Result<TcpStream, BoxError> {
+    let (host, port, credentials) = parse_proxy_addr(proxy_addr)?;
+    let target_addr = get_target_addr(uri)?;
+
+    let stream = match credentials {
+        Some((username, password)) => {
+            Socks5Stream::connect_with_password((host.as_str(), port), target_addr, &username, &password).await
+        }
+        None => Socks5Stream::connect((host.as_str(), port), target_addr).await,
+    }?;
+
+    Ok(stream.into_inner())
+}
+
+async fn handle_http_connection(proxy_addr: &str, uri: &Uri) -> Result<TcpStream, BoxError> {
+    let (host, port, credentials) = parse_proxy_addr(proxy_addr)?;
+    let proxy_stream = TcpStream::connect((host.as_str(), port)).await?;
+    let target_addr = get_target_addr(uri)?;
+
+    let connect_req = build_connect_request(&target_addr, credentials)?;
+    write_and_verify_connection(&proxy_stream, &connect_req).await?;
+
+    Ok(proxy_stream)
+}
+
+fn build_connect_request(target_addr: &str, credentials: Option<Credentials>) -> Result<String, BoxError> {
+    let mut req = format!(
+        "CONNECT {target_addr} HTTP/1.1\r\n\
+         Host: {target_addr}\r\n\
+         Connection: keep-alive\r\n"
+    );
+
+    if let Some((username, password)) = credentials {
+        let auth = general_purpose::STANDARD.encode(format!("{}:{}", username, password));
+        req.push_str(&format!("Proxy-Authorization: Basic {}\r\n", auth));
+    }
+
+    req.push_str("\r\n");
+    Ok(req)
+}
+
+async fn write_and_verify_connection(proxy_stream: &TcpStream, connect_req: &str) -> Result<(), BoxError> {
+    proxy_stream.writable().await?;
+    proxy_stream.try_write(connect_req.as_bytes())?;
+
+    let mut response = [0u8; 1024];
+    proxy_stream.readable().await?;
+    let n = proxy_stream.try_read(&mut response)?;
+
+    let response = String::from_utf8_lossy(&response[..n]);
+    if !response.starts_with("HTTP/1.1 200") {
+        return Err(Box::new(ProxyError(format!("Proxy CONNECT failed: {}", response))));
+    }
+
+    Ok(())
+}
+
+fn parse_proxy_addr(addr: &str) -> Result<(String, u16, Option<Credentials>), BoxError> {
     let uri: Uri = addr.parse()?;
     let host = uri.host().ok_or("Missing proxy host")?.to_string();
-    let port = uri.port_u16().unwrap_or(if uri.scheme_str() == Some("https") { 443 } else { 80 });
+    let port = uri.port_u16().unwrap_or_else(|| {
+        if uri.scheme_str() == Some("https") { 443 } else { 80 }
+    });
 
-    let credentials = if let Some(authority) = uri.authority() {
-        if let Some(credentials) = authority.as_str().split('@').next() {
-            if credentials != authority.as_str() {
-                let creds: Vec<&str> = credentials.split(':').collect();
-                if creds.len() == 2 {
-                    Some((creds[0].to_string(), creds[1].to_string()))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
+    let credentials = extract_credentials(uri.authority())?;
     Ok((host, port, credentials))
 }
 
+fn extract_credentials(authority: Option<&hyper::http::uri::Authority>) -> Result<Option<Credentials>, BoxError> {
+    let Some(authority) = authority else {
+        return Ok(None);
+    };
 
-fn get_target_addr(uri: &Uri) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let Some(credentials) = authority.as_str().split('@').next() else {
+        return Ok(None);
+    };
+
+    if credentials == authority.as_str() {
+        return Ok(None);
+    }
+
+    let creds: Vec<&str> = credentials.split(':').collect();
+    if creds.len() == 2 {
+        Ok(Some((creds[0].to_string(), creds[1].to_string())))
+    } else {
+        Ok(None)
+    }
+}
+
+fn get_target_addr(uri: &Uri) -> Result<String, BoxError> {
     let host = uri.host().ok_or("Missing target host")?;
-    let port = uri.port_u16().unwrap_or(if uri.scheme_str() == Some("https") { 443 } else { 80 });
+    let port = uri.port_u16().unwrap_or_else(|| {
+        if uri.scheme_str() == Some("https") { 443 } else { 80 }
+    });
     Ok(format!("{}:{}", host, port))
 }
