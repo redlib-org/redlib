@@ -2,7 +2,6 @@ use arc_swap::ArcSwap;
 use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
-use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
 use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::HttpsConnector;
@@ -30,10 +29,16 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> =
-	Lazy::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
+pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<ProxyConnector>> = Lazy::new(|| {
+	let proxy_connector = ProxyConnector::new();
+	hyper_rustls::HttpsConnectorBuilder::new()
+		.with_native_roots()
+		.https_only()
+		.enable_http2()
+		.wrap_connector(proxy_connector)
+});
 
-pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: Lazy<Client<HttpsConnector<ProxyConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
 
 pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
 	let client = block_on(Oauth::new());
@@ -509,6 +514,7 @@ pub async fn rate_limit_check() -> Result<(), String> {
 
 #[cfg(test)]
 use {crate::config::get_setting, sealed_test::prelude::*};
+use crate::proxy::ProxyConnector;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_rate_limit_check() {
