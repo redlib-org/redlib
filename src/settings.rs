@@ -117,7 +117,14 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 	let form = url::form_urlencoded::parse(query).collect::<HashMap<_, _>>();
 
 	let path = match form.get("redirect") {
-		Some(value) => format!("/{}", value.replace("%26", "&").replace("%23", "#")),
+		Some(value) => {
+			let value = value.replace("%26", "&").replace("%23", "#");
+			if value.starts_with('/') {
+				value
+			} else {
+				format!("/{value}")
+			}
+		}
 		None => "/".to_string(),
 	};
 
