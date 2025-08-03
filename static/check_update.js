@@ -1,3 +1,4 @@
+// @license http://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
 async function checkInstanceUpdateStatus() {
     try {
         const response = await fetch('/commits.atom');
@@ -58,3 +59,4 @@ async function checkOtherInstances() {
 window.addEventListener('load', checkOtherInstances);
 
 checkInstanceUpdateStatus();
+// @license-end
