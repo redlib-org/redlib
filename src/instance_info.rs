@@ -138,7 +138,8 @@ impl InstanceInfo {
 			Table::from([
 				["Hide awards", &convert(&self.config.default_hide_awards)],
 				["Hide score", &convert(&self.config.default_hide_score)],
-				["Theme", &convert(&self.config.default_theme)],
+				["Light Theme", &convert(&self.config.default_theme_light)],
+				["Dark Theme", &convert(&self.config.default_theme_dark)],
 				["Front page", &convert(&self.config.default_front_page)],
 				["Layout", &convert(&self.config.default_layout)],
 				["Wide", &convert(&self.config.default_wide)],
@@ -175,7 +176,8 @@ impl InstanceInfo {
                     Banner: {:?}\n
                     Hide awards: {:?}\n
                     Hide score: {:?}\n
-                    Default theme: {:?}\n
+                    Default light theme: {:?}\n
+                    Default dark theme: {:?}\n
                     Default front page: {:?}\n
                     Default layout: {:?}\n
                     Default wide: {:?}\n
@@ -202,7 +204,8 @@ impl InstanceInfo {
 					self.config.banner,
 					self.config.default_hide_awards,
 					self.config.default_hide_score,
-					self.config.default_theme,
+					self.config.default_theme_light,
+					self.config.default_theme_dark,
 					self.config.default_front_page,
 					self.config.default_layout,
 					self.config.default_wide,
