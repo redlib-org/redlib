@@ -1060,8 +1060,28 @@ pub fn format_url(url: &str) -> String {
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
-				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
+				"v.redd.it" => {
+					if match config::get_setting("REDLIB_TAINTED_MEDIA") {
+						Some(val) => val == "on",
+						None => false,
+					} {
+						url.to_string()
+					}
+					else {
+						chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2))
+					}
+				},
+				"i.redd.it" => {
+					if match config::get_setting("REDLIB_TAINTED_MEDIA") {
+						Some(val) => val == "on",
+						None => false,
+					} {
+						url.to_string()
+					}
+					else {
+						capture(&REGEX_URL_IMAGES, "/img/", 1)
+					}
+				},
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
 				"emoji.redditmedia.com" => capture(&REGEX_URL_EMOJI, "/emoji/", 2),
