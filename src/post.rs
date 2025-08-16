@@ -6,7 +6,8 @@ use crate::config::get_setting;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
+	clean_url, error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post,
+	Preferences,
 };
 use hyper::{Body, Request, Response};
 
@@ -64,7 +65,12 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 		// Otherwise, grab the JSON output from the request
 		Ok(response) => {
 			// Parse the JSON into Post and Comment structs
-			let post = parse_post(&response[0]["data"]["children"][0]).await;
+			let mut post = parse_post(&response[0]["data"]["children"][0]).await;
+
+			let clean_urls = setting(&req, "clean_urls");
+			if clean_urls == "on".to_owned() {
+				post.media.url = clean_url(post.media.url);
+			}
 
 			let req_url = req.uri().to_string();
 			// Return landing page if this post if this Reddit deems this post

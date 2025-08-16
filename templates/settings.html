@@ -145,6 +145,12 @@
 					<input type="checkbox" name="disable_visit_reddit_confirmation" {% if
 						prefs.disable_visit_reddit_confirmation=="on" %}checked{% endif %}>
 				</div>
+				<div class="prefs-group">
+					<label for="clean_urls">Remove tracking elements from URLs</label>
+					<input type="hidden" value="off" name="clean_urls">
+					<input type="checkbox" name="clean_urls" {% if
+						prefs.clean_urls=="on" %}checked{% endif %}>
+				</div>
 			</fieldset>
 			<input id="save" type="submit" value="Save">
 		</div>

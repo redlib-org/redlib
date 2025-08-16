@@ -79,6 +79,9 @@
     },
     "REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS": {
       "required": false
+    },
+    "REDLIB_DEFAULT_CLEAN_URLS": {
+      "required": false
     }
   }
 }
