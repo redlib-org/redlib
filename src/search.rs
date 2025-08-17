@@ -7,10 +7,10 @@ use crate::{
 	server::RequestExt,
 	subreddit::{can_access_quarantine, quarantine},
 };
+use askama::Template;
 use hyper::{Body, Request, Response};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rinja::Template;
 
 // STRUCTS
 struct SearchParams {

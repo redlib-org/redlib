@@ -74,7 +74,7 @@ Redlib currently implements most of Reddit's (signed-out) functionalities but st
 
 - [Rust](https://www.rust-lang.org/) - Programming language
 - [Hyper](https://github.com/hyperium/hyper) - HTTP server and client
-- [Rinja](https://github.com/rinja-rs/rinja) - Templating engine
+- [Askama](https://github.com/askama-rs/askama) - Templating engine
 - [Rustls](https://github.com/rustls/rustls) - TLS library
 
 ## How is it different from other Reddit front ends?

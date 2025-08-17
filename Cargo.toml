@@ -12,7 +12,10 @@ edition = "2021"
 default-run = "redlib"
 
 [dependencies]
-rinja = { version = "0.3.4", default-features = false }
+askama = { version = "0.14.0", default-features = false, features = [
+    "std",
+    "derive",
+] }
 cached = { version = "0.54.0", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
