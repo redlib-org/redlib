@@ -332,6 +332,12 @@ Fly.io lets you run an app with 512mb memory for free per month. Don't worry if 
 - Go to https://replace-this-name.fly.dev and now you have your own redlib instance
 - To upgrade your instance to the latest build, run `fly deploy --image quay.io/redlib/redlib:latest`
 
+Note: If you use this as a private instance and not promote it to the public,
+your bandwidth usage should be less than $0.25 per month.
+The app costs $4.10 + the $0.25 bandwidth cost will be less than $5. You can
+monitor your usage on fly.io's billing dashboard to prevent yourself from going
+over $5 every month.
+
 ## launchd (macOS)
 
 If you are on macOS, you can use the [launchd](https://en.wikipedia.org/wiki/Launchd) service available in `contrib/redlib.plist`.
