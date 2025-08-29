@@ -148,6 +148,10 @@ impl Oauth {
 
 		Ok(())
 	}
+
+	pub fn user_agent(&self) -> &str {
+		&self.device.user_agent
+	}
 }
 
 #[derive(Debug)]
@@ -209,6 +213,7 @@ struct Device {
 	oauth_id: String,
 	initial_headers: HashMap<String, String>,
 	headers: HashMap<String, String>,
+	user_agent: String,
 }
 
 impl Device {
@@ -230,7 +235,7 @@ impl Device {
 
 		// Android device headers
 		let headers: HashMap<String, String> = HashMap::from([
-			("User-Agent".into(), android_user_agent),
+			("User-Agent".into(), android_user_agent.clone()),
 			("x-reddit-retry".into(), "algo=no-retries".into()),
 			("x-reddit-compression".into(), "1".into()),
 			("x-reddit-qos".into(), qos),
@@ -246,6 +251,7 @@ impl Device {
 			oauth_id: REDDIT_ANDROID_OAUTH_CLIENT_ID.to_string(),
 			headers: headers.clone(),
 			initial_headers: headers,
+			user_agent: android_user_agent,
 		}
 	}
 	fn new() -> Self {
