@@ -13,8 +13,8 @@ use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
 
 use chrono::DateTime;
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::LazyLock;
 use time::{Duration, OffsetDateTime};
 
 // STRUCTS
@@ -58,7 +58,7 @@ struct WallTemplate {
 	url: String,
 }
 
-static GEO_FILTER_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"geo_filter=(?<region>\w+)").unwrap());
+static GEO_FILTER_MATCH: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"geo_filter=(?<region>\w+)").unwrap());
 
 // SERVICES
 pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {

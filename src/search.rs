@@ -9,8 +9,8 @@ use crate::{
 };
 use askama::Template;
 use hyper::{Body, Request, Response};
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::LazyLock;
 
 // STRUCTS
 struct SearchParams {
@@ -52,7 +52,7 @@ struct SearchTemplate {
 }
 
 /// Regex matched against search queries to determine if they are reddit urls.
-static REDDIT_URL_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://([^\./]+\.)*reddit.com/").unwrap());
+static REDDIT_URL_MATCH: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^https?://([^\./]+\.)*reddit.com/").unwrap());
 
 // SERVICES
 pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {

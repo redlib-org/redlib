@@ -1,12 +1,9 @@
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{env::var, fs::read_to_string};
+use std::{env::var, fs::read_to_string, sync::LazyLock};
 
-// Waiting for https://github.com/rust-lang/rust/issues/74465 to land, so we
-// can reduce reliance on once_cell.
 /// This is the local static that is initialized at runtime (technically at
 /// first request) and contains the instance settings.
-pub static CONFIG: Lazy<Config> = Lazy::new(Config::load);
+pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::load);
 
 /// This serves as the frontend for an archival API - on removed comments, this URL
 /// will be the base of a link, to display removed content (on another site).

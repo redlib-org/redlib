@@ -102,7 +102,7 @@ impl Oauth {
 		trace!("Sending token request...\n\n{request:?}");
 
 		// Send request
-		let client: &once_cell::sync::Lazy<client::Client<_, Body>> = &CLIENT;
+		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
 		let resp = client.request(request).await?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
