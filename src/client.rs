@@ -356,7 +356,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	.boxed()
 }
 
-// Make a request to a Reddit API and parse the JSON response
+/// Make a request to a Reddit API and parse the JSON response
 #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors

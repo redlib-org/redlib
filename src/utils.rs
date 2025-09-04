@@ -51,7 +51,7 @@ pub enum ResourceType {
 	Post,
 }
 
-// Post flair with content, background color and foreground color
+/// Post flair with content, background color and foreground color
 #[derive(Serialize)]
 pub struct Flair {
 	pub flair_parts: Vec<FlairPart>,
@@ -60,7 +60,7 @@ pub struct Flair {
 	pub foreground_color: String,
 }
 
-// Part of flair, either emoji or text
+/// Part of flair, either emoji or text
 #[derive(Clone, Serialize)]
 pub struct FlairPart {
 	pub flair_part_type: String,
@@ -167,7 +167,7 @@ impl PollOption {
 	}
 }
 
-// Post flags with nsfw and stickied
+/// Post flags with NSFW and stickied
 #[derive(Serialize)]
 pub struct Flags {
 	pub spoiler: bool,
@@ -323,7 +323,7 @@ impl GalleryMedia {
 	}
 }
 
-// Post containing content, metadata and media
+/// Post containing content, metadata and media
 #[derive(Serialize)]
 pub struct Post {
 	pub id: String,
@@ -355,7 +355,7 @@ pub struct Post {
 }
 
 impl Post {
-	// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
+	/// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
 	pub async fn fetch(path: &str, quarantine: bool) -> Result<(Vec<Self>, String), String> {
 		// Send a request to the url
 		let res = match json(path.to_string(), quarantine).await {
@@ -468,7 +468,7 @@ impl Post {
 
 #[derive(Template)]
 #[template(path = "comment.html")]
-// Comment with content, post, score and data/time that it was posted
+/// Comment with content, post, score and data/time that it was posted
 pub struct Comment {
 	pub id: String,
 	pub kind: String,
@@ -522,8 +522,8 @@ impl std::fmt::Display for Awards {
 	}
 }
 
-// Convert Reddit awards JSON to Awards struct
 impl Awards {
+	/// Convert Reddit awards JSON to Awards struct
 	pub fn parse(items: &Value) -> Self {
 		let parsed = items.as_array().unwrap_or(&Vec::new()).iter().fold(Vec::new(), |mut awards, item| {
 			let name = item["name"].as_str().unwrap_or_default().to_string();
@@ -583,7 +583,7 @@ pub struct NSFWLandingTemplate {
 }
 
 #[derive(Default)]
-// User struct containing metadata about user
+/// User struct containing metadata about user
 pub struct User {
 	pub name: String,
 	pub title: String,
@@ -596,7 +596,7 @@ pub struct User {
 }
 
 #[derive(Default)]
-// Subreddit struct containing metadata about community
+/// Subreddit struct containing metadata about community
 pub struct Subreddit {
 	pub name: String,
 	pub title: String,
@@ -610,7 +610,7 @@ pub struct Subreddit {
 	pub nsfw: bool,
 }
 
-// Parser for query params, used in sorting (eg. /r/rust/?sort=hot)
+/// Parser for query params, used in sorting (eg. /r/rust/?sort=hot)
 #[derive(serde::Deserialize)]
 pub struct Params {
 	pub t: Option<String>,
@@ -696,7 +696,7 @@ where
 pub struct ThemeAssets;
 
 impl Preferences {
-	// Build preferences from cookies
+	/// Build preferences from cookies
 	pub fn new(req: &Request<Body>) -> Self {
 		// Read available theme names from embedded css files.
 		// Always make the default "system" theme available.
@@ -895,7 +895,7 @@ pub async fn parse_post(post: &Value) -> Post {
 // FORMATTING
 //
 
-// Grab a query parameter from a url
+/// Grab a query parameter from a url
 pub fn param(path: &str, value: &str) -> Option<String> {
 	Some(
 		Url::parse(format!("https://libredd.it/{path}").as_str())
@@ -908,7 +908,7 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 	)
 }
 
-// Retrieve the value of a setting by name
+/// Retrieve the value of a setting by name
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
 
@@ -979,7 +979,7 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 	}
 }
 
-// Retrieve the value of a setting by name or the default value
+/// Retrieve the value of a setting by name or the default value
 pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> String {
 	let value = setting(req, name);
 	if value.is_empty() {
@@ -989,7 +989,7 @@ pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> S
 	}
 }
 
-// Detect and redirect in the event of a random subreddit
+/// Detect and redirect in the event of a random subreddit
 pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>, String> {
 	if sub == "random" || sub == "randnsfw" {
 		Ok(redirect(&format!(
@@ -1018,7 +1018,7 @@ static REGEX_URL_EXTERNAL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https
 static REGEX_URL_STYLES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
 static REGEX_URL_STATIC_MEDIA: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
 
-// Direct urls to proxy if proxy is enabled
+/// Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
 	if url.is_empty() || url == "self" || url == "default" || url == "nsfw" || url == "spoiler" {
 		String::new()
@@ -1093,7 +1093,7 @@ static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www
 static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
 static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
-// Rewrite Reddit links to Redlib in body of text
+/// Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
 	let mut text1 =
 		// Rewrite Reddit links to Redlib
@@ -1242,9 +1242,9 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	rewrite_urls(&comment)
 }
 
-// Format vote count to a string that will be displayed.
-// Append `m` and `k` for millions and thousands respectively, and
-// round to the nearest tenth.
+/// Format vote count to a string that will be displayed.
+/// Append `m` and `k` for millions and thousands respectively, and
+/// round to the nearest tenth.
 pub fn format_num(num: i64) -> (String, String) {
 	let truncated = if num >= 1_000_000 || num <= -1_000_000 {
 		format!("{:.1}m", num as f64 / 1_000_000.0)
@@ -1257,7 +1257,7 @@ pub fn format_num(num: i64) -> (String, String) {
 	(truncated, num.to_string())
 }
 
-// Parse a relative and absolute time from a UNIX timestamp
+/// Parse a relative and absolute time from a UNIX timestamp
 pub fn time(created: f64) -> (String, String) {
 	let time = OffsetDateTime::from_unix_timestamp(created.round() as i64).unwrap_or(OffsetDateTime::UNIX_EPOCH);
 	let now = OffsetDateTime::now_utc();
@@ -1293,7 +1293,7 @@ pub fn time(created: f64) -> (String, String) {
 	)
 }
 
-// val() function used to parse JSON from Reddit APIs
+/// val() function used to parse JSON from Reddit APIs
 pub fn val(j: &Value, k: &str) -> String {
 	j["data"][k].as_str().unwrap_or_default().to_string()
 }
@@ -1384,7 +1384,7 @@ pub fn disable_indexing() -> bool {
 	}
 }
 
-// Determines if a request shoud redirect to a nsfw landing gate.
+/// Determines if a request should redirect to a NSFW landing gate.
 pub fn should_be_nsfw_gated(req: &Request<Body>, _req_url: &str) -> bool {
 	(setting(req, "show_nsfw") != "on") || sfw_only()
 }
@@ -1419,7 +1419,7 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-// Returns the last (non-empty) segment of a path string
+/// Returns the last (non-empty) segment of a path string
 pub fn url_path_basename(path: &str) -> String {
 	let url_result = Url::parse(format!("https://libredd.it/{path}").as_str());
 
@@ -1433,7 +1433,7 @@ pub fn url_path_basename(path: &str) -> String {
 	}
 }
 
-// Returns the URL of a post, as needed by RSS feeds
+/// Returns the URL of a post, as needed by RSS feeds
 pub fn get_post_url(post: &Post) -> String {
 	if let Some(out_url) = &post.out_url {
 		// Handle cross post
