@@ -668,8 +668,12 @@ async fn compress_response(req_headers: &HeaderMap<header::HeaderValue>, res: &m
 		Ok(compressed) => {
 			// We get here iff the compression was successful. Replace the body
 			// with the compressed payload, and add the appropriate
-			// Content-Encoding header in the response.
-			res.headers_mut().insert(header::CONTENT_ENCODING, compressor.to_string().parse().unwrap());
+			// Content-Encoding header in the response. Remove any precomputed
+			// Content-Length, as it will no longer be valid.
+			let headers = res.headers_mut();
+			headers.insert(header::CONTENT_ENCODING, compressor.to_string().parse().unwrap());
+			headers.remove(header::CONTENT_LENGTH);
+
 			*(res.body_mut()) = Body::from(compressed);
 		}
 
