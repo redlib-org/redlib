@@ -165,6 +165,12 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 		}
 	}
 
+	// Add User-Agent header of the currently spoofed device
+	{
+		let client = OAUTH_CLIENT.load_full();
+		builder = builder.header("User-Agent", client.user_agent());
+	}
+
 	let stream_request = builder.body(Body::empty()).map_err(|_| "Couldn't build empty body in stream".to_string())?;
 
 	client
