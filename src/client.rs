@@ -8,12 +8,12 @@ use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Ur
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
 use log::{error, trace, warn};
-use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::LazyLock;
 use std::{io, result::Result};
 
 use crate::dbg_msg;
@@ -30,12 +30,12 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<HttpConnector>> =
-	Lazy::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
+pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> =
+	LazyLock::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
 
-pub static CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<Client<HttpsConnector<HttpConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
 
-pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
+pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
 	tokio::spawn(token_daemon());
 	ArcSwap::new(client.into())
@@ -154,7 +154,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: &Lazy<Client<_, Body>> = &CLIENT;
+	let client: &LazyLock<Client<_, Body>> = &CLIENT;
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -222,7 +222,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: &Lazy<Client<_, Body>> = &CLIENT;
+	let client: &LazyLock<Client<_, Body>> = &CLIENT;
 
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
