@@ -9,6 +9,7 @@ authors = [
     "spikecodes <19519553+spikecodes@users.noreply.github.com>",
 ]
 edition = "2021"
+rust-version = "1.81"
 default-run = "redlib"
 
 [dependencies]
