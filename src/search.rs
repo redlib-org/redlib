@@ -51,7 +51,7 @@ struct SearchTemplate {
 	no_posts: bool,
 }
 
-// Regex matched against search queries to determine if they are reddit urls.
+/// Regex matched against search queries to determine if they are reddit urls.
 static REDDIT_URL_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://([^\./]+\.)*reddit.com/").unwrap());
 
 // SERVICES

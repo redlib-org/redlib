@@ -1,4 +1,4 @@
-// Handler for post duplicates.
+//! Handler for post duplicates.
 
 use crate::client::json;
 use crate::server::RequestExt;

@@ -10,9 +10,9 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-// This is the local static that is intialized at runtime (technically at
-// the first request to the info endpoint) and contains the data
-// retrieved from the info endpoint.
+/// This is the local static that is initialized at runtime (technically at
+/// the first request to the info endpoint) and contains the data
+/// retrieved from the info endpoint.
 pub static INSTANCE_INFO: Lazy<InstanceInfo> = Lazy::new(InstanceInfo::new);
 
 /// Handles instance info endpoint

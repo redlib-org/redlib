@@ -48,7 +48,7 @@ const PREFS: [&str; 19] = [
 
 // FUNCTIONS
 
-// Retrieve cookies from request "Cookie" header
+/// Retrieve cookies from request "Cookie" header
 pub async fn get(req: Request<Body>) -> Result<Response<Body>, String> {
 	let url = req.uri().to_string();
 	Ok(template(&SettingsTemplate {
@@ -57,7 +57,7 @@ pub async fn get(req: Request<Body>) -> Result<Response<Body>, String> {
 	}))
 }
 
-// Set cookies using response "Set-Cookie" header
+/// Set cookies using response "Set-Cookie" header
 pub async fn set(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Split the body into parts
 	let (parts, mut body) = req.into_parts();
@@ -263,7 +263,7 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 	response
 }
 
-// Set cookies using response "Set-Cookie" header
+/// Set cookies using response "Set-Cookie" header
 pub async fn restore(req: Request<Body>) -> Result<Response<Body>, String> {
 	Ok(set_cookies_method(req, true))
 }
