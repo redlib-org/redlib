@@ -159,8 +159,8 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 		.unwrap_or_else(String::new); // Return an empty string if None
 
 	// If there are subscriptions to restore set them and delete any old subscriptions cookies, otherwise delete them all
-	if subscriptions.is_some() {
-		let sub_list: Vec<String> = subscriptions.expect("Subscriptions").split('+').map(str::to_string).collect();
+	if let Some(subscriptions) = subscriptions {
+		let sub_list: Vec<String> = subscriptions.split('+').map(str::to_string).collect();
 
 		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
 		let mut subscriptions_number_to_delete_from = 0;
@@ -210,8 +210,8 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 	}
 
 	// If there are filters to restore set them and delete any old filters cookies, otherwise delete them all
-	if filters.is_some() {
-		let filters_list: Vec<String> = filters.expect("Filters").split('+').map(str::to_string).collect();
+	if let Some(filters) = filters {
+		let filters_list: Vec<String> = filters.split('+').map(str::to_string).collect();
 
 		// Start at 0 to keep track of what number we need to start deleting old subscription cookies from
 		let mut filters_number_to_delete_from = 0;

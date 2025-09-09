@@ -1423,13 +1423,13 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 pub fn url_path_basename(path: &str) -> String {
 	let url_result = Url::parse(format!("https://libredd.it/{path}").as_str());
 
-	if url_result.is_err() {
-		path.to_string()
-	} else {
-		let mut url = url_result.unwrap();
-		url.path_segments_mut().unwrap().pop_if_empty();
+	match url_result {
+		Ok(mut url) => {
+			url.path_segments_mut().unwrap().pop_if_empty();
 
-		url.path_segments().unwrap().next_back().unwrap().to_string()
+			url.path_segments().unwrap().next_back().unwrap().to_string()
+		}
+		Err(_) => path.to_string(),
 	}
 }
 
