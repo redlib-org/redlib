@@ -6,6 +6,7 @@ use crate::config::{self, get_setting};
 // CRATES
 //
 use crate::{client::json, server::RequestExt};
+use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
@@ -13,7 +14,6 @@ use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use revision::revisioned;
-use rinja::Template;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
