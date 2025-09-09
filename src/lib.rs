@@ -11,3 +11,4 @@ pub mod settings;
 pub mod subreddit;
 pub mod user;
 pub mod utils;
+mod proxy;
