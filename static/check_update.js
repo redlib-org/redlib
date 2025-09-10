@@ -39,15 +39,39 @@ async function checkInstanceUpdateStatus() {
 
 async function checkOtherInstances() {
     try {
+        // Fetch list of available instances
         const response = await fetch('/instances.json');
         const data = await response.json();
         const instances = window.location.host.endsWith('.onion') ? data.instances.filter(i => i.onion) : data.instances.filter(i => i.url);
         if (instances.length == 0) return;
         const randomInstance = instances[Math.floor(Math.random() * instances.length)];
         const instanceUrl = randomInstance.url ?? randomInstance.onion;
-        // Set the href of the <a> tag to the instance URL with path included
-        document.getElementById('random-instance').href = instanceUrl + window.location.pathname;
-        document.getElementById('random-instance').innerText = "Visit Random Instance";
+        
+        // Fetch current user settings to transfer them to the new instance
+        let targetUrl = instanceUrl + window.location.pathname;
+        let text = "Visit Random Instance";
+        
+        try {
+            const settingsResponse = await fetch('/settings.json');
+            if (settingsResponse.ok) {
+                const urlEncoded = await settingsResponse.text();
+                if (urlEncoded && urlEncoded.trim()) {
+                    targetUrl = instanceUrl + '/settings/restore/?' + urlEncoded + '&redirect=' + encodeURIComponent(window.location.pathname.substring(1));
+                    text += " (bringing preferences)";
+                } else {
+                    console.warn('Settings encoding returned empty - visiting random instance without settings transfer');
+                }
+            } else {
+                console.warn('Could not fetch user settings (HTTP', settingsResponse.status + ') - visiting random instance without settings transfer');
+            }
+        } catch (settingsError) {
+            console.warn('Error fetching user settings:', settingsError);
+            console.warn('Visiting random instance without settings transfer');
+        }
+        
+        // Set the href of the <a> tag to the instance URL with path and settings included
+        document.getElementById('random-instance').href = targetUrl;
+        document.getElementById('random-instance').innerText = text;
     } catch (error) {
         console.error('Error fetching instances:', error);
         document.getElementById('update-status').innerText = '⚠️ Error checking other instances: ' + error;
