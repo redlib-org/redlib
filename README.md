@@ -248,7 +248,7 @@ You can check the status of your container by using the following command:
 systemctl --user status redlib.service
 ```
 
-To make Podman auto update the container, [add this line in hte service file](https://major.io/p/podman-quadlet-automatic-updates/):
+To [let Podman auto update the container](https://docs.podman.io/en/v5.0.1/markdown/podman-auto-update.1.html), and this line in the service file:
 
 ```
 Label=io.containers.autoupdate=registry
