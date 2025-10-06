@@ -584,6 +584,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fake_user_agent"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "913d317e38c6959fc258642eab72be85e99162a5fd19ca6c7b83c0c3c911d2f1"
+dependencies = [
+ "fastrand",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1392,6 +1401,7 @@ dependencies = [
  "clap",
  "cookie",
  "dotenvy",
+ "fake_user_agent",
  "fastrand",
  "futures-lite",
  "htmlescape",

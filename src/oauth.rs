@@ -6,7 +6,7 @@ use crate::{
 };
 use base64::{engine::general_purpose, Engine as _};
 use hyper::{client, Body, Method, Request};
-use log::{error, info, trace};
+use log::{error, info, trace, warn};
 use serde_json::json;
 use tegen::tegen::TextGenerator;
 use tokio::time::{error::Elapsed, timeout};
@@ -17,140 +17,126 @@ const AUTH_ENDPOINT: &str = "https://www.reddit.com";
 
 const OAUTH_TIMEOUT: Duration = Duration::from_secs(5);
 
+// Response from OAuth backend authentication
+#[derive(Debug, Clone)]
+pub struct OauthResponse {
+	pub token: String,
+	pub expires_in: u64,
+	pub additional_headers: HashMap<String, String>,
+}
+
+// Trait for OAuth backend implementations
+trait OauthBackend: Send + Sync {
+	fn authenticate(&mut self) -> impl std::future::Future<Output = Result<OauthResponse, AuthError>> + Send;
+	fn user_agent(&self) -> &str;
+	fn get_headers(&self) -> HashMap<String, String>;
+}
+
+// OAuth backend implementations
+#[derive(Debug, Clone)]
+pub(crate) enum OauthBackendImpl {
+	MobileSpoof(MobileSpoofAuth),
+	GenericWeb(GenericWebAuth),
+}
+
+impl OauthBackend for OauthBackendImpl {
+	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
+		match self {
+			OauthBackendImpl::MobileSpoof(backend) => backend.authenticate().await,
+			OauthBackendImpl::GenericWeb(backend) => backend.authenticate().await,
+		}
+	}
+
+	fn user_agent(&self) -> &str {
+		match self {
+			OauthBackendImpl::MobileSpoof(backend) => backend.user_agent(),
+			OauthBackendImpl::GenericWeb(backend) => backend.user_agent(),
+		}
+	}
+
+	fn get_headers(&self) -> HashMap<String, String> {
+		match self {
+			OauthBackendImpl::MobileSpoof(backend) => backend.get_headers(),
+			OauthBackendImpl::GenericWeb(backend) => backend.get_headers(),
+		}
+	}
+}
+
 // Spoofed client for Android devices
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Oauth {
-	pub(crate) initial_headers: HashMap<String, String>,
 	pub(crate) headers_map: HashMap<String, String>,
-	pub(crate) token: String,
 	expires_in: u64,
-	device: Device,
+	pub(crate) backend: OauthBackendImpl,
 }
 
 impl Oauth {
 	/// Create a new OAuth client
 	pub(crate) async fn new() -> Self {
-		// Call new_internal until it succeeds
+		// Try MobileSpoofAuth first, then fall back to GenericWebAuth
+		let mut failure_count = 0;
+		let mut backend = OauthBackendImpl::MobileSpoof(MobileSpoofAuth::new());
+
 		loop {
-			let attempt = Self::new_with_timeout().await;
+			let attempt = Self::new_with_timeout_with_backend(backend.clone()).await;
 			match attempt {
 				Ok(Ok(oauth)) => {
 					info!("[✅] Successfully created OAuth client");
 					return oauth;
 				}
 				Ok(Err(e)) => {
-					error!("Failed to create OAuth client: {}. Retrying in 5 seconds...", {
+					error!(
+						"[⛔] Failed to create OAuth client: {}. Retrying in 5 seconds...",
 						match e {
 							AuthError::Hyper(error) => error.to_string(),
 							AuthError::SerdeDeserialize(error) => error.to_string(),
 							AuthError::Field((value, error)) => format!("{error}\n{value}"),
 						}
-					});
+					);
 				}
 				Err(_) => {
-					error!("Failed to create OAuth client before timeout. Retrying in 5 seconds...");
+					error!("[⛔] Failed to create OAuth client before timeout. Retrying in 5 seconds...");
 				}
 			}
+
+			failure_count += 1;
+
+			// Switch to GenericWeb after 5 failures with MobileSpoof
+			if matches!(backend, OauthBackendImpl::MobileSpoof(_)) && failure_count >= 5 {
+				warn!("[🔄] MobileSpoofAuth failed 5 times. Falling back to GenericWebAuth...");
+				backend = OauthBackendImpl::GenericWeb(GenericWebAuth::new());
+			}
+
+			// Crash after 10 total failures
+			if failure_count >= 10 {
+				error!("[⛔] Failed to create OAuth client (mobile + generic)");
+				std::process::exit(1);
+			}
+
 			tokio::time::sleep(OAUTH_TIMEOUT).await;
 		}
 	}
 
-	async fn new_with_timeout() -> Result<Result<Self, AuthError>, Elapsed> {
-		let mut oauth = Self::default();
-		timeout(OAUTH_TIMEOUT, oauth.login()).await.map(|result: Result<(), AuthError>| result.map(|_| oauth))
-	}
+	async fn new_with_timeout_with_backend(mut backend: OauthBackendImpl) -> Result<Result<Self, AuthError>, Elapsed> {
+		timeout(OAUTH_TIMEOUT, async move {
+			let response = backend.authenticate().await?;
 
-	pub(crate) fn default() -> Self {
-		// Generate a device to spoof
-		let device = Device::new();
-		let headers_map = device.headers.clone();
-		let initial_headers = device.initial_headers.clone();
-		// For now, just insert headers - no token request
-		Self {
-			headers_map,
-			initial_headers,
-			token: String::new(),
-			expires_in: 0,
-			device,
-		}
-	}
-	async fn login(&mut self) -> Result<(), AuthError> {
-		// Construct URL for OAuth token
-		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
-		let mut builder = Request::builder().method(Method::POST).uri(&url);
+			// Build headers_map from backend headers + Authorization header
+			let mut headers_map = backend.get_headers();
+			headers_map.insert("Authorization".to_owned(), format!("Bearer {}", response.token));
+			headers_map.extend(response.additional_headers);
 
-		// Add headers from spoofed client
-		for (key, value) in &self.initial_headers {
-			builder = builder.header(key, value);
-		}
-		// Set up HTTP Basic Auth - basically just the const OAuth ID's with no password,
-		// Base64-encoded. https://en.wikipedia.org/wiki/Basic_access_authentication
-		// This could be constant, but I don't think it's worth it. OAuth ID's can change
-		// over time and we want to be flexible.
-		let auth = general_purpose::STANDARD.encode(format!("{}:", self.device.oauth_id));
-		builder = builder.header("Authorization", format!("Basic {auth}"));
-
-		// Set JSON body. I couldn't tell you what this means. But that's what the client sends
-		let json = json!({
-				"scopes": ["*","email", "pii"]
-		});
-		let body = Body::from(json.to_string());
-
-		// Build request
-		let request = builder.body(body).unwrap();
-
-		trace!("Sending token request...\n\n{request:?}");
-
-		// Send request
-		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
-		let resp = client.request(request).await?;
-
-		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
-		trace!("OAuth headers: {:#?}", resp.headers());
-
-		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
-		// Technically it's not needed, but it's easy for Reddit API to check for this.
-		// It's some kind of header that uniquely identifies the device.
-		// Not worried about the privacy implications, since this is randomly changed
-		// and really only as privacy-concerning as the OAuth token itself.
-		if let Some(header) = resp.headers().get("x-reddit-loid") {
-			self.headers_map.insert("x-reddit-loid".to_owned(), header.to_str().unwrap().to_string());
-		}
-
-		// Same with x-reddit-session
-		if let Some(header) = resp.headers().get("x-reddit-session") {
-			self.headers_map.insert("x-reddit-session".to_owned(), header.to_str().unwrap().to_string());
-		}
-
-		trace!("Serializing response...");
-
-		// Serialize response
-		let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
-		let json: serde_json::Value = serde_json::from_slice(&body_bytes)?;
-
-		trace!("Accessing relevant fields...");
-
-		// Save token and expiry
-		self.token = json
-			.get("access_token")
-			.ok_or_else(|| AuthError::Field((json.clone(), "access_token")))?
-			.as_str()
-			.ok_or_else(|| AuthError::Field((json.clone(), "access_token: as_str")))?
-			.to_string();
-		self.expires_in = json
-			.get("expires_in")
-			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in")))?
-			.as_u64()
-			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in: as_u64")))?;
-		self.headers_map.insert("Authorization".to_owned(), format!("Bearer {}", self.token));
-
-		info!("[✅] Success - Retrieved token \"{}...\", expires in {}", &self.token[..32], self.expires_in);
-
-		Ok(())
+			Ok(Self {
+				headers_map,
+				expires_in: response.expires_in,
+				backend,
+			})
+		})
+		.await
 	}
 
 	pub fn user_agent(&self) -> &str {
-		&self.device.user_agent
+		self.backend.user_agent()
 	}
 }
 
@@ -216,6 +202,235 @@ struct Device {
 	user_agent: String,
 }
 
+// MobileSpoofAuth backend - spoofs an Android mobile device
+#[derive(Debug, Clone)]
+pub struct MobileSpoofAuth {
+	device: Device,
+	additional_headers: HashMap<String, String>,
+}
+
+impl MobileSpoofAuth {
+	fn new() -> Self {
+		Self {
+			device: Device::new(),
+			additional_headers: HashMap::new(),
+		}
+	}
+}
+
+impl OauthBackend for MobileSpoofAuth {
+	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
+		// Construct URL for OAuth token
+		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
+		let mut builder = Request::builder().method(Method::POST).uri(&url);
+
+		// Add headers from spoofed client
+		for (key, value) in &self.device.initial_headers {
+			builder = builder.header(key, value);
+		}
+		// Set up HTTP Basic Auth - basically just the const OAuth ID's with no password,
+		// Base64-encoded. https://en.wikipedia.org/wiki/Basic_access_authentication
+		// This could be constant, but I don't think it's worth it. OAuth ID's can change
+		// over time and we want to be flexible.
+		let auth = general_purpose::STANDARD.encode(format!("{}:", self.device.oauth_id));
+		builder = builder.header("Authorization", format!("Basic {auth}"));
+
+		// Set JSON body. I couldn't tell you what this means. But that's what the client sends
+		let json = json!({
+				"scopes": ["*","email", "pii"]
+		});
+		let body = Body::from(json.to_string());
+
+		// Build request
+		let request = builder.body(body).unwrap();
+
+		trace!("Sending token request...\n\n{request:?}");
+
+		// Send request
+		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
+		let resp = client.request(request).await?;
+
+		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
+		trace!("OAuth headers: {:#?}", resp.headers());
+
+		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
+		// Technically it's not needed, but it's easy for Reddit API to check for this.
+		// It's some kind of header that uniquely identifies the device.
+		// Not worried about the privacy implications, since this is randomly changed
+		// and really only as privacy-concerning as the OAuth token itself.
+		if let Some(header) = resp.headers().get("x-reddit-loid") {
+			self.additional_headers.insert("x-reddit-loid".to_owned(), header.to_str().unwrap().to_string());
+		}
+
+		// Same with x-reddit-session
+		if let Some(header) = resp.headers().get("x-reddit-session") {
+			self.additional_headers.insert("x-reddit-session".to_owned(), header.to_str().unwrap().to_string());
+		}
+
+		trace!("Serializing response...");
+
+		// Serialize response
+		let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
+		let json: serde_json::Value = serde_json::from_slice(&body_bytes).map_err(AuthError::SerdeDeserialize)?;
+
+		trace!("Accessing relevant fields...");
+
+		// Save token and expiry
+		let token = json
+			.get("access_token")
+			.ok_or_else(|| AuthError::Field((json.clone(), "access_token")))?
+			.as_str()
+			.ok_or_else(|| AuthError::Field((json.clone(), "access_token: as_str")))?
+			.to_string();
+		let expires_in = json
+			.get("expires_in")
+			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in")))?
+			.as_u64()
+			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in: as_u64")))?;
+
+		info!("[✅] Success - Retrieved token \"{}...\", expires in {}", &token[..32], expires_in);
+
+		Ok(OauthResponse {
+			token,
+			expires_in,
+			additional_headers: self.additional_headers.clone(),
+		})
+	}
+
+	fn user_agent(&self) -> &str {
+		&self.device.user_agent
+	}
+
+	fn get_headers(&self) -> HashMap<String, String> {
+		let mut headers = self.device.headers.clone();
+		headers.extend(self.additional_headers.clone());
+		headers
+	}
+}
+
+// GenericWebAuth backend - simple web-based authentication
+#[derive(Debug, Clone)]
+pub struct GenericWebAuth {
+	device_id: String,
+	user_agent: String,
+	additional_headers: HashMap<String, String>,
+}
+
+impl GenericWebAuth {
+	fn new() -> Self {
+		// Generate random 20-character alphanumeric device_id
+		let device_id: String = (0..20)
+			.map(|_| {
+				let idx = fastrand::usize(..62);
+				let chars = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+				chars[idx] as char
+			})
+			.collect();
+
+		info!("[🔄] Using GenericWebAuth with device_id: \"{device_id}\"");
+
+		Self {
+			device_id,
+			user_agent: fake_user_agent::get_rua().to_owned(),
+			additional_headers: HashMap::new(),
+		}
+	}
+}
+
+impl OauthBackend for GenericWebAuth {
+	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
+		// Construct URL for OAuth token
+		let url = "https://www.reddit.com/api/v1/access_token";
+		let mut builder = Request::builder().method(Method::POST).uri(url);
+
+		// Add minimal headers
+		builder = builder.header("Host", "www.reddit.com");
+		builder = builder.header("User-Agent", &self.user_agent);
+		builder = builder.header("Accept", "*/*");
+		builder = builder.header("Accept-Language", "en-US,en;q=0.5");
+		// builder = builder.header("Accept-Encoding", "gzip, deflate, br, zstd");
+		builder = builder.header("Authorization", "Basic M1hmQkpXbGlIdnFBQ25YcmZJWWxMdzo=");
+		builder = builder.header("Content-Type", "application/x-www-form-urlencoded");
+		builder = builder.header("Sec-GPC", "1");
+		builder = builder.header("Connection", "keep-alive");
+
+		// Set up form body
+		let body_str = format!("grant_type=https%3A%2F%2Foauth.reddit.com%2Fgrants%2Finstalled_client&device_id={}", self.device_id);
+		let body = Body::from(body_str);
+
+		// Build request
+		let request = builder.body(body).unwrap();
+
+		trace!("Sending GenericWebAuth token request...\n\n{request:?}");
+
+		// Send request
+		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
+		let resp = client.request(request).await?;
+
+		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
+		trace!("GenericWebAuth headers: {:#?}", resp.headers());
+
+		// Parse headers - loid header _should_ be saved sent on subsequent token refreshes.
+		// Technically it's not needed, but it's easy for Reddit API to check for this.
+		// It's some kind of header that uniquely identifies the device.
+		// Not worried about the privacy implications, since this is randomly changed
+		// and really only as privacy-concerning as the OAuth token itself.
+		if let Some(header) = resp.headers().get("x-reddit-loid") {
+			self.additional_headers.insert("x-reddit-loid".to_owned(), header.to_str().unwrap().to_string());
+		}
+
+		// Same with x-reddit-session
+		if let Some(header) = resp.headers().get("x-reddit-session") {
+			self.additional_headers.insert("x-reddit-session".to_owned(), header.to_str().unwrap().to_string());
+		}
+
+		trace!("Serializing GenericWebAuth response...");
+
+		// Serialize response
+		let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
+		let json: serde_json::Value = serde_json::from_slice(&body_bytes).map_err(AuthError::SerdeDeserialize)?;
+
+		trace!("Accessing relevant fields...");
+
+		// Parse response - access_token, token_type, device_id, expires_in, scope
+		let token = json
+			.get("access_token")
+			.ok_or_else(|| AuthError::Field((json.clone(), "access_token")))?
+			.as_str()
+			.ok_or_else(|| AuthError::Field((json.clone(), "access_token: as_str")))?
+			.to_string();
+		let expires_in = json
+			.get("expires_in")
+			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in")))?
+			.as_u64()
+			.ok_or_else(|| AuthError::Field((json.clone(), "expires_in: as_u64")))?;
+
+		info!(
+			"[✅] GenericWebAuth success - Retrieved token \"{}...\", expires in {}",
+			&token[..32.min(token.len())],
+			expires_in
+		);
+
+		// Insert a few necessary headers
+		self.additional_headers.insert("Origin".to_owned(), "https://www.reddit.com".to_owned());
+		self.additional_headers.insert("User-Agent".to_owned(), self.user_agent.to_owned());
+
+		Ok(OauthResponse {
+			token,
+			expires_in,
+			additional_headers: self.additional_headers.clone(),
+		})
+	}
+
+	fn user_agent(&self) -> &str {
+		&self.user_agent
+	}
+
+	fn get_headers(&self) -> HashMap<String, String> {
+		self.additional_headers.clone()
+	}
+}
+
 impl Device {
 	fn android() -> Self {
 		// Generate uuid
@@ -265,17 +480,46 @@ fn choose<T: Copy>(list: &[T]) -> T {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn test_mobile_spoof_backend() {
+	// Test MobileSpoofAuth backend specifically
+	let mut backend = MobileSpoofAuth::new();
+	let response = backend.authenticate().await;
+	assert!(response.is_ok());
+	let response = response.unwrap();
+	assert!(!response.token.is_empty());
+	assert!(response.expires_in > 0);
+	assert!(!backend.user_agent().is_empty());
+	assert!(!backend.get_headers().is_empty());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_generic_web_backend() {
+	// Test GenericWebAuth backend specifically
+	let mut backend = GenericWebAuth::new();
+	let response = backend.authenticate().await;
+	assert!(response.is_ok());
+	let response = response.unwrap();
+	assert!(!response.token.is_empty());
+	assert!(response.expires_in > 0);
+	assert!(!backend.user_agent().is_empty());
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_client() {
-	assert!(!OAUTH_CLIENT.load_full().token.is_empty());
+	// Integration test - tests the overall Oauth client
+	assert!(OAUTH_CLIENT.load_full().headers_map.contains_key("Authorization"));
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_client_refresh() {
 	force_refresh_token().await;
 }
+
 #[tokio::test(flavor = "multi_thread")]
 async fn test_oauth_token_exists() {
-	assert!(!OAUTH_CLIENT.load_full().token.is_empty());
+	let client = OAUTH_CLIENT.load_full();
+	let auth_header = client.headers_map.get("Authorization").unwrap();
+	assert!(auth_header.starts_with("Bearer "));
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -286,4 +530,11 @@ async fn test_oauth_headers_len() {
 #[test]
 fn test_creating_device() {
 	Device::new();
+}
+
+#[test]
+fn test_creating_backends() {
+	// Test that both backends can be created
+	MobileSpoofAuth::new();
+	GenericWebAuth::new();
 }
