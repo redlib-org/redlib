@@ -7,16 +7,16 @@ use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Ur
 use hyper_rustls::HttpsConnector;
 use libflate::gzip;
 use log::{error, trace, warn};
-use once_cell::sync::Lazy;
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::LazyLock;
 use std::{io, result::Result};
 
 use crate::dbg_msg;
-use crate::oauth::{force_refresh_token, token_daemon, Oauth};
+use crate::oauth::{force_refresh_token, token_daemon, Oauth, OauthBackendImpl};
 use crate::server::RequestExt;
 use crate::utils::{format_url, Post};
 
@@ -29,7 +29,8 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<ProxyConnector>> = Lazy::new(|| {
+
+pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<ProxyConnector>> = LazyLock::new(|| {
 	let proxy_connector = ProxyConnector::new();
 	hyper_rustls::HttpsConnectorBuilder::new()
 		.with_native_roots()
@@ -38,9 +39,9 @@ pub static HTTPS_CONNECTOR: Lazy<HttpsConnector<ProxyConnector>> = Lazy::new(|| 
 		.wrap_connector(proxy_connector)
 });
 
-pub static CLIENT: Lazy<Client<HttpsConnector<ProxyConnector>>> = Lazy::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<Client<HttpsConnector<ProxyConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
 
-pub static OAUTH_CLIENT: Lazy<ArcSwap<Oauth>> = Lazy::new(|| {
+pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
 	tokio::spawn(token_daemon());
 	ArcSwap::new(client.into())
@@ -159,7 +160,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
 
 	// Build the hyper client from the HTTPS connector.
-	let client: &Lazy<Client<_, Body>> = &CLIENT;
+	let client: &LazyLock<Client<_, Body>> = &CLIENT;
 
 	let mut builder = Request::get(parsed_uri);
 
@@ -168,6 +169,12 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 		if let Some(value) = req.headers().get(key) {
 			builder = builder.header(key, value);
 		}
+	}
+
+	// Add User-Agent header of the currently spoofed device
+	{
+		let client = OAUTH_CLIENT.load_full();
+		builder = builder.header("User-Agent", client.user_agent());
 	}
 
 	let stream_request = builder.body(Body::empty()).map_err(|_| "Couldn't build empty body in stream".to_string())?;
@@ -221,7 +228,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	let url = format!("{base_path}{path}");
 
 	// Construct the hyper client from the HTTPS connector.
-	let client: &Lazy<Client<_, Body>> = &CLIENT;
+	let client: &LazyLock<Client<_, Body>> = &CLIENT;
 
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
@@ -361,7 +368,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	.boxed()
 }
 
-// Make a request to a Reddit API and parse the JSON response
+/// Make a request to a Reddit API and parse the JSON response
 #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
@@ -493,11 +500,17 @@ async fn self_check(sub: &str) -> Result<(), String> {
 }
 
 pub async fn rate_limit_check() -> Result<(), String> {
+	// First, test the Oauth client: we can perform a rate limit check if the OAuth backend is MobileSpoof; if GenericWeb, we skip the check.
+	if matches!(OAUTH_CLIENT.load().backend, OauthBackendImpl::GenericWeb(_)) {
+		warn!("[⚠️] Cannot perform rate limit check, running as GenericWeb. Skipping check.");
+		return Ok(());
+	}
+
 	// First, check a subreddit.
 	self_check("reddit").await?;
 	// This will reduce the rate limit to 99. Assert this check.
 	if OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst) != 99 {
-		return Err(format!("Rate limit check failed: expected 99, got {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst)));
+		return Err(format!("Rate limit check 1 failed: expected 99, got {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst)));
 	}
 	// Now, we switch out the OAuth client.
 	// This checks for the IP rate limit association.
@@ -506,7 +519,7 @@ pub async fn rate_limit_check() -> Result<(), String> {
 	self_check("rust").await?;
 	// Again, assert the rate limit check.
 	if OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst) != 99 {
-		return Err(format!("Rate limit check failed: expected 99, got {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst)));
+		return Err(format!("Rate limit check 2 failed: expected 99, got {}", OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst)));
 	}
 
 	Ok(())

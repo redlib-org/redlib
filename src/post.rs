@@ -10,10 +10,10 @@ use crate::utils::{
 };
 use hyper::{Body, Request, Response};
 
-use once_cell::sync::Lazy;
+use askama::Template;
 use regex::Regex;
-use rinja::Template;
 use std::collections::{HashMap, HashSet};
+use std::sync::LazyLock;
 
 // STRUCTS
 #[derive(Template)]
@@ -29,7 +29,7 @@ struct PostTemplate {
 	comment_query: String,
 }
 
-static COMMENT_SEARCH_CAPTURE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
+static COMMENT_SEARCH_CAPTURE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
 
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Build Reddit API path
