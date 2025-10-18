@@ -13,7 +13,7 @@ use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
 use regex::Regex;
-use revision::revisioned;
+use revision::{revisioned, Error};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -23,7 +23,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock};
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -622,7 +622,7 @@ pub struct Params {
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
-#[revisioned(revision = 1)]
+#[revisioned(revision = 2)]
 pub struct Preferences {
 	#[revision(start = 1)]
 	#[serde(skip_serializing, skip_deserializing)]
@@ -671,7 +671,7 @@ pub struct Preferences {
 	pub hide_score: String,
 	#[revision(start = 1)]
 	pub remove_default_feeds: String,
-	#[revision(start = 1)]
+	#[revision(start = 2, default_fn = "default_clean_urls")]
 	pub clean_urls: String,
 }
 
@@ -747,6 +747,9 @@ impl Preferences {
 	}
 	pub fn to_bincode_str(&self) -> Result<String, String> {
 		Ok(base2048::encode(&self.to_compressed_bincode()?))
+	}
+	fn default_clean_urls(_revision: u16) -> Result<String, Error> {
+		Ok("off".to_owned())
 	}
 }
 
@@ -1080,7 +1083,7 @@ pub fn format_url(url: &str) -> String {
 }
 
 // Remove tracking query params
-static URL_CLEANER: LazyLock<Mutex<UrlCleaner>> = LazyLock::new(|| Mutex::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
+static URL_CLEANER: LazyLock<Arc<UrlCleaner>> = LazyLock::new(|| Arc::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
 
 pub fn clean_url(url: String) -> String {
 	let is_external_url = match Url::parse(url.as_str()) {
@@ -1089,8 +1092,10 @@ pub fn clean_url(url: String) -> String {
 	};
 	let mut cleaned_url = url.clone();
 	if is_external_url {
-		let cleaner = URL_CLEANER.lock().unwrap();
-		cleaned_url = cleaner.clear_single_url_str(cleaned_url.as_str()).expect("Unable to clean the URL.").as_ref().to_owned();
+		cleaned_url = match URL_CLEANER.clear_single_url_str(cleaned_url.as_str()) {
+			Ok(cleaned_result) => cleaned_result.as_ref().to_owned(),
+			_ => cleaned_url,
+		}
 	}
 	cleaned_url
 }
@@ -1675,9 +1680,10 @@ fn test_default_prefs_serialization_loop_bincode() {
 }
 
 static KNOWN_GOOD_CONFIGS: &[&str] = &[
-	"ਧӐΥºÃΦĴгౡୡϤҚԷŽဎՐΧΣೡຽဒ೨ʛĽତ๘Ӓǹভµɾ൦ॴцৱ௬చΣҭжҭȱȾཊజĊȔ௸७ƘȂј۰ȥėǨԯၻíႽਈႴ۹ଆ",
-	"ਧҫടºÃǒɣυໃਣөŕǁజ८ௐɪǅઘႴ౨ඛႻຫǪၼդɍ৪Êѕ୶ʭѹŪҚຊೱѰງიŠСঌາඌĨğਜડ࿅ଠಲೱҋŇƞਭăʁझшȖǾཔ௧ந۞ສÚ",
-	"ਧҫടºÃǒɿဧϯǉഔค๖۞ԆНȦ൨ĭ྅ҤƍตཧႯƅशञঊମਇȕමзқଽĳჰଐՋບӎՓஶཕ૭ଛกήऋĜɀಱӔԩझԩîဓŒԬũլಙટщೞຝ৪༎",
+	"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
+	"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
+	"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
+	"ԅҫടÀÁÓɿဧඑปฎɣĊဨ۹ÕќଌઞೱũდϚӕӜĄӑƺӌĩҹஸইພÇƄŴ࿀টŨ୬ਦတႣಮѿౡಛളƖǉǉೱ႒ઽරਊԚƢൿɧűХխபծಥဤ౧À",
 ];
 
 #[test]
