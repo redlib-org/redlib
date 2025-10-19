@@ -7,12 +7,13 @@ use crate::config::{self, get_setting};
 //
 use crate::{client::json, server::RequestExt};
 use askama::Template;
+use clearurls::UrlCleaner;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
 use regex::Regex;
-use revision::revisioned;
+use revision::{revisioned, Error};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -22,7 +23,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -621,7 +622,7 @@ pub struct Params {
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
-#[revisioned(revision = 1)]
+#[revisioned(revision = 2)]
 pub struct Preferences {
 	#[revision(start = 1)]
 	#[serde(skip_serializing, skip_deserializing)]
@@ -670,6 +671,8 @@ pub struct Preferences {
 	pub hide_score: String,
 	#[revision(start = 1)]
 	pub remove_default_feeds: String,
+	#[revision(start = 2, default_fn = "default_clean_urls")]
+	pub clean_urls: String,
 }
 
 fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
@@ -728,6 +731,7 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 			remove_default_feeds: setting(req, "remove_default_feeds"),
+			clean_urls: setting(req, "clean_urls"),
 		}
 	}
 
@@ -743,6 +747,9 @@ impl Preferences {
 	}
 	pub fn to_bincode_str(&self) -> Result<String, String> {
 		Ok(base2048::encode(&self.to_compressed_bincode()?))
+	}
+	fn default_clean_urls(_revision: u16) -> Result<String, Error> {
+		Ok("off".to_owned())
 	}
 }
 
@@ -1073,6 +1080,24 @@ pub fn format_url(url: &str) -> String {
 			}
 		})
 	}
+}
+
+// Remove tracking query params
+static URL_CLEANER: LazyLock<Arc<UrlCleaner>> = LazyLock::new(|| Arc::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
+
+pub fn clean_url(url: String) -> String {
+	let is_external_url = match Url::parse(url.as_str()) {
+		Ok(parsed_url) => parsed_url.domain().is_some(),
+		_ => false,
+	};
+	let mut cleaned_url = url.clone();
+	if is_external_url {
+		cleaned_url = match URL_CLEANER.clear_single_url_str(cleaned_url.as_str()) {
+			Ok(cleaned_result) => cleaned_result.as_ref().to_owned(),
+			_ => cleaned_url,
+		}
+	}
+	cleaned_url
 }
 
 static REGEX_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
@@ -1541,10 +1566,11 @@ mod tests {
 			hide_awards: "off".to_owned(),
 			hide_score: "off".to_owned(),
 			remove_default_feeds: "off".to_owned(),
+			clean_urls: "off".to_owned(),
 		};
 		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
 
-		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
+		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off&clean_urls=off");
 	}
 }
 
@@ -1657,6 +1683,7 @@ static KNOWN_GOOD_CONFIGS: &[&str] = &[
 	"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
 	"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
 	"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
+	"ԅҫടÀÁÓɿဧඑปฎɣĊဨ۹ÕќଌઞೱũდϚӕӜĄӑƺӌĩҹஸইພÇƄŴ࿀টŨ୬ਦတႣಮѿౡಛളƖǉǉೱ႒ઽරਊԚƢൿɧűХխபծಥဤ౧À",
 ];
 
 #[test]

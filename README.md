@@ -34,7 +34,7 @@
    - [Docker](#docker)
      - [Docker Compose](#docker-compose)
      - [Docker CLI](#docker-cli)
-   - Podman 
+   - Podman
       - Quadlets
 
    - [Binary](#binary)
@@ -216,7 +216,7 @@ Stream logs from the Redlib container:
 ```bash
 docker logs -f redlib
 ```
-## Podman 
+## Podman
 
 [Podman](https://podman.io/) lets you run containerized applications in a rootless fashion. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
 
@@ -225,8 +225,8 @@ Container images for Redlib are available at [quay.io](https://quay.io/repositor
 ### Quadlets
 
 > [!IMPORTANT]
-> These instructions assume that you are on a systemd based distro with [podman](https://podman.io/). If not, follow these [instructions on podman's website](https://podman.io/docs/installation) for how to do so. 
-> It also assumes you have used `loginctl enable-linger <username>` to enable the service to start for your user without logging in. 
+> These instructions assume that you are on a systemd based distro with [podman](https://podman.io/). If not, follow these [instructions on podman's website](https://podman.io/docs/installation) for how to do so.
+> It also assumes you have used `loginctl enable-linger <username>` to enable the service to start for your user without logging in.
 
 Copy the `redlib.container` and `.env.example` files to `.config/containers/systemd/` and modify any relevant values (for example, the ports Redlib should listen on, renaming the .env file and editing its values, etc.).
 
@@ -244,7 +244,7 @@ systemctl --user start redlib.service
 ```
 
 You can check the status of your container by using the following command:
-```bash 
+```bash
 systemctl --user status redlib.service
 ```
 
@@ -442,3 +442,4 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SIDEBAR_AND_SUMMARY`          | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 | `REMOVE_DEFAULT_FEEDS`              | `["on", "off"]`                                                                                                                    | `off`         |
+| `CLEAN_URLS`                        | `["on", "off"]`                                                                                                                    | `off`         |
