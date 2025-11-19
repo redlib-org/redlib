@@ -1,26 +1,37 @@
-# docker-compose -f docker-compose.dev.yml up -d
-version: "3.8"
+# docker compose -f compose.dev.yaml up
+# Development setup - source mounted read-only, build cache in Docker volumes
 
 services:
   redlib:
-    build: .
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     container_name: "redlib"
     ports:
-      - 8080:8080 # Specify `127.0.0.1:8080:8080` instead if using a reverse proxy
-    user: nobody
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
-      # - seccomp=seccomp-redlib.json
-    cap_drop:
-      - ALL
+      - 8080:8080
+    volumes:
+      # Mount source code as read-only - code changes trigger rebuild
+      - ./src:/redlib/src:ro
+      - ./templates:/redlib/templates:ro
+      - ./static:/redlib/static:ro
+      - ./Cargo.toml:/redlib/Cargo.toml:ro
+      - ./Cargo.lock:/redlib/Cargo.lock:ro
+      - ./build.rs:/redlib/build.rs:ro
+      # Build artifacts stay in Docker volumes (not on your disk)
+      - redlib-target:/redlib/target
+      - redlib-cargo:/usr/local/cargo
+    environment:
+      - RUST_LOG=debug
     networks:
       - redlib
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "--tries=1", "http://localhost:8080/settings"]
       interval: 5m
       timeout: 3s
+
+volumes:
+  redlib-target:
+  redlib-cargo:
 
 networks:
   redlib:
