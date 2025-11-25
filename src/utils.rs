@@ -1433,18 +1433,23 @@ pub fn url_path_basename(path: &str) -> String {
 	}
 }
 
-/// Returns the URL of a post, as needed by RSS feeds
+/// Returns the absolute URL of a post, as needed by RSS feeds
 pub fn get_post_url(post: &Post) -> String {
-	if let Some(out_url) = &post.out_url {
-		// Handle cross post
-		if out_url.starts_with("/r/") {
-			format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), out_url)
-		} else {
-			out_url.to_string()
-		}
-	} else {
-		format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), post.permalink)
+	match post.post_type.as_str() {
+		"image" | "gallery" | "gif" | "video" => return to_absolute_url(&post.permalink),
+		_ => {}
 	}
+
+	if let Some(out_url) = &post.out_url {
+		return if out_url.starts_with("/r/") { to_absolute_url(out_url) } else { out_url.clone() };
+	}
+
+	to_absolute_url(&post.permalink)
+}
+
+/// Returns an absolute URL given a relative URL, as needed by RSS feeds
+pub fn to_absolute_url(relative_path: &str) -> String {
+	format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), relative_path)
 }
 
 #[cfg(test)]
