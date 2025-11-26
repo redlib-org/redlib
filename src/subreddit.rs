@@ -678,7 +678,7 @@ fn apply_enclosure(item: &mut Item, post: &Post) {
 fn get_rss_image(post: &Post) -> Option<Enclosure> {
 	let image_url = match post.post_type.as_str() {
 		"image" => Some(post.media.url.clone()),
-		"gallery" => decode_html(&post.gallery[0].url).ok(),
+		"gallery" => post.gallery.get(0).and_then(|media| decode_html(&media.url).ok()),
 		"gif" | "video" => decode_html(&post.media.poster).ok(),
 		_ => None,
 	};
