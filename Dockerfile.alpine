@@ -1,12 +1,12 @@
 # supported versions here: https://hub.docker.com/_/rust
-ARG ALPINE_VERSION=3.20
+ARG ALPINE_VERSION=3.22
 
 ########################
 ## builder image
 ########################
 FROM rust:alpine${ALPINE_VERSION} AS builder
 
-RUN apk add --no-cache musl-dev
+RUN apk add --no-cache musl-dev perl make git
 
 WORKDIR /redlib
 
@@ -25,6 +25,9 @@ RUN echo "finished building redlib!"
 ## release image
 ########################
 FROM alpine:${ALPINE_VERSION} AS release
+
+# Install runtime dependencies for OpenSSL
+RUN apk add --no-cache ca-certificates
 
 # Import redlib binary from builder
 COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
