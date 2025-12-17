@@ -375,7 +375,7 @@ body > footer {
     align-items: center;
     width: 100%;
     background: var(--post);
-    position: absolute;
+    position: fixed;
     bottom: 0;
 }
 
