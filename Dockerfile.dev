@@ -1,0 +1,24 @@
+# Development Dockerfile - prepares dev environment for live compilation
+# supported versions here: https://hub.docker.com/_/rust
+ARG ALPINE_VERSION=3.20
+
+FROM rust:alpine${ALPINE_VERSION}
+
+RUN apk add --no-cache musl-dev wget
+
+WORKDIR /redlib
+
+# Pre-download dependencies (will be cached in Docker volume)
+COPY Cargo.lock Cargo.toml ./
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs && \
+    cargo build --bin redlib && \
+    rm -rf src
+
+# Install cargo-watch for automatic recompilation on file changes
+RUN cargo install cargo-watch
+
+EXPOSE 8080
+
+# Use cargo-watch to automatically recompile and restart on source changes
+CMD ["cargo", "watch", "-x", "run --bin redlib"]
+
