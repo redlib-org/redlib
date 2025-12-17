@@ -36,7 +36,7 @@ time = { version = "0.3.31", features = ["local-offset"] }
 url = "2.5.0"
 rust-embed = { version = "8.1.0", features = ["include-exclude"] }
 libflate = "2.0.0"
-brotli = { version = "7.0.0", features = ["std"] }
+brotli = { version = "8.0.0", features = ["std"] }
 toml = "0.8.8"
 serde_yaml = "0.9.29"
 build_html = "2.4.0"
