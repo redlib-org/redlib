@@ -1112,6 +1112,10 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	// Remove (html-encoded) "\" from URLs.
 	text1 = text1.replace("%5C", "").replace("\\_", "_");
 
+	/* Remove paragraphs that only contain zero width spaces.
+	Reddit ignores these in their formatting so we want to remove them so they don't mess with ours. */
+	text1 = text1.replace("<p>&#8203;</p>", "").replace("<p>&#x200B;</p>", "");
+
 	// Rewrite external media previews to Redlib
 	loop {
 		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {

@@ -1210,7 +1210,6 @@ a.search_subreddit:hover {
 .post_body pre {
     background: var(--background);
     overflow-x: auto;
-    margin: 10px 0;
     padding: 10px;
 }
 
@@ -1748,17 +1747,16 @@ input[type="submit"] {
     width: 100%;
 }
 
-.md > p:not(:first-child) {
-    margin-top: 20px;
+.md > :first-child {
+    margin-top: 0;
 }
 
-.md > figure:first-of-type {
-    margin-top: 5px;
-    margin-bottom: 0px;
+.md > :last-child {
+    margin-bottom: 0;
 }
 
-.md > figure:not(:first-of-type) {
-    margin-top: 10px;
+.md > * {
+    margin-bottom: 1.25rem;
 }
 
 .md h1 {
@@ -1778,6 +1776,10 @@ input[type="submit"] {
 }
 .md h6 {
     font-size: 12px;
+}
+
+.md h1, h2, h3, h4, h5, h6 {
+    margin: 1.25rem 0 .75rem;
 }
 
 .md blockquote {
@@ -1818,7 +1820,6 @@ input[type="submit"] {
 .md pre {
     background: var(--outside);
     padding: 20px;
-    margin-top: 10px;
     border-radius: 5px;
     box-shadow: var(--shadow);
     overflow: auto;
