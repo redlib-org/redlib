@@ -34,13 +34,13 @@
    - [Docker](#docker)
      - [Docker Compose](#docker-compose)
      - [Docker CLI](#docker-cli)
-   - Podman 
+   - Podman
       - Quadlets
 
    - [Binary](#binary)
      - [Running as a systemd service](#running-as-a-systemd-service)
    - [Building from source](#building-from-source)
-   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
+   - [Replit/Heroku/Fly.io](#replitherokuflyio)
    - [launchd (macOS)](#launchd-macos)
 6. [Configuration](#configuration)
    - [Instance settings](#instance-settings)
@@ -216,7 +216,7 @@ Stream logs from the Redlib container:
 ```bash
 docker logs -f redlib
 ```
-## Podman 
+## Podman
 
 [Podman](https://podman.io/) lets you run containerized applications in a rootless fashion. Containers are loosely isolated environments that are lightweight and contain everything needed to run the application, so there's no need to rely on what's installed on the host.
 
@@ -225,8 +225,8 @@ Container images for Redlib are available at [quay.io](https://quay.io/repositor
 ### Quadlets
 
 > [!IMPORTANT]
-> These instructions assume that you are on a systemd based distro with [podman](https://podman.io/). If not, follow these [instructions on podman's website](https://podman.io/docs/installation) for how to do so. 
-> It also assumes you have used `loginctl enable-linger <username>` to enable the service to start for your user without logging in. 
+> These instructions assume that you are on a systemd based distro with [podman](https://podman.io/). If not, follow these [instructions on podman's website](https://podman.io/docs/installation) for how to do so.
+> It also assumes you have used `loginctl enable-linger <username>` to enable the service to start for your user without logging in.
 
 Copy the `redlib.container` and `.env.example` files to `.config/containers/systemd/` and modify any relevant values (for example, the ports Redlib should listen on, renaming the .env file and editing its values, etc.).
 
@@ -244,7 +244,7 @@ systemctl --user start redlib.service
 ```
 
 You can check the status of your container by using the following command:
-```bash 
+```bash
 systemctl --user status redlib.service
 ```
 
@@ -313,13 +313,30 @@ git clone https://github.com/redlib-org/redlib && cd redlib
 cargo run
 ```
 
-## Replit/Heroku
+## Replit/Heroku/Fly.io
 
 > [!WARNING]
 > These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+
+### Fly.io
+Fly.io lets you run an app with 512mb memory for free per month. Don't worry if you see your monthly bill going up, if it's less than $5, they will waive the cost.
+
+- Install flyctl by `brew install flyctl` or see other options at https://fly.io/docs/getting-started/launch/
+- Create an account with `fly auth signup` or log in with `fly auth login`.
+- `git clone https://github.com/redlib-org/redlib && cd redlib`
+- Edit fly.toml to configure your redlib instance
+- `fly deploy`
+- Go to https://replace-this-name.fly.dev and now you have your own redlib instance
+- To upgrade your instance to the latest build, run `fly deploy --image quay.io/redlib/redlib:latest`
+
+Note: If you use this as a private instance and not promote it to the public,
+your bandwidth usage should be less than $0.25 per month.
+The app costs $4.10 + the $0.25 bandwidth cost will be less than $5. You can
+monitor your usage on fly.io's billing dashboard to prevent yourself from going
+over $5 every month.
 
 ## launchd (macOS)
 
