@@ -2,7 +2,6 @@ use arc_swap::ArcSwap;
 use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
-use hyper::client::HttpConnector;
 use hyper::header::HeaderValue;
 use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
 use hyper_rustls::{ConfigBuilderExt, HttpsConnector};
@@ -30,7 +29,8 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> = LazyLock::new(|| {
+pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<ProxyConnector>> = LazyLock::new(|| {
+  let proxy_connector = ProxyConnector::new();
 	hyper_rustls::HttpsConnectorBuilder::new()
 		.with_tls_config(
 			rustls::ClientConfig::builder()
@@ -50,6 +50,7 @@ pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> = LazyLock::
 					rustls::cipher_suite::TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 				])
 				// .with_safe_default_cipher_suites()
+
 				.with_safe_default_kx_groups()
 				.with_safe_default_protocol_versions()
 				.unwrap()
@@ -58,10 +59,11 @@ pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> = LazyLock::
 		)
 		.https_only()
 		.enable_http2()
+    .wrap_connector(proxy_connector)
 		.build()
 });
 
-pub static CLIENT: LazyLock<Client<HttpsConnector<HttpConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<Client<HttpsConnector<ProxyConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
 
 pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
@@ -549,6 +551,7 @@ pub async fn rate_limit_check() -> Result<(), String> {
 
 #[cfg(test)]
 use {crate::config::get_setting, sealed_test::prelude::*};
+use crate::proxy::ProxyConnector;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_rate_limit_check() {
