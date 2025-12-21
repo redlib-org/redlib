@@ -36,6 +36,7 @@ time = { version = "0.3.31", features = ["local-offset"] }
 url = "2.5.0"
 rust-embed = { version = "8.1.0", features = ["include-exclude"] }
 libflate = "2.0.0"
+
 brotli = { version = "7.0.0", features = ["std"] }
 toml = "0.8.8"
 serde_yaml = "0.9.29"
@@ -61,6 +62,7 @@ base2048 = "2.0.2"
 revision = "0.10.0"
 tokio-socks = "0.5.2"
 fake_user_agent = "0.2.2"
+rustls = "0.21.12"
 
 [dev-dependencies]
 lipsum = "0.9.0"

@@ -1424,6 +1424,7 @@ dependencies = [
  "route-recognizer",
  "rss",
  "rust-embed",
+ "rustls",
  "sealed_test",
  "serde",
  "serde_json",
