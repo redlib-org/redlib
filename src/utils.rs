@@ -340,6 +340,7 @@ pub struct Post {
 	pub flair: Flair,
 	pub flags: Flags,
 	pub thumbnail: Media,
+	pub overlay_image_url: String,
 	pub media: Media,
 	pub domain: String,
 	pub rel_time: String,
@@ -392,6 +393,22 @@ impl Post {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
 
+			let thumbnail = Media {
+				url: format_url(val(post, "thumbnail").as_str()),
+				alt_url: String::new(),
+				width: data["thumbnail_width"].as_i64().unwrap_or_default(),
+				height: data["thumbnail_height"].as_i64().unwrap_or_default(),
+				poster: String::new(),
+				download_name: String::new(),
+			};
+			let overlay_image_url = if post_type == "image" {
+				media.url.clone()
+			} else if !thumbnail.url.is_empty() {
+				thumbnail.url.clone()
+			} else {
+				String::new()
+			};
+
 			posts.push(Self {
 				id: val(post, "id"),
 				title,
@@ -418,14 +435,8 @@ impl Post {
 				},
 				upvote_ratio: ratio as i64,
 				post_type,
-				thumbnail: Media {
-					url: format_url(val(post, "thumbnail").as_str()),
-					alt_url: String::new(),
-					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
-					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
-					poster: String::new(),
-					download_name: String::new(),
-				},
+				thumbnail,
+				overlay_image_url,
 				media,
 				domain: val(post, "domain"),
 				flair: Flair {
@@ -823,6 +834,22 @@ pub async fn parse_post(post: &Value) -> Post {
 		}
 	};
 
+	let thumbnail = Media {
+		url: format_url(val(post, "thumbnail").as_str()),
+		alt_url: String::new(),
+		width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
+		height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
+		poster: String::new(),
+		download_name: String::new(),
+	};
+	let overlay_image_url = if post_type == "image" {
+		media.url.clone()
+	} else if !thumbnail.url.is_empty() {
+		thumbnail.url.clone()
+	} else {
+		String::new()
+	};
+
 	// Build a post using data parsed from Reddit post API
 	Post {
 		id: val(post, "id"),
@@ -850,14 +877,8 @@ pub async fn parse_post(post: &Value) -> Post {
 		upvote_ratio: ratio as i64,
 		post_type,
 		media,
-		thumbnail: Media {
-			url: format_url(val(post, "thumbnail").as_str()),
-			alt_url: String::new(),
-			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
-			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
-			poster: String::new(),
-			download_name: String::new(),
-		},
+		thumbnail,
+		overlay_image_url,
 		flair: Flair {
 			flair_parts: FlairPart::parse(
 				post["data"]["link_flair_type"].as_str().unwrap_or_default(),

@@ -68,6 +68,9 @@
 			<script src="/hls.min.js"></script>
 			<script src="/playHLSVideo.js"></script>
 			{% endif %}
+			{% if prefs.layout == "compact-overlay" %}
+			<script src="/image_overlay.js"></script>
+			{% endif %}
 			</div>
 			{% endif %}
 

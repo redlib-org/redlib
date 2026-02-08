@@ -73,6 +73,16 @@
 		</main>
 		{% endblock %}
 
+		{% if prefs.layout == "compact-overlay" %}
+		<div id="image_overlay" class="image_overlay" aria-hidden="true">
+			<div class="image_overlay_backdrop"></div>
+			<div class="image_overlay_content" role="dialog" aria-modal="true">
+				<button class="image_overlay_close" type="button" aria-label="Close image overlay">x</button>
+				<img id="image_overlay_img" alt="Expanded preview">
+			</div>
+		</div>
+		{% endif %}
+
 		<!-- FOOTER -->
 		{% block footer %}
 			<footer>

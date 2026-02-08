@@ -284,7 +284,7 @@
 	{% call render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) %}
 	{% endif %}
 	{% else if post.post_type != "self" %}
-	<a class="post_thumbnail{% if post.thumbnail.url.is_empty() %} no_thumbnail{% endif %}" href="{% if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow">
+	<a class="post_thumbnail{% if post.thumbnail.url.is_empty() %} no_thumbnail{% endif %}{% if prefs.layout == "compact-overlay" && !post.overlay_image_url.is_empty() %} overlay_trigger{% endif %}" href="{% if prefs.layout == "compact-overlay" && !post.overlay_image_url.is_empty() %}{{ post.overlay_image_url }}{% else if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow" data-overlay-src="{{ post.overlay_image_url }}">
 		{% if post.thumbnail.url.is_empty() %}
 		<svg viewBox="0 0 100 106" width="140" height="53" xmlns="http://www.w3.org/2000/svg">
 			<title>Thumbnail</title>

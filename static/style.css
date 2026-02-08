@@ -1575,65 +1575,137 @@ summary.comment_data {
 
 /* Layouts */
 
-.compact .post:not(.highlighted) {
+.compact .post:not(.highlighted),
+.compact-overlay .post:not(.highlighted) {
     border-radius: 0;
     margin: 0;
     padding: 0;
 }
 
-.compact .post:first-of-type {
+.compact .post:first-of-type,
+.compact-overlay .post:first-of-type {
     border-radius: 5px 5px 0 0;
     overflow: hidden;
 }
 
-.compact .post:last-of-type {
+.compact .post:last-of-type,
+.compact-overlay .post:last-of-type {
     border-radius: 0 0 5px 5px;
     overflow: hidden;
 }
 
-.compact .post.highlighted {
+.compact .post.highlighted,
+.compact-overlay .post.highlighted {
     border-radius: 5px;
 }
-.compact .post:not(:last-of-type):not(.highlighted):not(.stickied) {
+.compact .post:not(:last-of-type):not(.highlighted):not(.stickied),
+.compact-overlay .post:not(:last-of-type):not(.highlighted):not(.stickied) {
     border-bottom: 0;
 }
 
-.compact .post_score {
+.compact .post_score,
+.compact-overlay .post_score {
     padding-top: 15px;
     border-radius: 0;
 }
 
-.compact .post_header {
+.compact .post_header,
+.compact-overlay .post_header {
     margin: 11px 15px 2.5px 12px;
     font-size: 14px;
 }
 
 .compact .post_title,
 .compact #post_url,
-.compact .post_body {
+.compact .post_body,
+.compact-overlay .post_title,
+.compact-overlay #post_url,
+.compact-overlay .post_body {
     margin: 2.5px 15px;
 }
 
-.compact .post_preview {
+.compact .post_preview,
+.compact-overlay .post_preview {
     display: none;
 }
 
-.compact .post_media {
+.compact .post_media,
+.compact-overlay .post_media {
     max-width: calc(100% - 30px);
     margin: 2.5px auto;
 }
 
-.compact .post_footer {
+.compact .post_footer,
+.compact-overlay .post_footer {
     margin: 5px 15px 15px 15px;
 }
 
-.compact .post_thumbnail {
+.compact .post_thumbnail,
+.compact-overlay .post_thumbnail {
     width: 75px;
     height: 75px;
 }
 
-.compact footer {
+.compact footer,
+.compact-overlay footer {
     margin-top: 20px;
+}
+
+.image_overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.image_overlay.active {
+    display: flex;
+}
+
+.image_overlay_backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.image_overlay_content {
+    position: relative;
+    max-width: min(92vw, 1200px);
+    max-height: 90vh;
+    padding: 24px;
+    background: var(--post);
+    border: var(--panel-border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    z-index: 1;
+}
+
+.image_overlay_content img {
+    display: block;
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 6px;
+}
+
+.image_overlay_close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    border: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 16px;
+    line-height: 32px;
+    cursor: pointer;
+}
+
+.overlay_open {
+    overflow: hidden;
 }
 
 /* Settings */
@@ -2036,7 +2108,8 @@ th {
         padding: 5px 15px 10px 12px;
     }
 
-    .compact .post_score {
+    .compact .post_score,
+    .compact-overlay .post_score {
         padding: 0;
     }
 
