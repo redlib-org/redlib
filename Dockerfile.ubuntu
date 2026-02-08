@@ -7,6 +7,8 @@ ARG UBUNTU_RELEASE_VERSION=noble
 ########################
 FROM rust:${RUST_BUILDER_VERSION} AS builder
 
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /redlib
 
 # download (most) dependencies in their own layer
