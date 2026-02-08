@@ -1683,10 +1683,30 @@ summary.comment_data {
 }
 
 .image_overlay_content img {
-    display: block;
+    display: none;
     max-width: 100%;
     max-height: 75vh;
     border-radius: 6px;
+}
+
+.image_overlay_content video {
+    display: none;
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 6px;
+    background: #000;
+}
+
+.image_overlay_content video.active {
+    display: block;
+}
+
+.image_overlay_content img.active {
+    display: block;
+}
+
+.image_overlay_content img.hidden {
+    display: none;
 }
 
 .image_overlay_close {
