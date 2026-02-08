@@ -283,6 +283,21 @@ impl Media {
 	}
 }
 
+fn overlay_image_url_from_data(data: &Value, post_type: &str, media_url: &str, thumbnail_url: &str) -> String {
+	if post_type == "image" {
+		return media_url.to_string();
+	}
+
+	if let Some(preview_url) = data["preview"]["images"][0]["source"]["url"].as_str() {
+		let formatted = format_url(preview_url);
+		if !formatted.is_empty() {
+			return formatted;
+		}
+	}
+
+	thumbnail_url.to_string()
+}
+
 #[derive(Serialize)]
 pub struct GalleryMedia {
 	pub url: String,
@@ -401,13 +416,7 @@ impl Post {
 				poster: String::new(),
 				download_name: String::new(),
 			};
-			let overlay_image_url = if post_type == "image" {
-				media.url.clone()
-			} else if !thumbnail.url.is_empty() {
-				thumbnail.url.clone()
-			} else {
-				String::new()
-			};
+			let overlay_image_url = overlay_image_url_from_data(data, &post_type, &media.url, &thumbnail.url);
 
 			posts.push(Self {
 				id: val(post, "id"),
@@ -842,13 +851,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		poster: String::new(),
 		download_name: String::new(),
 	};
-	let overlay_image_url = if post_type == "image" {
-		media.url.clone()
-	} else if !thumbnail.url.is_empty() {
-		thumbnail.url.clone()
-	} else {
-		String::new()
-	};
+	let overlay_image_url = overlay_image_url_from_data(&post["data"], &post_type, &media.url, &thumbnail.url);
 
 	// Build a post using data parsed from Reddit post API
 	Post {
