@@ -1,0 +1,13 @@
+/* Catppuccin-Mocha theme setting */
+.catppuccinMocha {
+	--accent: #b4befe;
+	--green: #a6e3a1;
+	--text: #cdd6f4;
+	--foreground: #313244;
+	--background: #1e1e2e;
+	--outside: #181825;
+	--post: #45475a;
+	--panel-border: 1px solid #585b70;
+	--highlighted: #6c7086;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

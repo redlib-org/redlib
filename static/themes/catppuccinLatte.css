@@ -1,0 +1,13 @@
+/* Catppuccin-Latte theme setting */
+.catppuccinLatte {
+	--accent: #7287fd;
+	--green: #40a02b;
+	--text: #4c4f69;
+	--foreground: #ccd0da;
+	--background: #eff1f5;
+	--outside: #e6e9ef;
+	--post: #bcc0cc;
+	--panel-border: 1px solid #acb0be;
+	--highlighted: #9ca0b0;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

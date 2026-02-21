@@ -1,0 +1,13 @@
+/* Catppuccin-Frappe theme setting */
+.catppuccinFrappe {
+	--accent: #babbf1;
+	--green: #a6d189;
+	--text: #c6d0f5;
+	--foreground: #414559;
+	--background: #303446;
+	--outside: #292c3c;
+	--post: #51576d;
+	--panel-border: 1px solid #626880;
+	--highlighted: #737994;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

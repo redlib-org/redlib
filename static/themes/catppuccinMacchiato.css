@@ -1,0 +1,13 @@
+/* Catppuccin-Macchiato theme setting */
+.catppuccinMacchiato {
+	--accent: #b7bdf8;
+	--green: #a6da95;
+	--text: #cad3f5;
+	--foreground: #363a4f;
+	--background: #24273a;
+	--outside: #1e2030;
+	--post: #494d64;
+	--panel-border: 1px solid #5b6078;
+	--highlighted: #6e738d;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
