@@ -2,7 +2,7 @@
 {% import "utils.html" as utils %}
 
 {% block title %}
-	{% if single_thread %}
+	{% if single_thread && comments.len() > 0 %}
 		{{ comments[0].author.name }} comments on {{ post.title }} - r/{{ post.community }}
 	{% else %}
 		{{ post.title }} - r/{{ post.community }}
