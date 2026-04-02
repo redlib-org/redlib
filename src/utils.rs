@@ -178,6 +178,7 @@ pub struct Flags {
 #[derive(Debug, Serialize)]
 pub struct Media {
 	pub url: String,
+	pub url_audio: String,
 	pub alt_url: String,
 	pub width: i64,
 	pub height: i64,
@@ -261,7 +262,32 @@ impl Media {
 			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
 			let media_url_base = url_path_basename(url_val.as_str().unwrap_or_default());
 
+			// Remove .mp4 extension for cleaner combined filename
+			let media_url_base = media_url_base.strip_suffix(".mp4").unwrap_or(&media_url_base);
+
 			format!("redlib_{permalink_base}_{media_url_base}")
+		} else {
+			String::new()
+		};
+
+		// Extract audio URL from video ID
+		// DASH manifest contains direct audio MP4 files: CMAF_AUDIO_64.mp4 and CMAF_AUDIO_128.mp4
+		let video_url = format_url(url_val.as_str().unwrap_or_default());
+		let url_audio = if post_type == "video" {
+			// Extract video ID from the video URL
+			// video_url format: /vid/{id}/cmaf/{quality}.mp4 or /vid/{id}/dash/{quality}.mp4
+			if video_url.starts_with("/vid/") {
+				let parts: Vec<&str> = video_url.split('/').collect();
+				if parts.len() >= 5 {
+					let video_id = parts[2];
+					// Use highest quality audio (128 kbps) as direct MP4 file
+					format!("/vid/{video_id}/cmaf/audio/128.mp4")
+				} else {
+					String::new()
+				}
+			} else {
+				String::new()
+			}
 		} else {
 			String::new()
 		};
@@ -269,7 +295,8 @@ impl Media {
 		(
 			post_type.to_string(),
 			Self {
-				url: format_url(url_val.as_str().unwrap_or_default()),
+				url: video_url,
+				url_audio,
 				alt_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
@@ -420,6 +447,7 @@ impl Post {
 				post_type,
 				thumbnail: Media {
 					url: format_url(val(post, "thumbnail").as_str()),
+					url_audio: String::new(),
 					alt_url: String::new(),
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
@@ -852,6 +880,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		media,
 		thumbnail: Media {
 			url: format_url(val(post, "thumbnail").as_str()),
+			url_audio: String::new(),
 			alt_url: String::new(),
 			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
