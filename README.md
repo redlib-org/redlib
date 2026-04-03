@@ -442,3 +442,26 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `HIDE_SIDEBAR_AND_SUMMARY`          | `["on", "off"]`                                                                                                                    | `off`         |
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 | `REMOVE_DEFAULT_FEEDS`              | `["on", "off"]`                                                                                                                    | `off`         |
+
+## Building
+
+Since Redlib uses [`boring-sys2`](https://crates.io/crates/boring-sys2), to build Redlib you will need to build
+BoringSSL from source.
+
+### Linux/MacOS
+
+Refer to the [boringssl](https://github.com/google/boringssl/blob/main/BUILDING.md) documentation for instructions.
+
+### Windows
+
+Install MSVC, which you likely already have for Rust.
+
+```pwsh
+# Make sure to update your PATH, some of the installers don't do that by default (hense -i, interactive mode).
+winget install -i Kitware.CMake
+winget install -i NASM.NASM
+winget install -i LLVM.LLVM
+
+# For tests.
+winget install GoLang.Go
+```
