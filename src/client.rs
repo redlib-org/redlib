@@ -7,16 +7,15 @@ use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::{body::Buf, header, Body, Request, Response};
-use libflate::gzip;
 use log::{error, trace, warn};
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
+use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
-use std::{io, result::Result};
-use wreq::header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION};
 use wreq::{Client as WreqClient, Method};
+use wreq_util::Emulation;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -45,12 +44,10 @@ const URL_PAIRS: [(&str, &str); 2] = [
 ];
 
 pub fn build_client() -> WreqClient {
-	let mut headers = HeaderMap::new();
-	headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
-	headers.insert(ACCEPT_ENCODING, HeaderValue::from_static("gzip"));
-	headers.insert(CONNECTION, HeaderValue::from_static("keep-alive"));
-
-	WreqClient::builder().default_headers(headers).build().unwrap()
+	WreqClient::builder()
+		.emulation(Emulation::random())
+		.build()
+		.expect("Should always be able to build a client")
 }
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
@@ -244,11 +241,8 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// Build Reddit URL from path.
 	let url = format!("{base_path}{path}");
 
-	// Build request to Reddit. When making a GET, request gzip compression.
-	// (Reddit doesn't do brotli yet.)
 	let mut headers: Vec<(String, String)> = vec![
 		("Host".into(), host.into()),
-		("Accept-Encoding".into(), if method == &Method::GET { "gzip".into() } else { "identity".into() }),
 		(
 			"Cookie".into(),
 			if quarantine {
@@ -320,69 +314,7 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 					.await;
 				};
 
-				match response.headers().get(wreq::header::CONTENT_ENCODING).and_then(|h| h.to_str().ok()) {
-					// Content not compressed or encoding invalid.
-					None | Some("identity") => Ok(to_hyper_response(response)),
-
-					// Content encoded (hopefully with gzip).
-					Some("gzip") => {
-						// We get here if the body is gzip-compressed.
-
-						// The body must be something that implements
-						// std::io::Read, hence the conversion to
-						// bytes::buf::Buf and then transformation into a
-						// Reader.
-						let mut decompressed: Vec<u8>;
-						let mut hyper_res: Response<Body>;
-						{
-							let status = response.status();
-							let version = response.version();
-							let mut wreq_headers = HeaderMap::new();
-							for (name, value) in response.headers() {
-								wreq_headers.insert(name.clone(), value.clone());
-							}
-
-							let body_bytes = match response.bytes().await {
-								Ok(b) => b,
-								Err(e) => return Err(e.to_string()),
-							};
-
-							let mut decoder = match gzip::Decoder::new(&body_bytes[..]) {
-								Ok(decoder) => decoder,
-								Err(e) => return Err(e.to_string()),
-							};
-
-							decompressed = Vec::<u8>::new();
-							if let Err(e) = io::copy(&mut decoder, &mut decompressed) {
-								return Err(e.to_string());
-							};
-
-							let mut builder = Response::builder().status(status.as_u16()).version(match version {
-								wreq::Version::HTTP_09 => hyper::Version::HTTP_09,
-								wreq::Version::HTTP_10 => hyper::Version::HTTP_10,
-								wreq::Version::HTTP_11 => hyper::Version::HTTP_11,
-								wreq::Version::HTTP_2 => hyper::Version::HTTP_2,
-								wreq::Version::HTTP_3 => hyper::Version::HTTP_3,
-								_ => hyper::Version::HTTP_11,
-							});
-
-							for (name, value) in &wreq_headers {
-								builder = builder.header(
-									header::HeaderName::from_bytes(name.as_str().as_bytes()).unwrap(),
-									header::HeaderValue::from_bytes(value.as_bytes()).unwrap(),
-								);
-							}
-							hyper_res = builder.body(Body::empty()).unwrap();
-						}
-
-						hyper_res.headers_mut().remove(header::CONTENT_ENCODING);
-						hyper_res.headers_mut().insert(header::CONTENT_LENGTH, decompressed.len().into());
-						*(hyper_res.body_mut()) = Body::from(decompressed);
-
-						Ok(hyper_res)
-					}
-					Some(_) => Err("Reddit response was encoded with an unsupported compressor".to_string()),
-				}
+				Ok(to_hyper_response(response))
 			}
 			Err(e) => {
 				dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
