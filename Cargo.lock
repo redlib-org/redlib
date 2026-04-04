@@ -1379,6 +1379,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
+name = "mime"
+version = "0.3.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1806,12 +1812,6 @@ dependencies = [
  "linux-raw-sys",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "rustls-pki-types"
-version = "1.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be040f8b0a225e40375822a563fa9524378b9d63112f53e19ffff34df5d33fdd"
 
 [[package]]
 name = "rustversion"
@@ -2606,15 +2606,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "webpki-root-certs"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "804f18a4ac2676ffb4e8b5b5fa9ae38af06df08162314f96a68d2a363e21a8ca"
-dependencies = [
- "rustls-pki-types",
-]
-
-[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2770,6 +2761,7 @@ dependencies = [
  "boring2",
  "brotli 8.0.2",
  "bytes",
+ "encoding_rs",
  "flate2",
  "futures-channel",
  "futures-util",
@@ -2780,6 +2772,7 @@ dependencies = [
  "httparse",
  "ipnet",
  "libc",
+ "mime",
  "percent-encoding",
  "pin-project-lite",
  "schnellru",
@@ -2796,7 +2789,6 @@ dependencies = [
  "tower-http",
  "url",
  "want",
- "webpki-root-certs",
  "zstd",
 ]
 
