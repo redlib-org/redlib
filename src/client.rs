@@ -1,25 +1,22 @@
-use arc_swap::ArcSwap;
-use cached::proc_macro::cached;
-use futures_lite::future::block_on;
-use futures_lite::{future::Boxed, FutureExt};
-use hyper::client::HttpConnector;
-use hyper::header::HeaderValue;
-use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
-use hyper_rustls::{ConfigBuilderExt, HttpsConnector};
-use libflate::gzip;
-use log::{error, trace, warn};
-use percent_encoding::{percent_encode, CONTROLS};
-use serde_json::Value;
-
-use std::sync::atomic::Ordering;
-use std::sync::atomic::{AtomicBool, AtomicU16};
-use std::sync::LazyLock;
-use std::{io, result::Result};
-
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth, OauthBackendImpl};
 use crate::server::RequestExt;
 use crate::utils::{format_url, Post};
+use arc_swap::ArcSwap;
+use cached::proc_macro::cached;
+use futures_lite::future::block_on;
+use futures_lite::{future::Boxed, FutureExt};
+use hyper::{body::Buf, header, Body, Request, Response};
+use libflate::gzip;
+use log::{error, trace, warn};
+use percent_encoding::{percent_encode, CONTROLS};
+use serde_json::Value;
+use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::LazyLock;
+use std::{io, result::Result};
+use wreq::header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION};
+use wreq::{Client as WreqClient, Method};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -30,38 +27,7 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> = LazyLock::new(|| {
-	hyper_rustls::HttpsConnectorBuilder::new()
-		.with_tls_config(
-			rustls::ClientConfig::builder()
-				// These are the Firefox 145.0 cipher suite,
-				// minus the suites missing forward-secrecy support,
-				// in the same order.
-				// https://github.com/redlib-org/redlib/issues/446#issuecomment-3609306592
-				.with_cipher_suites(&[
-					rustls::cipher_suite::TLS13_AES_256_GCM_SHA384,
-					rustls::cipher_suite::TLS13_AES_128_GCM_SHA256,
-					rustls::cipher_suite::TLS13_CHACHA20_POLY1305_SHA256,
-					rustls::cipher_suite::TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-					rustls::cipher_suite::TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-					rustls::cipher_suite::TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-					rustls::cipher_suite::TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-					rustls::cipher_suite::TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-					rustls::cipher_suite::TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				])
-				// .with_safe_default_cipher_suites()
-				.with_safe_default_kx_groups()
-				.with_safe_default_protocol_versions()
-				.unwrap()
-				.with_native_roots()
-				.with_no_client_auth(),
-		)
-		.https_only()
-		.enable_http2()
-		.build()
-});
-
-pub static CLIENT: LazyLock<Client<HttpsConnector<HttpConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
 pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
@@ -77,6 +43,15 @@ const URL_PAIRS: [(&str, &str); 2] = [
 	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
 	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
 ];
+
+pub fn build_client() -> WreqClient {
+	let mut headers = HeaderMap::new();
+	headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
+	headers.insert(ACCEPT_ENCODING, HeaderValue::from_static("gzip"));
+	headers.insert(CONNECTION, HeaderValue::from_static("keep-alive"));
+
+	WreqClient::builder().default_headers(headers).build().unwrap()
+}
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -177,19 +152,39 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 	stream(&url, &req).await
 }
 
+fn to_hyper_response(res: wreq::Response) -> Response<Body> {
+	let status = res.status();
+	let version = res.version();
+
+	let mut builder = Response::builder().status(status.as_u16()).version(match version {
+		wreq::Version::HTTP_09 => hyper::Version::HTTP_09,
+		wreq::Version::HTTP_10 => hyper::Version::HTTP_10,
+		wreq::Version::HTTP_11 => hyper::Version::HTTP_11,
+		wreq::Version::HTTP_2 => hyper::Version::HTTP_2,
+		wreq::Version::HTTP_3 => hyper::Version::HTTP_3,
+		_ => hyper::Version::HTTP_11,
+	});
+
+	for (name, value) in res.headers() {
+		builder = builder.header(
+			header::HeaderName::from_bytes(name.as_str().as_bytes()).unwrap(),
+			header::HeaderValue::from_bytes(value.as_bytes()).unwrap(),
+		);
+	}
+
+	builder.body(Body::wrap_stream(res.bytes_stream())).unwrap()
+}
+
 async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String> {
 	// First parameter is target URL (mandatory).
-	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
+	let wreq_uri = wreq::Uri::try_from(url).map_err(|_| "Couldn't parse URL".to_string())?;
 
-	// Build the hyper client from the HTTPS connector.
-	let client: &LazyLock<Client<_, Body>> = &CLIENT;
-
-	let mut builder = Request::get(parsed_uri);
+	let mut builder = CLIENT.get(wreq_uri);
 
 	// Copy useful headers from original request
 	for &key in &["Range", "If-Modified-Since", "Cache-Control"] {
 		if let Some(value) = req.headers().get(key) {
-			builder = builder.header(key, value);
+			builder = builder.header(key, value.as_bytes());
 		}
 	}
 
@@ -199,13 +194,13 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 		builder = builder.header("User-Agent", client.user_agent());
 	}
 
-	let stream_request = builder.body(Body::empty()).map_err(|_| "Couldn't build empty body in stream".to_string())?;
-
-	client
-		.request(stream_request)
+	builder
+		.send()
 		.await
 		.map(|mut res| {
-			let mut rm = |key: &str| res.headers_mut().remove(key);
+			let headers = res.headers_mut();
+
+			let mut rm = |key: &str| headers.remove(key);
 
 			rm("access-control-expose-headers");
 			rm("server");
@@ -220,7 +215,7 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 			rm("Nel");
 			rm("Report-To");
 
-			res
+			to_hyper_response(res)
 		})
 		.map_err(|e| e.to_string())
 }
@@ -249,14 +244,11 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// Build Reddit URL from path.
 	let url = format!("{base_path}{path}");
 
-	// Construct the hyper client from the HTTPS connector.
-	let client: &LazyLock<Client<_, Body>> = &CLIENT;
-
 	// Build request to Reddit. When making a GET, request gzip compression.
 	// (Reddit doesn't do brotli yet.)
 	let mut headers: Vec<(String, String)> = vec![
 		("Host".into(), host.into()),
-		("Accept-Encoding".into(), if method == Method::GET { "gzip".into() } else { "identity".into() }),
+		("Accept-Encoding".into(), if method == &Method::GET { "gzip".into() } else { "identity".into() }),
 		(
 			"Cookie".into(),
 			if quarantine {
@@ -277,114 +269,126 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// shuffle headers: https://github.com/redlib-org/redlib/issues/324
 	fastrand::shuffle(&mut headers);
 
-	let mut builder = Request::builder().method(method).uri(&url);
+	let mut builder = CLIENT.request(method.clone(), &url);
 
 	for (key, value) in headers {
 		builder = builder.header(key, value);
 	}
 
-	let builder = builder.body(Body::empty());
-
 	async move {
-		match builder {
-			Ok(req) => match client.request(req).await {
-				Ok(mut response) => {
-					// Reddit may respond with a 3xx. Decide whether or not to
-					// redirect based on caller params.
-					if response.status().is_redirection() {
-						if !redirect {
-							return Ok(response);
-						};
-						let location_header = response.headers().get(header::LOCATION);
-						if location_header == Some(&HeaderValue::from_static(ALTERNATIVE_REDDIT_URL_BASE)) {
-							return Err("Reddit response was invalid".to_string());
-						}
-						return request(
-							method,
-							location_header
-								.map(|val| {
-									// We need to make adjustments to the URI
-									// we get back from Reddit. Namely, we
-									// must:
-									//
-									//     1. Remove the authority (e.g.
-									//     https://www.reddit.com) that may be
-									//     present, so that we recurse on the
-									//     path (and query parameters) as
-									//     required.
-									//
-									//     2. Percent-encode the path.
-									let new_path = percent_encode(val.as_bytes(), CONTROLS)
-										.to_string()
-										.trim_start_matches(REDDIT_URL_BASE)
-										.trim_start_matches(ALTERNATIVE_REDDIT_URL_BASE)
-										.to_string();
-									format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
-								})
-								.unwrap_or_default()
-								.to_string(),
-							true,
-							quarantine,
-							base_path,
-							host,
-						)
-						.await;
+		match builder.send().await {
+			Ok(response) => {
+				// Reddit may respond with a 3xx. Decide whether or not to
+				// redirect based on caller params.
+				if response.status().is_redirection() {
+					if !redirect {
+						return Ok(to_hyper_response(response));
 					};
-
-					match response.headers().get(header::CONTENT_ENCODING) {
-						// Content not compressed.
-						None => Ok(response),
-
-						// Content encoded (hopefully with gzip).
-						Some(hdr) => {
-							match hdr.to_str() {
-								Ok(val) => match val {
-									"gzip" => {}
-									"identity" => return Ok(response),
-									_ => return Err("Reddit response was encoded with an unsupported compressor".to_string()),
-								},
-								Err(_) => return Err("Reddit response was invalid".to_string()),
-							}
-
-							// We get here if the body is gzip-compressed.
-
-							// The body must be something that implements
-							// std::io::Read, hence the conversion to
-							// bytes::buf::Buf and then transformation into a
-							// Reader.
-							let mut decompressed: Vec<u8>;
-							{
-								let mut aggregated_body = match body::aggregate(response.body_mut()).await {
-									Ok(b) => b.reader(),
-									Err(e) => return Err(e.to_string()),
-								};
-
-								let mut decoder = match gzip::Decoder::new(&mut aggregated_body) {
-									Ok(decoder) => decoder,
-									Err(e) => return Err(e.to_string()),
-								};
-
-								decompressed = Vec::<u8>::new();
-								if let Err(e) = io::copy(&mut decoder, &mut decompressed) {
-									return Err(e.to_string());
-								};
-							}
-
-							response.headers_mut().remove(header::CONTENT_ENCODING);
-							response.headers_mut().insert(header::CONTENT_LENGTH, decompressed.len().into());
-							*(response.body_mut()) = Body::from(decompressed);
-
-							Ok(response)
-						}
+					let location_header = response.headers().get(wreq::header::LOCATION);
+					if location_header.and_then(|h| h.to_str().ok()) == Some(ALTERNATIVE_REDDIT_URL_BASE) {
+						return Err("Reddit response was invalid".to_string());
 					}
-				}
-				Err(e) => {
-					dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
+					return request(
+						method,
+						location_header
+							.map(|val| {
+								// We need to make adjustments to the URI
+								// we get back from Reddit. Namely, we
+								// must:
+								//
+								//     1. Remove the authority (e.g.
+								//     https://www.reddit.com) that may be
+								//     present, so that we recurse on the
+								//     path (and query parameters) as
+								//     required.
+								//
+								//     2. Percent-encode the path.
+								let new_path = percent_encode(val.as_bytes(), CONTROLS)
+									.to_string()
+									.trim_start_matches(REDDIT_URL_BASE)
+									.trim_start_matches(ALTERNATIVE_REDDIT_URL_BASE)
+									.to_string();
+								format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
+							})
+							.unwrap_or_default()
+							.to_string(),
+						true,
+						quarantine,
+						base_path,
+						host,
+					)
+					.await;
+				};
 
-					Err(e.to_string())
+				match response.headers().get(wreq::header::CONTENT_ENCODING).and_then(|h| h.to_str().ok()) {
+					// Content not compressed or encoding invalid.
+					None | Some("identity") => Ok(to_hyper_response(response)),
+
+					// Content encoded (hopefully with gzip).
+					Some("gzip") => {
+						// We get here if the body is gzip-compressed.
+
+						// The body must be something that implements
+						// std::io::Read, hence the conversion to
+						// bytes::buf::Buf and then transformation into a
+						// Reader.
+						let mut decompressed: Vec<u8>;
+						let mut hyper_res: Response<Body>;
+						{
+							let status = response.status();
+							let version = response.version();
+							let mut wreq_headers = HeaderMap::new();
+							for (name, value) in response.headers() {
+								wreq_headers.insert(name.clone(), value.clone());
+							}
+
+							let body_bytes = match response.bytes().await {
+								Ok(b) => b,
+								Err(e) => return Err(e.to_string()),
+							};
+
+							let mut decoder = match gzip::Decoder::new(&body_bytes[..]) {
+								Ok(decoder) => decoder,
+								Err(e) => return Err(e.to_string()),
+							};
+
+							decompressed = Vec::<u8>::new();
+							if let Err(e) = io::copy(&mut decoder, &mut decompressed) {
+								return Err(e.to_string());
+							};
+
+							let mut builder = Response::builder().status(status.as_u16()).version(match version {
+								wreq::Version::HTTP_09 => hyper::Version::HTTP_09,
+								wreq::Version::HTTP_10 => hyper::Version::HTTP_10,
+								wreq::Version::HTTP_11 => hyper::Version::HTTP_11,
+								wreq::Version::HTTP_2 => hyper::Version::HTTP_2,
+								wreq::Version::HTTP_3 => hyper::Version::HTTP_3,
+								_ => hyper::Version::HTTP_11,
+							});
+
+							for (name, value) in &wreq_headers {
+								builder = builder.header(
+									header::HeaderName::from_bytes(name.as_str().as_bytes()).unwrap(),
+									header::HeaderValue::from_bytes(value.as_bytes()).unwrap(),
+								);
+							}
+							hyper_res = builder.body(Body::empty()).unwrap();
+						}
+
+						hyper_res.headers_mut().remove(header::CONTENT_ENCODING);
+						hyper_res.headers_mut().insert(header::CONTENT_LENGTH, decompressed.len().into());
+						*(hyper_res.body_mut()) = Body::from(decompressed);
+
+						Ok(hyper_res)
+					}
+					Some(_) => Err("Reddit response was encoded with an unsupported compressor".to_string()),
 				}
-			},
-			Err(_) => Err("Post url contains non-ASCII characters".to_string()),
+			}
+			Err(e) => {
+				dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
+
+				Err(e.to_string())
+			}
 		}
 	}
 	.boxed()

@@ -61,7 +61,7 @@ base2048 = "2.0.2"
 revision = "0.10.0"
 fake_user_agent = "0.2.2"
 rustls = "0.21.12"
-wreq = "6.0.0-rc.28"
+wreq = { version = "6.0.0-rc.28" , features = ["brotli", "gzip", "deflate", "zstd", "json", "stream"] }
 wreq-util = "3.0.0-rc.10"
 
 [dev-dependencies]
