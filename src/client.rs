@@ -7,14 +7,14 @@ use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
 use hyper::{body::Buf, header, Body, Request as HyperRequest, Response as HyperResponse};
-use log::{error, trace, warn};
+use log::{error, info, trace, warn};
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
 use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
-use wreq::{header as wreq_header, Client as WreqClient, Method, Response as WreqResponse};
+use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
 use wreq_util::Emulation;
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
@@ -44,10 +44,9 @@ const URL_PAIRS: [(&str, &str); 2] = [
 ];
 
 pub fn build_client() -> WreqClient {
-	WreqClient::builder()
-		.emulation(Emulation::random())
-		.build()
-		.expect("Should always be able to build a client")
+	let emulation = Emulation::random().emulation();
+	info!("Building Wreq client with random emulation {:?}", emulation);
+	WreqClient::builder().emulation(emulation).build().expect("Should always be able to build a client")
 }
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by

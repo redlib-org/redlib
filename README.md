@@ -111,7 +111,7 @@ Last tested on January 12, 2024.
 Results from Google PageSpeed Insights ([Redlib Report](https://pagespeed.web.dev/report?url=https%3A%2F%2Fredlib.matthew.science%2F), [Reddit Report](https://pagespeed.web.dev/report?url=https://www.reddit.com)).
 
 | Performance metric  | Redlib   | Reddit    |
-| ------------------- | -------- | --------- |
+|---------------------|----------|-----------|
 | Speed Index         | 0.6s     | 1.9s      |
 | Performance Score   | 100%     | 64%       |
 | Time to Interactive | **2.8s** | **12.4s** |
@@ -409,14 +409,15 @@ Redlib supports the following command line flags:
 Assign a default value for each instance-specific setting by passing environment variables to Redlib in the format `REDLIB_{X}`. Replace `{X}` with the setting name (see list below) in capital letters.
 
 | Name                      | Possible values | Default value          | Description                                                                                               |
-| ------------------------- | --------------- | ----------------       | --------------------------------------------------------------------------------------------------------- |
+|---------------------------|-----------------|------------------------|-----------------------------------------------------------------------------------------------------------|
 | `SFW_ONLY`                | `["on", "off"]` | `off`                  | Enables SFW-only mode for the instance, i.e. all NSFW content is filtered.                                |
 | `BANNER`                  | String          | (empty)                | Allows the server to set a banner to be displayed. Currently this is displayed on the instance info page. |
 | `ROBOTS_DISABLE_INDEXING` | `["on", "off"]` | `off`                  | Disables indexing of the instance by search engines.                                                      |
 | `PUSHSHIFT_FRONTEND`      | String          | `undelete.pullpush.io` | Allows the server to set the Pushshift frontend to be used with "removed" links.                          |
 | `PORT`                    | Integer 0-65535 | `8080`                 | The **internal** port Redlib listens on.                                                                  |
 | `ENABLE_RSS`              | `["on", "off"]` | `off`                  | Enables RSS feed generation.                                                                              |
-| `FULL_URL`                | String          | (empty)                | Allows for proper URLs (for now, only needed by RSS)
+| `FULL_URL`                | String          | (empty)                | Allows for proper URLs (for now, only needed by RSS)                                                      |
+
 ## Default user settings
 
 Assign a default value for each user-modifiable setting by passing environment variables to Redlib in the format `REDLIB_DEFAULT_{Y}`. Replace `{Y}` with the setting name (see list below) in capital letters.
@@ -443,6 +444,23 @@ Assign a default value for each user-modifiable setting by passing environment v
 | `FIXED_NAVBAR`                      | `["on", "off"]`                                                                                                                    | `on`          |
 | `REMOVE_DEFAULT_FEEDS`              | `["on", "off"]`                                                                                                                    | `off`         |
 
+## Forward Proxies
+
+Redlib [supports](https://docs.rs/wreq/latest/wreq/#proxies) proxy usage using the standard `HTTP_PROXY` and
+`HTTPS_PROXY` environment variables. Use `ALL_PROXY` to set both at the same time (which you want to do).
+
+- `http://` is the scheme for http proxy
+- `https://` is the scheme for https proxy
+- `socks4://` is the scheme for socks4 proxy
+- `socks4a://` is the scheme for socks4a proxy
+- `socks5://` is the scheme for socks5 proxy
+- `socks5h://` is the scheme for socks5h proxy
+
+## Security
+
+This project uses [BoringSSL](https://boringssl.googlesource.com/boringssl/), built from source with patches from
+the [wreq](https://github.com/0x676e67/wreq) project. Certificates are validated against the OS's trust store.
+
 ## Building
 
 Since Redlib uses [`boring-sys2`](https://crates.io/crates/boring-sys2), to build Redlib you will need to build
@@ -450,7 +468,7 @@ BoringSSL from source.
 
 ### Linux/MacOS
 
-Refer to the [boringssl](https://github.com/google/boringssl/blob/main/BUILDING.md) documentation for instructions.
+Refer to the [boringssl](https://github.com/google/boringssl/blob/main/BUILDING.md) documentation for dependencies.
 
 ### Windows
 
