@@ -469,62 +469,67 @@ fn choose<T: Copy>(list: &[T]) -> T {
 	*fastrand::choose_multiple(list.iter(), 1)[0]
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_mobile_spoof_backend() {
-	// Test MobileSpoofAuth backend specifically
-	let mut backend = MobileSpoofAuth::new();
-	let response = backend.authenticate().await;
-	assert!(response.is_ok());
-	let response = response.unwrap();
-	assert!(!response.token.is_empty());
-	assert!(response.expires_in > 0);
-	assert!(!backend.user_agent().is_empty());
-	assert!(!backend.get_headers().is_empty());
-}
+#[cfg(test)]
+mod tests {
+	use super::*;
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_generic_web_backend() {
-	// Test GenericWebAuth backend specifically
-	let mut backend = GenericWebAuth::new();
-	let response = backend.authenticate().await;
-	assert!(response.is_ok());
-	let response = response.unwrap();
-	assert!(!response.token.is_empty());
-	assert!(response.expires_in > 0);
-	assert!(!backend.user_agent().is_empty());
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_mobile_spoof_backend() {
+		// Test MobileSpoofAuth backend specifically
+		let mut backend = MobileSpoofAuth::new();
+		let response = backend.authenticate().await;
+		assert!(response.is_ok());
+		let response = response.unwrap();
+		assert!(!response.token.is_empty());
+		assert!(response.expires_in > 0);
+		assert!(!backend.user_agent().is_empty());
+		assert!(!backend.get_headers().is_empty());
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_client() {
-	// Integration test - tests the overall Oauth client
-	assert!(OAUTH_CLIENT.load_full().headers_map.contains_key("Authorization"));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_generic_web_backend() {
+		// Test GenericWebAuth backend specifically
+		let mut backend = GenericWebAuth::new();
+		let response = backend.authenticate().await;
+		assert!(response.is_ok());
+		let response = response.unwrap();
+		assert!(!response.token.is_empty());
+		assert!(response.expires_in > 0);
+		assert!(!backend.user_agent().is_empty());
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_client_refresh() {
-	force_refresh_token().await;
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_client() {
+		// Integration test - tests the overall Oauth client
+		assert!(OAUTH_CLIENT.load_full().headers_map.contains_key("Authorization"));
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_token_exists() {
-	let client = OAUTH_CLIENT.load_full();
-	let auth_header = client.headers_map.get("Authorization").unwrap();
-	assert!(auth_header.starts_with("Bearer "));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_client_refresh() {
+		force_refresh_token().await;
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_headers_len() {
-	assert!(OAUTH_CLIENT.load_full().headers_map.len() >= 3);
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_token_exists() {
+		let client = OAUTH_CLIENT.load_full();
+		let auth_header = client.headers_map.get("Authorization").unwrap();
+		assert!(auth_header.starts_with("Bearer "));
+	}
 
-#[test]
-fn test_creating_device() {
-	Device::new();
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_headers_len() {
+		assert!(OAUTH_CLIENT.load_full().headers_map.len() >= 3);
+	}
 
-#[test]
-fn test_creating_backends() {
-	// Test that both backends can be created
-	MobileSpoofAuth::new();
-	GenericWebAuth::new();
+	#[test]
+	fn test_creating_device() {
+		Device::new();
+	}
+
+	#[test]
+	fn test_creating_backends() {
+		// Test that both backends can be created
+		MobileSpoofAuth::new();
+		GenericWebAuth::new();
+	}
 }
