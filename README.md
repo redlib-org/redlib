@@ -459,7 +459,7 @@ Redlib [supports](https://docs.rs/wreq/latest/wreq/#proxies) proxy usage using t
 ## Security
 
 This project uses [BoringSSL](https://boringssl.googlesource.com/boringssl/), built from source with patches from
-the [wreq](https://github.com/0x676e67/wreq) project. Certificates are validated against the OS's trust store.
+the [wreq](https://github.com/0x676e67/wreq) project. Certificates are validated against the embedded trust store from Mozilla.
 
 ## Building
 
