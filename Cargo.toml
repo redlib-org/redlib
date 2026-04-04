@@ -17,7 +17,7 @@ askama = { version = "0.14.0", default-features = false, features = [
     "std",
     "derive",
 ] }
-cached = { version = "0.54.0", features = ["async"] }
+cached = { version = "0.59.0", features = ["async"] }
 clap = { version = "4.4.11", default-features = false, features = [
     "std",
     "env",
@@ -50,17 +50,17 @@ rss = "2.0.7"
 arc-swap = "1.7.1"
 serde_json_path = "0.7.1"
 async-recursion = "1.1.1"
-pulldown-cmark = { version = "0.12.0", features = ["simd", "html"], default-features = false }
+pulldown-cmark = { version = "0.13.3", features = ["simd", "html"], default-features = false }
 tegen = "0.1.4"
 serde_urlencoded = "0.7.1"
 chrono = { version = "0.4.39", default-features = false, features = ["std"] }
 htmlescape = "0.3.1"
 bincode = "1.3.3"
 base2048 = "2.0.2"
-revision = "0.10.0"
+revision = "0.17.0"
 fake_user_agent = "0.2.2"
 wreq = { version = "6.0.0-rc.28", features = ["brotli", "gzip", "deflate", "zstd", "json", "stream", "socks"] }
-wreq-util = { version = "3.0.0-rc.10", features = ["emulation-rand"] }
+wreq-util = { version = "3.0.0-rc.10" }
 
 [dev-dependencies]
 lipsum = "0.9.0"

@@ -15,7 +15,7 @@ use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
 use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
-use wreq_util::Emulation;
+use wreq_util::{Emulation, EmulationOS, EmulationOption};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -44,7 +44,19 @@ const URL_PAIRS: [(&str, &str); 2] = [
 ];
 
 pub fn build_client() -> WreqClient {
-	let emulation = Emulation::random().emulation();
+	// Keeping this list short to aid in privacy.
+	// The more emulations, the more unique a fingerprint each instance has.
+	// But some emulations should increase evasiveness.
+	let emulation = [Emulation::Chrome145, Emulation::Firefox147];
+	let emulation_os = [EmulationOS::Android, EmulationOS::Windows];
+
+	let rand = fastrand::usize(..);
+	let emulation = EmulationOption::builder()
+		.emulation(emulation[rand % emulation.len()])
+		.emulation_os(emulation_os[rand % emulation_os.len()])
+		.build()
+		.emulation();
+
 	info!("Building Wreq client with random emulation {:?}", emulation);
 	WreqClient::builder().emulation(emulation).build().expect("Should always be able to build a client")
 }
