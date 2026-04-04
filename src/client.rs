@@ -14,6 +14,7 @@ use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
+use wreq::redirect::Policy;
 use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
 use wreq_util::{Emulation, EmulationOS, EmulationOption};
 
@@ -58,7 +59,11 @@ pub fn build_client() -> WreqClient {
 		.emulation();
 
 	info!("Building Wreq client with random emulation {:?}", emulation);
-	WreqClient::builder().emulation(emulation).build().expect("Should always be able to build a client")
+	WreqClient::builder()
+		.emulation(emulation)
+		.redirect(Policy::none())
+		.build()
+		.expect("Should always be able to build a client")
 }
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
@@ -174,6 +179,9 @@ pub async fn proxy(req: HyperRequest<Body>, format: &str) -> Result<HyperRespons
 		let client = OAUTH_CLIENT.load_full();
 		builder = builder.header("User-Agent", client.user_agent());
 	}
+
+	// This is needed or Reddit will redirect us to a /media landing page that just renders the image.
+	builder = builder.header(wreq_header::ACCEPT, "*/*");
 
 	builder
 		.send()
