@@ -1,6 +1,6 @@
 {
     "name": "Rust",
-    "image": "mcr.microsoft.com/devcontainers/rust:1.0.9-bookworm",
+    "image": "mcr.microsoft.com/devcontainers/rust:dev-trixie",
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
@@ -10,5 +10,6 @@
             "onAutoForward": "notify"
         }
     },
-    "postCreateCommand": "cargo build"
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git build-essential cmake libclang-dev",
+    "postStartCommand": "cargo build"
 }
