@@ -194,6 +194,15 @@
 				</a>
 			</li>
 			{% endif %}
+			{% if post.post_type == "gallery" %}
+			<!-- Gallery download -->
+			<li class="download_gallery">
+				<a href="#" data-post-id="{{ post.id }}" data-base-name="redlib_{{ post.id }}">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download all ({{ post.gallery.len() }})</span>
+				</a>
+			</li>
+			{% endif %}
 		</ul>
 		<p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>
 	</div>
