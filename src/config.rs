@@ -26,8 +26,6 @@ pub struct Config {
 
 	#[serde(rename = "REDLIB_DEFAULT_THEME_LIGHT")]
 	#[serde(alias = "LIBREDDIT_DEFAULT_THEME_LIGHT")]
-	#[serde(alias = "REDLIB_DEFAULT_THEME")]
-	#[serde(alias = "LIBREDDIT_DEFAULT_THEME")]
 	pub(crate) default_theme_light: Option<String>,
 
 	#[serde(rename = "REDLIB_DEFAULT_THEME_DARK")]
@@ -138,10 +136,12 @@ impl Config {
 			let legacy_key = key.replace("REDLIB_", "LIBREDDIT_");
 			var(key).ok().or_else(|| var(legacy_key).ok()).or_else(|| get_setting_from_config(key, &config))
 		};
+		// For theme settings, fall back to REDLIB_DEFAULT_THEME if specific light/dark not set
+		let default_theme = parse("REDLIB_DEFAULT_THEME");
 		Self {
 			sfw_only: parse("REDLIB_SFW_ONLY"),
-			default_theme_light: parse("REDLIB_DEFAULT_THEME_LIGHT"),
-			default_theme_dark: parse("REDLIB_DEFAULT_THEME_DARK"),
+			default_theme_light: parse("REDLIB_DEFAULT_THEME_LIGHT").or_else(|| default_theme.clone()),
+			default_theme_dark: parse("REDLIB_DEFAULT_THEME_DARK").or_else(|| default_theme.clone()),
 			default_front_page: parse("REDLIB_DEFAULT_FRONT_PAGE"),
 			default_layout: parse("REDLIB_DEFAULT_LAYOUT"),
 			default_post_sort: parse("REDLIB_DEFAULT_POST_SORT"),
