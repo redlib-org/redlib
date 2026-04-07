@@ -620,11 +620,11 @@ pub struct Params {
 	pub before: Option<String>,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[revisioned(revision = 2)]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
 pub struct Preferences {
 	#[revision(start = 1)]
-	#[serde(skip_serializing, skip_deserializing)]
+	#[serde(skip)]
 	pub available_themes: Vec<String>,
 	#[revision(start = 1, end = 2, convert_fn="convert_theme")]
 	pub theme: String,
@@ -748,12 +748,13 @@ impl Preferences {
 	pub fn to_bincode_str(&self) -> Result<String, String> {
 		Ok(base2048::encode(&self.to_compressed_bincode()?))
 	}
-	fn convert_theme(&mut self, _revision: u16, value:String) -> Result<(), Error> {
+	fn convert_theme(&mut self, _revision: u16, value: String) -> Result<(), Error> {
 		self.theme_light = value.clone();
-		self.theme_dark = value.clone();
+		self.theme_dark = value;
 		Ok(())
 	}
 }
+
 
 pub fn deflate_compress(i: Vec<u8>) -> Result<Vec<u8>, String> {
 	let mut e = Encoder::new(Vec::new());
@@ -1560,7 +1561,7 @@ mod tests {
 		};
 		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
 
-		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
+		assert_eq!(urlencoded, "theme_light=laserwave&theme_dark=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
 	}
 }
 
