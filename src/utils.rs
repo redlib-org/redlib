@@ -195,20 +195,25 @@ impl Media {
 		let secure_media = &data["secure_media"]["reddit_video"];
 		let crosspost_parent_media = &data["crosspost_parent_list"][0]["secure_media"]["reddit_video"];
 
+		let mut has_audio=false;
+
 		// If post is a video, return the video
 		let (post_type, url_val, alt_url_val) = if data_preview["fallback_url"].is_string() {
+			has_audio=data_preview["has_audio"].as_bool().unwrap_or(false);
 			(
 				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&data_preview["fallback_url"],
 				Some(&data_preview["hls_url"]),
 			)
 		} else if secure_media["fallback_url"].is_string() {
+			has_audio=secure_media["has_audio"].as_bool().unwrap_or(false);
 			(
 				if secure_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&secure_media["fallback_url"],
 				Some(&secure_media["hls_url"]),
 			)
 		} else if crosspost_parent_media["fallback_url"].is_string() {
+			has_audio=crosspost_parent_media["has_audio"].as_bool().unwrap_or(false);
 			(
 				if crosspost_parent_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&crosspost_parent_media["fallback_url"],
@@ -273,7 +278,7 @@ impl Media {
 		// Extract audio URL from video ID
 		// DASH manifest contains direct audio MP4 files: CMAF_AUDIO_64.mp4 and CMAF_AUDIO_128.mp4
 		let video_url = format_url(url_val.as_str().unwrap_or_default());
-		let url_audio = if post_type == "video" {
+		let url_audio = if post_type == "video" && has_audio {
 			// Extract video ID from the video URL
 			// video_url format: /vid/{id}/cmaf/{quality}.mp4 or /vid/{id}/dash/{quality}.mp4
 			if video_url.starts_with("/vid/") {
