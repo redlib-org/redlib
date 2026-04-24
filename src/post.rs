@@ -1,6 +1,4 @@
 #![allow(clippy::cmp_owned)]
-
-// CRATES
 use crate::client::json;
 use crate::config::get_setting;
 use crate::server::RequestExt;
@@ -8,9 +6,8 @@ use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
 	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
 };
-use hyper::{Body, Request, Response};
-
 use askama::Template;
+use hyper::{Body, Request, Response};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
