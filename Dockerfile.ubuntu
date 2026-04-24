@@ -7,6 +7,10 @@ ARG UBUNTU_RELEASE_VERSION=noble
 ########################
 FROM rust:${RUST_BUILDER_VERSION} AS builder
 
+RUN apt-get update \
+    && apt-get -y install git build-essential cmake libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /redlib
 
 # download (most) dependencies in their own layer
@@ -24,9 +28,6 @@ RUN echo "finished building redlib!"
 ## release image
 ########################
 FROM ubuntu:${UBUNTU_RELEASE_VERSION} AS release
-
-# Install ca-certificates
-RUN apt-get update && apt-get install -y ca-certificates
 
 # Import redlib binary from builder
 COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib

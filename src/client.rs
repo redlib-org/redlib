@@ -1,25 +1,22 @@
-use arc_swap::ArcSwap;
-use cached::proc_macro::cached;
-use futures_lite::future::block_on;
-use futures_lite::{future::Boxed, FutureExt};
-use hyper::client::HttpConnector;
-use hyper::header::HeaderValue;
-use hyper::{body, body::Buf, header, Body, Client, Method, Request, Response, Uri};
-use hyper_rustls::HttpsConnector;
-use libflate::gzip;
-use log::{error, trace, warn};
-use percent_encoding::{percent_encode, CONTROLS};
-use serde_json::Value;
-
-use std::sync::atomic::Ordering;
-use std::sync::atomic::{AtomicBool, AtomicU16};
-use std::sync::LazyLock;
-use std::{io, result::Result};
-
 use crate::dbg_msg;
 use crate::oauth::{force_refresh_token, token_daemon, Oauth, OauthBackendImpl};
 use crate::server::RequestExt;
 use crate::utils::{format_url, Post};
+use arc_swap::ArcSwap;
+use cached::proc_macro::cached;
+use futures_lite::future::block_on;
+use futures_lite::{future::Boxed, FutureExt};
+use hyper::{body::Buf, header, Body, Request as HyperRequest, Response as HyperResponse};
+use log::{error, info, trace, warn};
+use percent_encoding::{percent_encode, CONTROLS};
+use serde_json::Value;
+use std::result::Result;
+use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, AtomicU16};
+use std::sync::LazyLock;
+use wreq::redirect::Policy;
+use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
+use wreq_util::{Emulation, EmulationOS, EmulationOption};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -30,10 +27,7 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 
-pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> =
-	LazyLock::new(|| hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_only().enable_http2().build());
-
-pub static CLIENT: LazyLock<Client<HttpsConnector<HttpConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
 pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
@@ -49,6 +43,28 @@ const URL_PAIRS: [(&str, &str); 2] = [
 	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
 	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
 ];
+
+pub fn build_client() -> WreqClient {
+	// Keeping this list short to aid in privacy.
+	// The more emulations, the more unique a fingerprint each instance has.
+	// But some emulations should increase evasiveness.
+	let emulation = [Emulation::Chrome145, Emulation::Firefox147];
+	let emulation_os = [EmulationOS::Android, EmulationOS::Windows];
+
+	let rand = fastrand::usize(..);
+	let emulation = EmulationOption::builder()
+		.emulation(emulation[rand % emulation.len()])
+		.emulation_os(emulation_os[rand % emulation_os.len()])
+		.build()
+		.emulation();
+
+	info!("Building Wreq client with random emulation {:?}", emulation);
+	WreqClient::builder()
+		.emulation(emulation)
+		.redirect(Policy::none())
+		.build()
+		.expect("Should always be able to build a client")
+}
 
 /// Gets the canonical path for a resource on Reddit. This is accomplished by
 /// making a `HEAD` request to Reddit at the path given in `path`.
@@ -86,14 +102,14 @@ pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, S
 
 	let res = res.ok_or_else(|| "Unable to make HEAD request to Reddit.".to_string())?;
 	let status = res.status().as_u16();
-	let policy_error = res.headers().get(header::RETRY_AFTER).is_some();
+	let policy_error = res.headers().get(wreq_header::RETRY_AFTER).is_some();
 
 	match status {
 		// If Reddit responds with a 2xx, then the path is already canonical.
 		200..=299 => Ok(Some(path)),
 
 		// If Reddit responds with a 301, then the path is redirected.
-		301 => match res.headers().get(header::LOCATION) {
+		301 => match res.headers().get(wreq_header::LOCATION) {
 			Some(val) => {
 				let Ok(original) = val.to_str() else {
 					return Err("Unable to decode Location header.".to_string());
@@ -131,13 +147,13 @@ pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, S
 		_ => Ok(
 			res
 				.headers()
-				.get(header::LOCATION)
+				.get(wreq_header::LOCATION)
 				.map(|val| percent_encode(val.as_bytes(), CONTROLS).to_string().trim_start_matches(REDDIT_URL_BASE).to_string()),
 		),
 	}
 }
 
-pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, String> {
+pub async fn proxy(req: HyperRequest<Body>, format: &str) -> Result<HyperResponse<Body>, String> {
 	let mut url = format!("{format}?{}", req.uri().query().unwrap_or_default());
 
 	// For each parameter in request
@@ -146,22 +162,15 @@ pub async fn proxy(req: Request<Body>, format: &str) -> Result<Response<Body>, S
 		url = url.replace(&format!("{{{name}}}"), value);
 	}
 
-	stream(&url, &req).await
-}
-
-async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String> {
 	// First parameter is target URL (mandatory).
-	let parsed_uri = url.parse::<Uri>().map_err(|_| "Couldn't parse URL".to_string())?;
+	let wreq_uri = wreq::Uri::try_from(url).map_err(|_| "Couldn't parse URL".to_string())?;
 
-	// Build the hyper client from the HTTPS connector.
-	let client: &LazyLock<Client<_, Body>> = &CLIENT;
-
-	let mut builder = Request::get(parsed_uri);
+	let mut builder = CLIENT.get(wreq_uri);
 
 	// Copy useful headers from original request
 	for &key in &["Range", "If-Modified-Since", "Cache-Control"] {
 		if let Some(value) = req.headers().get(key) {
-			builder = builder.header(key, value);
+			builder = builder.header(key, value.as_bytes());
 		}
 	}
 
@@ -171,13 +180,16 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 		builder = builder.header("User-Agent", client.user_agent());
 	}
 
-	let stream_request = builder.body(Body::empty()).map_err(|_| "Couldn't build empty body in stream".to_string())?;
+	// This is needed or Reddit will redirect us to a /media landing page that just renders the image.
+	builder = builder.header(wreq_header::ACCEPT, "*/*");
 
-	client
-		.request(stream_request)
+	builder
+		.send()
 		.await
 		.map(|mut res| {
-			let mut rm = |key: &str| res.headers_mut().remove(key);
+			let headers = res.headers_mut();
+
+			let mut rm = |key: &str| headers.remove(key);
 
 			rm("access-control-expose-headers");
 			rm("server");
@@ -192,19 +204,19 @@ async fn stream(url: &str, req: &Request<Body>) -> Result<Response<Body>, String
 			rm("Nel");
 			rm("Report-To");
 
-			res
+			res.into_hyper_response()
 		})
 		.map_err(|e| e.to_string())
 }
 
 /// Makes a GET request to Reddit at `path`. By default, this will honor HTTP
 /// 3xx codes Reddit returns and will automatically redirect.
-fn reddit_get(path: String, quarantine: bool) -> Boxed<Result<Response<Body>, String>> {
+fn reddit_get(path: String, quarantine: bool) -> Boxed<Result<WreqResponse, String>> {
 	request(&Method::GET, path, true, quarantine, REDDIT_URL_BASE, REDDIT_URL_BASE_HOST)
 }
 
 /// Makes a HEAD request to Reddit at `path, using the short URL base. This will not follow redirects.
-fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<Response<Body>, String>> {
+fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<WreqResponse, String>> {
 	request(&Method::HEAD, path, false, quarantine, base_path, host)
 }
 
@@ -217,18 +229,12 @@ fn reddit_short_head(path: String, quarantine: bool, base_path: &'static str, ho
 /// Makes a request to Reddit. If `redirect` is `true`, `request_with_redirect`
 /// will recurse on the URL that Reddit provides in the Location HTTP header
 /// in its response.
-fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<Response<Body>, String>> {
+fn request(method: &'static Method, path: String, redirect: bool, quarantine: bool, base_path: &'static str, host: &'static str) -> Boxed<Result<WreqResponse, String>> {
 	// Build Reddit URL from path.
 	let url = format!("{base_path}{path}");
 
-	// Construct the hyper client from the HTTPS connector.
-	let client: &LazyLock<Client<_, Body>> = &CLIENT;
-
-	// Build request to Reddit. When making a GET, request gzip compression.
-	// (Reddit doesn't do brotli yet.)
 	let mut headers: Vec<(String, String)> = vec![
 		("Host".into(), host.into()),
-		("Accept-Encoding".into(), if method == Method::GET { "gzip".into() } else { "identity".into() }),
 		(
 			"Cookie".into(),
 			if quarantine {
@@ -249,114 +255,64 @@ fn request(method: &'static Method, path: String, redirect: bool, quarantine: bo
 	// shuffle headers: https://github.com/redlib-org/redlib/issues/324
 	fastrand::shuffle(&mut headers);
 
-	let mut builder = Request::builder().method(method).uri(&url);
+	let mut builder = CLIENT.request(method.clone(), &url);
 
 	for (key, value) in headers {
 		builder = builder.header(key, value);
 	}
 
-	let builder = builder.body(Body::empty());
-
 	async move {
-		match builder {
-			Ok(req) => match client.request(req).await {
-				Ok(mut response) => {
-					// Reddit may respond with a 3xx. Decide whether or not to
-					// redirect based on caller params.
-					if response.status().is_redirection() {
-						if !redirect {
-							return Ok(response);
-						};
-						let location_header = response.headers().get(header::LOCATION);
-						if location_header == Some(&HeaderValue::from_static(ALTERNATIVE_REDDIT_URL_BASE)) {
-							return Err("Reddit response was invalid".to_string());
-						}
-						return request(
-							method,
-							location_header
-								.map(|val| {
-									// We need to make adjustments to the URI
-									// we get back from Reddit. Namely, we
-									// must:
-									//
-									//     1. Remove the authority (e.g.
-									//     https://www.reddit.com) that may be
-									//     present, so that we recurse on the
-									//     path (and query parameters) as
-									//     required.
-									//
-									//     2. Percent-encode the path.
-									let new_path = percent_encode(val.as_bytes(), CONTROLS)
-										.to_string()
-										.trim_start_matches(REDDIT_URL_BASE)
-										.trim_start_matches(ALTERNATIVE_REDDIT_URL_BASE)
-										.to_string();
-									format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
-								})
-								.unwrap_or_default()
-								.to_string(),
-							true,
-							quarantine,
-							base_path,
-							host,
-						)
-						.await;
+		match builder.send().await {
+			Ok(response) => {
+				// Reddit may respond with a 3xx. Decide whether or not to
+				// redirect based on caller params.
+				if response.status().is_redirection() {
+					if !redirect {
+						return Ok(response);
 					};
-
-					match response.headers().get(header::CONTENT_ENCODING) {
-						// Content not compressed.
-						None => Ok(response),
-
-						// Content encoded (hopefully with gzip).
-						Some(hdr) => {
-							match hdr.to_str() {
-								Ok(val) => match val {
-									"gzip" => {}
-									"identity" => return Ok(response),
-									_ => return Err("Reddit response was encoded with an unsupported compressor".to_string()),
-								},
-								Err(_) => return Err("Reddit response was invalid".to_string()),
-							}
-
-							// We get here if the body is gzip-compressed.
-
-							// The body must be something that implements
-							// std::io::Read, hence the conversion to
-							// bytes::buf::Buf and then transformation into a
-							// Reader.
-							let mut decompressed: Vec<u8>;
-							{
-								let mut aggregated_body = match body::aggregate(response.body_mut()).await {
-									Ok(b) => b.reader(),
-									Err(e) => return Err(e.to_string()),
-								};
-
-								let mut decoder = match gzip::Decoder::new(&mut aggregated_body) {
-									Ok(decoder) => decoder,
-									Err(e) => return Err(e.to_string()),
-								};
-
-								decompressed = Vec::<u8>::new();
-								if let Err(e) = io::copy(&mut decoder, &mut decompressed) {
-									return Err(e.to_string());
-								};
-							}
-
-							response.headers_mut().remove(header::CONTENT_ENCODING);
-							response.headers_mut().insert(header::CONTENT_LENGTH, decompressed.len().into());
-							*(response.body_mut()) = Body::from(decompressed);
-
-							Ok(response)
-						}
+					let location_header = response.headers().get(wreq::header::LOCATION);
+					if location_header.and_then(|h| h.to_str().ok()) == Some(ALTERNATIVE_REDDIT_URL_BASE) {
+						return Err("Reddit response was invalid".to_string());
 					}
-				}
-				Err(e) => {
-					dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
+					return request(
+						method,
+						location_header
+							.map(|val| {
+								// We need to make adjustments to the URI
+								// we get back from Reddit. Namely, we
+								// must:
+								//
+								//     1. Remove the authority (e.g.
+								//     https://www.reddit.com) that may be
+								//     present, so that we recurse on the
+								//     path (and query parameters) as
+								//     required.
+								//
+								//     2. Percent-encode the path.
+								let new_path = percent_encode(val.as_bytes(), CONTROLS)
+									.to_string()
+									.trim_start_matches(REDDIT_URL_BASE)
+									.trim_start_matches(ALTERNATIVE_REDDIT_URL_BASE)
+									.to_string();
+								format!("{new_path}{}raw_json=1", if new_path.contains('?') { "&" } else { "?" })
+							})
+							.unwrap_or_default()
+							.to_string(),
+						true,
+						quarantine,
+						base_path,
+						host,
+					)
+					.await;
+				};
 
-					Err(e.to_string())
-				}
-			},
-			Err(_) => Err("Post url contains non-ASCII characters".to_string()),
+				Ok(response)
+			}
+			Err(e) => {
+				dbg_msg!("{method} {REDDIT_URL_BASE}{path}: {}", e);
+
+				Err(e.to_string())
+			}
 		}
 	}
 	.boxed()
@@ -406,7 +362,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 			};
 
 			// asynchronously aggregate the chunks of the body
-			match hyper::body::aggregate(response).await {
+			match hyper::body::aggregate(response.into_hyper_response()).await {
 				Ok(body) => {
 					let has_remaining = body.has_remaining();
 
@@ -519,61 +475,92 @@ pub async fn rate_limit_check() -> Result<(), String> {
 	Ok(())
 }
 
-#[cfg(test)]
-use {crate::config::get_setting, sealed_test::prelude::*};
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_rate_limit_check() {
-	rate_limit_check().await.unwrap();
+trait IntoHyperResponse {
+	fn into_hyper_response(self) -> HyperResponse<Body>;
 }
 
-#[test]
-#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "rust")])]
-fn test_default_subscriptions() {
-	tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap().block_on(async {
-		let subscriptions = get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS");
-		assert!(subscriptions.is_some());
+impl IntoHyperResponse for WreqResponse {
+	fn into_hyper_response(self) -> HyperResponse<Body> {
+		let status = self.status();
+		let version = self.version();
 
-		// check rate limit
+		let mut builder = HyperResponse::builder().status(status.as_u16()).version(match version {
+			wreq::Version::HTTP_09 => hyper::Version::HTTP_09,
+			wreq::Version::HTTP_10 => hyper::Version::HTTP_10,
+			wreq::Version::HTTP_11 => hyper::Version::HTTP_11,
+			wreq::Version::HTTP_2 => hyper::Version::HTTP_2,
+			wreq::Version::HTTP_3 => hyper::Version::HTTP_3,
+			_ => hyper::Version::HTTP_11,
+		});
+
+		for (name, value) in self.headers() {
+			builder = builder.header(
+				header::HeaderName::from_bytes(name.as_str().as_bytes()).unwrap(),
+				header::HeaderValue::from_bytes(value.as_bytes()).unwrap(),
+			);
+		}
+
+		builder.body(Body::wrap_stream(self.bytes_stream())).unwrap()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use {crate::config::get_setting, sealed_test::prelude::*};
+
+	const POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_rate_limit_check() {
 		rate_limit_check().await.unwrap();
-	});
-}
+	}
 
-#[cfg(test)]
-const POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+	#[test]
+	#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "rust")])]
+	fn test_default_subscriptions() {
+		tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap().block_on(async {
+			let subscriptions = get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS");
+			assert!(subscriptions.is_some());
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_localization_popular() {
-	let val = json(POPULAR_URL.to_string(), false).await.unwrap();
-	assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());
-}
+			// check rate limit
+			rate_limit_check().await.unwrap();
+		});
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_obfuscated_share_link() {
-	let share_link = "/r/rust/s/kPgq8WNHRK".into();
-	// Correct link without share parameters
-	let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc/".into();
-	assert_eq!(canonical_path(share_link, 3).await, Ok(Some(canonical_link)));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_localization_popular() {
+		let val = json(POPULAR_URL.to_string(), false).await.unwrap();
+		assert_eq!("GLOBAL", val["data"]["geo_filter"].as_str().unwrap());
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_private_sub() {
-	let link = json("/r/suicide/about.json?raw_json=1".into(), true).await;
-	assert!(link.is_err());
-	assert_eq!(link, Err("private".into()));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_obfuscated_share_link() {
+		let share_link = "/r/rust/s/kPgq8WNHRK".into();
+		// Correct link without share parameters
+		let canonical_link = "/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/kfbqlbc/".into();
+		assert_eq!(canonical_path(share_link, 3).await, Ok(Some(canonical_link)));
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_banned_sub() {
-	let link = json("/r/aaa/about.json?raw_json=1".into(), true).await;
-	assert!(link.is_err());
-	assert_eq!(link, Err("banned".into()));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_private_sub() {
+		let link = json("/r/suicide/about.json?raw_json=1".into(), true).await;
+		assert!(link.is_err());
+		assert_eq!(link, Err("private".into()));
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_gated_sub() {
-	// quarantine to false to specifically catch when we _don't_ catch it
-	let link = json("/r/drugs/about.json?raw_json=1".into(), false).await;
-	assert!(link.is_err());
-	assert_eq!(link, Err("gated".into()));
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_banned_sub() {
+		let link = json("/r/aaa/about.json?raw_json=1".into(), true).await;
+		assert!(link.is_err());
+		assert_eq!(link, Err("banned".into()));
+	}
+
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_gated_sub() {
+		// quarantine to false to specifically catch when we _don't_ catch it
+		let link = json("/r/drugs/about.json?raw_json=1".into(), false).await;
+		assert!(link.is_err());
+		assert_eq!(link, Err("gated".into()));
+	}
 }

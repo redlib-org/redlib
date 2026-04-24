@@ -1,13 +1,11 @@
-use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
-
 use crate::{
 	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
 };
 use base64::{engine::general_purpose, Engine as _};
-use hyper::{client, Body, Method, Request};
 use log::{error, info, trace, warn};
 use serde_json::json;
+use std::{collections::HashMap, sync::atomic::Ordering, time::Duration};
 use tegen::tegen::TextGenerator;
 use tokio::time::{error::Elapsed, timeout};
 
@@ -88,7 +86,7 @@ impl Oauth {
 					error!(
 						"[⛔] Failed to create OAuth client: {}. Retrying in 5 seconds...",
 						match e {
-							AuthError::Hyper(error) => error.to_string(),
+							AuthError::Wreq(error) => error.to_string(),
 							AuthError::SerdeDeserialize(error) => error.to_string(),
 							AuthError::Field((value, error)) => format!("{error}\n{value}"),
 						}
@@ -142,14 +140,14 @@ impl Oauth {
 
 #[derive(Debug)]
 enum AuthError {
-	Hyper(hyper::Error),
+	Wreq(wreq::Error),
 	SerdeDeserialize(serde_json::Error),
 	Field((serde_json::Value, &'static str)),
 }
 
-impl From<hyper::Error> for AuthError {
-	fn from(err: hyper::Error) -> Self {
-		AuthError::Hyper(err)
+impl From<wreq::Error> for AuthError {
+	fn from(err: wreq::Error) -> Self {
+		AuthError::Wreq(err)
 	}
 }
 
@@ -222,7 +220,7 @@ impl OauthBackend for MobileSpoofAuth {
 	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
 		// Construct URL for OAuth token
 		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
-		let mut builder = Request::builder().method(Method::POST).uri(&url);
+		let mut builder = CLIENT.post(&url);
 
 		// Add headers from spoofed client
 		for (key, value) in &self.device.initial_headers {
@@ -239,16 +237,11 @@ impl OauthBackend for MobileSpoofAuth {
 		let json = json!({
 				"scopes": ["*","email", "pii"]
 		});
-		let body = Body::from(json.to_string());
 
-		// Build request
-		let request = builder.body(body).unwrap();
-
-		trace!("Sending token request...\n\n{request:?}");
+		trace!("Sending token request to {url}...");
 
 		// Send request
-		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
-		let resp = client.request(request).await?;
+		let resp = builder.json(&json).send().await?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
 		trace!("OAuth headers: {:#?}", resp.headers());
@@ -259,19 +252,20 @@ impl OauthBackend for MobileSpoofAuth {
 		// Not worried about the privacy implications, since this is randomly changed
 		// and really only as privacy-concerning as the OAuth token itself.
 		if let Some(header) = resp.headers().get("x-reddit-loid") {
-			self.additional_headers.insert("x-reddit-loid".to_owned(), header.to_str().unwrap().to_string());
+			let header_val: &wreq::header::HeaderValue = header;
+			self.additional_headers.insert("x-reddit-loid".to_owned(), header_val.to_str().unwrap().to_string());
 		}
 
 		// Same with x-reddit-session
 		if let Some(header) = resp.headers().get("x-reddit-session") {
-			self.additional_headers.insert("x-reddit-session".to_owned(), header.to_str().unwrap().to_string());
+			let header_val: &wreq::header::HeaderValue = header;
+			self.additional_headers.insert("x-reddit-session".to_owned(), header_val.to_str().unwrap().to_string());
 		}
 
 		trace!("Serializing response...");
 
 		// Serialize response
-		let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
-		let json: serde_json::Value = serde_json::from_slice(&body_bytes).map_err(AuthError::SerdeDeserialize)?;
+		let json: serde_json::Value = resp.json().await?;
 
 		trace!("Accessing relevant fields...");
 
@@ -341,7 +335,7 @@ impl OauthBackend for GenericWebAuth {
 	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
 		// Construct URL for OAuth token
 		let url = "https://www.reddit.com/api/v1/access_token";
-		let mut builder = Request::builder().method(Method::POST).uri(url);
+		let mut builder = CLIENT.post(url);
 
 		// Add minimal headers
 		builder = builder.header("Host", "www.reddit.com");
@@ -356,16 +350,11 @@ impl OauthBackend for GenericWebAuth {
 
 		// Set up form body
 		let body_str = format!("grant_type=https%3A%2F%2Foauth.reddit.com%2Fgrants%2Finstalled_client&device_id={}", self.device_id);
-		let body = Body::from(body_str);
 
-		// Build request
-		let request = builder.body(body).unwrap();
-
-		trace!("Sending GenericWebAuth token request...\n\n{request:?}");
+		trace!("Sending GenericWebAuth token request to {url}...");
 
 		// Send request
-		let client: &std::sync::LazyLock<client::Client<_, Body>> = &CLIENT;
-		let resp = client.request(request).await?;
+		let resp: wreq::Response = builder.body(body_str).send().await?;
 
 		trace!("Received response with status {} and length {:?}", resp.status(), resp.headers().get("content-length"));
 		trace!("GenericWebAuth headers: {:#?}", resp.headers());
@@ -376,19 +365,20 @@ impl OauthBackend for GenericWebAuth {
 		// Not worried about the privacy implications, since this is randomly changed
 		// and really only as privacy-concerning as the OAuth token itself.
 		if let Some(header) = resp.headers().get("x-reddit-loid") {
-			self.additional_headers.insert("x-reddit-loid".to_owned(), header.to_str().unwrap().to_string());
+			let header_val: &wreq::header::HeaderValue = header;
+			self.additional_headers.insert("x-reddit-loid".to_owned(), header_val.to_str().unwrap().to_string());
 		}
 
 		// Same with x-reddit-session
 		if let Some(header) = resp.headers().get("x-reddit-session") {
-			self.additional_headers.insert("x-reddit-session".to_owned(), header.to_str().unwrap().to_string());
+			let header_val: &wreq::header::HeaderValue = header;
+			self.additional_headers.insert("x-reddit-session".to_owned(), header_val.to_str().unwrap().to_string());
 		}
 
 		trace!("Serializing GenericWebAuth response...");
 
 		// Serialize response
-		let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
-		let json: serde_json::Value = serde_json::from_slice(&body_bytes).map_err(AuthError::SerdeDeserialize)?;
+		let json: serde_json::Value = resp.json().await?;
 
 		trace!("Accessing relevant fields...");
 
@@ -479,62 +469,67 @@ fn choose<T: Copy>(list: &[T]) -> T {
 	*fastrand::choose_multiple(list.iter(), 1)[0]
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_mobile_spoof_backend() {
-	// Test MobileSpoofAuth backend specifically
-	let mut backend = MobileSpoofAuth::new();
-	let response = backend.authenticate().await;
-	assert!(response.is_ok());
-	let response = response.unwrap();
-	assert!(!response.token.is_empty());
-	assert!(response.expires_in > 0);
-	assert!(!backend.user_agent().is_empty());
-	assert!(!backend.get_headers().is_empty());
-}
+#[cfg(test)]
+mod tests {
+	use super::*;
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_generic_web_backend() {
-	// Test GenericWebAuth backend specifically
-	let mut backend = GenericWebAuth::new();
-	let response = backend.authenticate().await;
-	assert!(response.is_ok());
-	let response = response.unwrap();
-	assert!(!response.token.is_empty());
-	assert!(response.expires_in > 0);
-	assert!(!backend.user_agent().is_empty());
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_mobile_spoof_backend() {
+		// Test MobileSpoofAuth backend specifically
+		let mut backend = MobileSpoofAuth::new();
+		let response = backend.authenticate().await;
+		assert!(response.is_ok());
+		let response = response.unwrap();
+		assert!(!response.token.is_empty());
+		assert!(response.expires_in > 0);
+		assert!(!backend.user_agent().is_empty());
+		assert!(!backend.get_headers().is_empty());
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_client() {
-	// Integration test - tests the overall Oauth client
-	assert!(OAUTH_CLIENT.load_full().headers_map.contains_key("Authorization"));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_generic_web_backend() {
+		// Test GenericWebAuth backend specifically
+		let mut backend = GenericWebAuth::new();
+		let response = backend.authenticate().await;
+		assert!(response.is_ok());
+		let response = response.unwrap();
+		assert!(!response.token.is_empty());
+		assert!(response.expires_in > 0);
+		assert!(!backend.user_agent().is_empty());
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_client_refresh() {
-	force_refresh_token().await;
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_client() {
+		// Integration test - tests the overall Oauth client
+		assert!(OAUTH_CLIENT.load_full().headers_map.contains_key("Authorization"));
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_token_exists() {
-	let client = OAUTH_CLIENT.load_full();
-	let auth_header = client.headers_map.get("Authorization").unwrap();
-	assert!(auth_header.starts_with("Bearer "));
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_client_refresh() {
+		force_refresh_token().await;
+	}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_oauth_headers_len() {
-	assert!(OAUTH_CLIENT.load_full().headers_map.len() >= 3);
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_token_exists() {
+		let client = OAUTH_CLIENT.load_full();
+		let auth_header = client.headers_map.get("Authorization").unwrap();
+		assert!(auth_header.starts_with("Bearer "));
+	}
 
-#[test]
-fn test_creating_device() {
-	Device::new();
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_oauth_headers_len() {
+		assert!(OAUTH_CLIENT.load_full().headers_map.len() >= 3);
+	}
 
-#[test]
-fn test_creating_backends() {
-	// Test that both backends can be created
-	MobileSpoofAuth::new();
-	GenericWebAuth::new();
+	#[test]
+	fn test_creating_device() {
+		Device::new();
+	}
+
+	#[test]
+	fn test_creating_backends() {
+		// Test that both backends can be created
+		MobileSpoofAuth::new();
+		GenericWebAuth::new();
+	}
 }

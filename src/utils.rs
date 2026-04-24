@@ -2,9 +2,6 @@
 #![allow(clippy::cmp_owned)]
 
 use crate::config::{self, get_setting};
-//
-// CRATES
-//
 use crate::{client::json, server::RequestExt};
 use askama::Template;
 use cookie::Cookie;
@@ -1454,7 +1451,7 @@ pub fn to_absolute_url(relative_path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-	use super::{format_num, format_url, rewrite_urls, Preferences};
+	use super::{deflate_compress, deflate_decompress, format_num, format_url, render_bullet_lists, rewrite_emotes, rewrite_urls, url_path_basename, Post, Preferences};
 
 	#[test]
 	fn format_num_works() {
@@ -1551,76 +1548,75 @@ mod tests {
 
 		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
 	}
-}
 
-#[test]
-fn test_rewriting_emoji() {
-	let input = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
-	let output = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="/static/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
-	assert_eq!(rewrite_urls(input), output);
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_fetching_subreddit_quarantined() {
-	let subreddit = Post::fetch("/r/drugs", true).await;
-	assert!(subreddit.is_ok());
-	assert!(!subreddit.unwrap().0.is_empty());
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_fetching_nsfw_subreddit() {
-	// Gonwild is a place for closed, Euclidean Geometric shapes to exchange their nth terms for karma; showing off their edges in a comfortable environment without pressure.
-	// Find a good sub that is tagged NSFW but that actually isn't in case my future employers are watching (they probably are)
-	// switched from randnsfw as it is no longer functional.
-	let subreddit = Post::fetch("/r/gonwild", false).await;
-	assert!(subreddit.is_ok());
-	assert!(!subreddit.unwrap().0.is_empty());
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_fetching_ws() {
-	let subreddit = Post::fetch("/r/popular", false).await;
-	assert!(subreddit.is_ok());
-	for post in subreddit.unwrap().0 {
-		assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
+	#[test]
+	fn test_rewriting_emoji() {
+		let input = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
+		let output = r#"<div class="md"><p>How can you have such hard feelings towards a license? <img src="/static/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif" width="20" height="20" style="vertical-align:middle"> Let people use what license they want, and BSD is one of the least restrictive ones AFAIK.</p>"#;
+		assert_eq!(rewrite_urls(input), output);
 	}
-}
 
-#[test]
-fn test_rewriting_image_links() {
-	let input =
-		r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
-	let output = r#"<figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure>"#;
-	assert_eq!(rewrite_urls(input), output);
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_fetching_subreddit_quarantined() {
+		let subreddit = Post::fetch("/r/drugs", true).await;
+		assert!(subreddit.is_ok());
+		assert!(!subreddit.unwrap().0.is_empty());
+	}
 
-#[test]
-fn test_url_path_basename() {
-	// without trailing slash
-	assert_eq!(url_path_basename("/first/last"), "last");
-	// with trailing slash
-	assert_eq!(url_path_basename("/first/last/"), "last");
-	// with query parameters
-	assert_eq!(url_path_basename("/first/last/?some=query"), "last");
-	// file path
-	assert_eq!(url_path_basename("/cdn/image.jpg"), "image.jpg");
-	// when a full url is passed instead of just a path
-	assert_eq!(url_path_basename("https://doma.in/first/last"), "last");
-	// empty path
-	assert_eq!(url_path_basename("/"), "");
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_fetching_nsfw_subreddit() {
+		// Gonwild is a place for closed, Euclidean Geometric shapes to exchange their nth terms for karma; showing off their edges in a comfortable environment without pressure.
+		// Find a good sub that is tagged NSFW but that actually isn't in case my future employers are watching (they probably are)
+		// switched from randnsfw as it is no longer functional.
+		let subreddit = Post::fetch("/r/gonwild", false).await;
+		assert!(subreddit.is_ok());
+		assert!(!subreddit.unwrap().0.is_empty());
+	}
 
-#[test]
-fn test_rewriting_emotes() {
-	let json_input = serde_json::from_str(r#"{"emote|t5_31hpy|2028":{"e":"Image","id":"emote|t5_31hpy|2028","m":"image/png","s":{"u":"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/t5_31hpy/PW6WsOaLcd.png","x":60,"y":60},"status":"valid","t":"sticker"}}"#).expect("Valid JSON");
-	let comment_input = r#"<div class="comment_body "><div class="md"><p>:2028:</p></div></div>"#;
-	let output = r#"<div class="comment_body "><div class="md"><p><img loading="lazy" src="/emote/t5_31hpy/PW6WsOaLcd.png" width="60" height="60" style="vertical-align:text-bottom"></p></div></div>"#;
-	assert_eq!(rewrite_emotes(&json_input, comment_input.to_string()), output);
-}
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_fetching_ws() {
+		let subreddit = Post::fetch("/r/popular", false).await;
+		assert!(subreddit.is_ok());
+		for post in subreddit.unwrap().0 {
+			assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
+		}
+	}
 
-#[test]
-fn test_rewriting_bullet_list() {
-	let input = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
+	#[test]
+	fn test_rewriting_image_links() {
+		let input =
+			r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
+		let output = r#"<figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure>"#;
+		assert_eq!(rewrite_urls(input), output);
+	}
+
+	#[test]
+	fn test_url_path_basename() {
+		// without trailing slash
+		assert_eq!(url_path_basename("/first/last"), "last");
+		// with trailing slash
+		assert_eq!(url_path_basename("/first/last/"), "last");
+		// with query parameters
+		assert_eq!(url_path_basename("/first/last/?some=query"), "last");
+		// file path
+		assert_eq!(url_path_basename("/cdn/image.jpg"), "image.jpg");
+		// when a full url is passed instead of just a path
+		assert_eq!(url_path_basename("https://doma.in/first/last"), "last");
+		// empty path
+		assert_eq!(url_path_basename("/"), "");
+	}
+
+	#[test]
+	fn test_rewriting_emotes() {
+		let json_input = serde_json::from_str(r#"{"emote|t5_31hpy|2028":{"e":"Image","id":"emote|t5_31hpy|2028","m":"image/png","s":{"u":"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/t5_31hpy/PW6WsOaLcd.png","x":60,"y":60},"status":"valid","t":"sticker"}}"#).expect("Valid JSON");
+		let comment_input = r#"<div class="comment_body "><div class="md"><p>:2028:</p></div></div>"#;
+		let output = r#"<div class="comment_body "><div class="md"><p><img loading="lazy" src="/emote/t5_31hpy/PW6WsOaLcd.png" width="60" height="60" style="vertical-align:text-bottom"></p></div></div>"#;
+		assert_eq!(rewrite_emotes(&json_input, comment_input.to_string()), output);
+	}
+
+	#[test]
+	fn test_rewriting_bullet_list() {
+		let input = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
 - Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)
 - Contrast 70 (which for me was the default one)
 - Picture mode Custom
@@ -1635,59 +1631,60 @@ fn test_rewriting_bullet_list() {
 - Color Temp Medium
 How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
 </div>"#;
-	let output = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
+		let output = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
 <ul><li>Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)</li><li>Contrast 70 (which for me was the default one)</li><li>Picture mode Custom</li><li>Super resolution + Off (it looks horrible anyway)</li><li>Sharpness 50 (default one I think)</li><li>Black level High (low messes up gray colors)</li><li>DFC Off</li><li>Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)</li><li>Freesync doesn&#39;t matter</li><li>Black stabilizer 50</li><li>Gamma setting on 0</li><li>Color Temp Medium</li></ul>
 How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
 </div>"#;
 
-	assert_eq!(render_bullet_lists(input), output);
-}
-
-#[test]
-fn test_default_prefs_serialization_loop_json() {
-	let prefs = Preferences::default();
-	let serialized = serde_json::to_string(&prefs).unwrap();
-	let deserialized: Preferences = serde_json::from_str(&serialized).unwrap();
-	assert_eq!(prefs, deserialized);
-}
-
-#[test]
-fn test_default_prefs_serialization_loop_bincode() {
-	let prefs = Preferences::default();
-	test_round_trip(&prefs, false);
-	test_round_trip(&prefs, true);
-}
-
-static KNOWN_GOOD_CONFIGS: &[&str] = &[
-	"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
-	"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
-	"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
-];
-
-#[test]
-fn test_known_good_configs_deserialization() {
-	for config in KNOWN_GOOD_CONFIGS {
-		let bytes = base2048::decode(config).unwrap();
-		let decompressed = deflate_decompress(bytes).unwrap();
-		assert!(bincode::deserialize::<Preferences>(&decompressed).is_ok());
+		assert_eq!(render_bullet_lists(input), output);
 	}
-}
 
-#[test]
-fn test_known_good_configs_full_round_trip() {
-	for config in KNOWN_GOOD_CONFIGS {
-		let bytes = base2048::decode(config).unwrap();
-		let decompressed = deflate_decompress(bytes).unwrap();
-		let prefs: Preferences = bincode::deserialize(&decompressed).unwrap();
+	#[test]
+	fn test_default_prefs_serialization_loop_json() {
+		let prefs = Preferences::default();
+		let serialized = serde_json::to_string(&prefs).unwrap();
+		let deserialized: Preferences = serde_json::from_str(&serialized).unwrap();
+		assert_eq!(prefs, deserialized);
+	}
+
+	#[test]
+	fn test_default_prefs_serialization_loop_bincode() {
+		let prefs = Preferences::default();
 		test_round_trip(&prefs, false);
 		test_round_trip(&prefs, true);
 	}
-}
 
-fn test_round_trip(input: &Preferences, compression: bool) {
-	let serialized = bincode::serialize(input).unwrap();
-	let compressed = if compression { deflate_compress(serialized).unwrap() } else { serialized };
-	let decompressed = if compression { deflate_decompress(compressed).unwrap() } else { compressed };
-	let deserialized: Preferences = bincode::deserialize(&decompressed).unwrap();
-	assert_eq!(*input, deserialized);
+	static KNOWN_GOOD_CONFIGS: &[&str] = &[
+		"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
+		"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
+		"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
+	];
+
+	#[test]
+	fn test_known_good_configs_deserialization() {
+		for config in KNOWN_GOOD_CONFIGS {
+			let bytes = base2048::decode(config).unwrap();
+			let decompressed = deflate_decompress(bytes).unwrap();
+			assert!(bincode::deserialize::<Preferences>(&decompressed).is_ok());
+		}
+	}
+
+	#[test]
+	fn test_known_good_configs_full_round_trip() {
+		for config in KNOWN_GOOD_CONFIGS {
+			let bytes = base2048::decode(config).unwrap();
+			let decompressed = deflate_decompress(bytes).unwrap();
+			let prefs: Preferences = bincode::deserialize(&decompressed).unwrap();
+			test_round_trip(&prefs, false);
+			test_round_trip(&prefs, true);
+		}
+	}
+
+	fn test_round_trip(input: &Preferences, compression: bool) {
+		let serialized = bincode::serialize(input).unwrap();
+		let compressed = if compression { deflate_compress(serialized).unwrap() } else { serialized };
+		let decompressed = if compression { deflate_decompress(compressed).unwrap() } else { compressed };
+		let deserialized: Preferences = bincode::deserialize(&decompressed).unwrap();
+		assert_eq!(*input, deserialized);
+	}
 }
