@@ -187,12 +187,25 @@
 			{% call external_reddit_link(post.permalink) %}
 
 			{% if post.media.download_name != "" %}
+			{% if post.media.url_audio != "" %}
+			<!-- Combined video + audio download (JS) / Video only fallback (no JS) -->
 			<li>
-				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}">
+				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}.mp4" class="combined_download"
+				   data-video="{{ post.media.url }}" data-audio="{{ post.media.url_audio }}" data-name="{{ post.media.download_name }}_combined.mp4">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download</span>
+				</a>
+				<noscript>(video only)</noscript>
+			</li>
+			{% else %}
+			<!-- Simple download -->
+			<li>
+				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}.mp4">
 					<span class="mobile_item">dl</span>
 					<span class="desktop_item">download</span>
 				</a>
 			</li>
+			{% endif %}
 			{% endif %}
 		</ul>
 		<p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>

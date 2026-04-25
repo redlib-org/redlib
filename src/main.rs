@@ -88,6 +88,17 @@ async fn resource(body: &str, content_type: &str, cache: bool) -> Result<Respons
 
 	Ok(res)
 }
+fn resource_bytes(content: &'static [u8], mime: &'static str, _shared: bool) -> Response<Body> {
+    Response::builder()
+        .header("Content-Type", mime)
+        // Ensure these match your existing 'resource' function's security headers
+        .header("Content-Security-Policy", "default-src 'none'; font-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src 'self' blob:;")
+        .header("Cross-Origin-Embedder-Policy", "require-corp")
+        .header("Cross-Origin-Opener-Policy", "same-origin")
+        .status(200)
+        .body(Body::from(content))
+        .unwrap()
+}
 
 async fn style() -> Result<Response<Body>, String> {
 	let mut res = include_str!("../static/style.css").to_string();
@@ -209,7 +220,9 @@ async fn main() {
 		"Referrer-Policy" => "no-referrer",
 		"X-Content-Type-Options" => "nosniff",
 		"X-Frame-Options" => "DENY",
-		"Content-Security-Policy" => "default-src 'none'; font-src 'self'; script-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src blob:;"
+		"Content-Security-Policy" => "default-src 'none'; font-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; manifest-src 'self'; media-src 'self' data: blob: about:; style-src 'self' 'unsafe-inline'; base-uri 'none'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; connect-src 'self'; worker-src 'self' blob:;",
+		"Cross-Origin-Embedder-Policy" => "require-corp",
+		"Cross-Origin-Opener-Policy" => "same-origin"
 	};
 
 	if let Some(expire_time) = hsts {
@@ -257,13 +270,35 @@ async fn main() {
 		.at("/check_update.js")
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
+	app
+		.at("/downloadCombinedVideo.js")
+		.get(|_| resource(include_str!("../static/downloadCombinedVideo.js"), "text/javascript", false).boxed());
 
+
+	app.at("/static/ffmpeg/ffmpeg.min.js")
+		.get(|_| resource(include_str!("../static/ffmpeg/ffmpeg.min.js"), "text/javascript", false).boxed());
+	app.at("/static/ffmpeg/ffmpeg-util.min.js")
+		.get(|_| resource(include_str!("../static/ffmpeg/ffmpeg-util.min.js"), "text/javascript", false).boxed());
+	app.at("/static/ffmpeg/ffmpeg-core.js")
+		.get(|_| resource(include_str!("../static/ffmpeg/ffmpeg-core.js"), "text/javascript", false).boxed());
+	app.at("/static/ffmpeg/ffmpeg-core.wasm")
+		.get(|_| async { 
+			// Wrap the response in Ok()
+			Ok(resource_bytes(include_bytes!("../static/ffmpeg/ffmpeg-core.wasm"), "application/wasm", false))
+		}.boxed());
+	app.at("/static/ffmpeg/814.ffmpeg.js")
+		.get(|_| resource(include_str!("../static/ffmpeg/814.ffmpeg.js"), "text/javascript", false).boxed());
+	
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
 	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
 
 	// Proxy media through Redlib
-	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
+	app.at("/vid/:id/dash/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
+	app.at("/vid/:id/cmaf/:size").get(|r| proxy(r, "https://v.redd.it/{id}/CMAF_{size}").boxed());
+	app.at("/vid/:id/dash/audio/:bitrate").get(|r| proxy(r, "https://v.redd.it/{id}/AUDIO_{bitrate}").boxed());
+	app.at("/vid/:id/cmaf/audio/:bitrate").get(|r| proxy(r, "https://v.redd.it/{id}/CMAF_AUDIO_{bitrate}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
+	app.at("/audio/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
 	app.at("/img/*path").get(|r| proxy(r, "https://i.redd.it/{path}").boxed());
 	app.at("/thumb/:point/:id").get(|r| proxy(r, "https://{point}.thumbs.redditmedia.com/{id}").boxed());
 	app.at("/emoji/:id/:name").get(|r| proxy(r, "https://emoji.redditmedia.com/{id}/{name}").boxed());
