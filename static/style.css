@@ -223,8 +223,8 @@ nav #redlib {
     vertical-align: -2px;
 }
 
-figcaption {
-    margin-top: 5px;
+figcaption p {
+    margin: 5px 0;
     text-align: center;
 }
 
@@ -1120,6 +1120,13 @@ a.search_subreddit:hover {
     overflow: hidden;
 }
 
+.post_media_content:not(:has(.post_media_video)),
+.post_media_video,
+.gallery {
+    border: var(--panel-border);
+    border-radius: 5px;
+}
+
 .post_media_video {
     min-width: 100px;
     max-width: 100px;
@@ -1177,9 +1184,107 @@ a.search_subreddit:hover {
     vertical-align: bottom;
 }
 
+.gallery {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: none;
+    background: var(--background);
+    transition: background 0.2s;
+}
+
+.post:hover .gallery {
+    background: var(--post);
+}
+
+.gallery figure {
+    flex: 1 0 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    margin: 0;
+}
+
+.gallery_overlay {
+    flex: 1 0 100%;
+    height: 100%;
+    position: sticky;
+    left: 0;
+    margin-left: -100%;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.2s;
+}
+
+.gallery:focus-within .gallery_overlay {
+    opacity: 0;
+}
+
+.gallery:not(:focus-within) .gallery_overlay * {
+    pointer-events: auto;
+}
+
+.gallery_length {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 10px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 5px;
+}
+
+@supports not (animation-timeline: scroll()) {
+    .gallery_progress {
+        display: none;
+    }
+}
+
+.gallery_progress {
+    position: absolute;
+    bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 10px solid transparent;
+    border-radius: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.gallery_dot,
+.gallery_dot_indicator {
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+    border: 1px solid var(--text);
+    border-radius: 50%;
+}
+
+.gallery_dot_indicator {
+    background: var(--text);
+    position: absolute;
+    animation-name: galleryDotIndicatorScroll;
+    animation-timeline: scroll(inline nearest);
+    animation-timing-function: linear;
+}
+
+@keyframes galleryDotIndicatorScroll {
+    from {
+        left: 0;
+    }
+
+    to {
+        left: 100%;
+        transform: translateX(-100%);
+    }
+}
+
 .gallery img {
+    display: block;
+    margin: auto;
     max-width: 100%;
-    vertical-align: bottom;
+    border-radius: 5px;
 }
 
 .gallery .outbound_url {
