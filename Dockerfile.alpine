@@ -1,12 +1,12 @@
 # supported versions here: https://hub.docker.com/_/rust
-ARG ALPINE_VERSION=3.20
+ARG ALPINE_VERSION=3.22
 
 ########################
 ## builder image
 ########################
 FROM rust:alpine${ALPINE_VERSION} AS builder
 
-RUN apk add --no-cache musl-dev
+RUN apk add --no-cache musl-dev perl make git
 
 WORKDIR /redlib
 
@@ -26,6 +26,9 @@ RUN echo "finished building redlib!"
 ########################
 FROM alpine:${ALPINE_VERSION} AS release
 
+# Install runtime dependencies for OpenSSL
+RUN apk add --no-cache ca-certificates
+
 # Import redlib binary from builder
 COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
 
@@ -37,7 +40,7 @@ USER redlib
 EXPOSE 8080
 
 # Run a healthcheck every minute to make sure redlib is functional
-HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
+HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider -q http://localhost:8080/settings || exit 1
 
 # Add container metadata
 LABEL org.opencontainers.image.authors="sigaloid"

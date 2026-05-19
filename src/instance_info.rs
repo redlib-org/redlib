@@ -3,17 +3,17 @@ use crate::{
 	server::RequestExt,
 	utils::{ErrorTemplate, Preferences},
 };
+use askama::Template;
 use build_html::{Container, Html, HtmlContainer, Table};
 use hyper::{http::Error, Body, Request, Response};
-use once_cell::sync::Lazy;
-use rinja::Template;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 use time::OffsetDateTime;
 
-// This is the local static that is intialized at runtime (technically at
-// the first request to the info endpoint) and contains the data
-// retrieved from the info endpoint.
-pub static INSTANCE_INFO: Lazy<InstanceInfo> = Lazy::new(InstanceInfo::new);
+/// This is the local static that is initialized at runtime (technically at
+/// the first request to the info endpoint) and contains the data
+/// retrieved from the info endpoint.
+pub static INSTANCE_INFO: LazyLock<InstanceInfo> = LazyLock::new(InstanceInfo::new);
 
 /// Handles instance info endpoint
 pub async fn instance_info(req: Request<Body>) -> Result<Response<Body>, String> {

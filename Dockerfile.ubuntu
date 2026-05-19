@@ -7,6 +7,8 @@ ARG UBUNTU_RELEASE_VERSION=noble
 ########################
 FROM rust:${RUST_BUILDER_VERSION} AS builder
 
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /redlib
 
 # download (most) dependencies in their own layer
@@ -43,7 +45,7 @@ USER redlib
 EXPOSE 8080
 
 # Run a healthcheck every minute to make sure redlib is functional
-HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider --q http://localhost:8080/settings || exit 1
+HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider -q http://localhost:8080/settings || exit 1
 
 # Add container metadata
 LABEL org.opencontainers.image.authors="sigaloid"

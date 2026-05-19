@@ -6,14 +6,13 @@ use crate::config::{self, get_setting};
 // CRATES
 //
 use crate::{client::json, server::RequestExt};
+use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use revision::revisioned;
-use rinja::Template;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -23,6 +22,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
+use std::sync::LazyLock;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -51,7 +51,7 @@ pub enum ResourceType {
 	Post,
 }
 
-// Post flair with content, background color and foreground color
+/// Post flair with content, background color and foreground color
 #[derive(Serialize)]
 pub struct Flair {
 	pub flair_parts: Vec<FlairPart>,
@@ -60,7 +60,7 @@ pub struct Flair {
 	pub foreground_color: String,
 }
 
-// Part of flair, either emoji or text
+/// Part of flair, either emoji or text
 #[derive(Clone, Serialize)]
 pub struct FlairPart {
 	pub flair_part_type: String,
@@ -167,7 +167,7 @@ impl PollOption {
 	}
 }
 
-// Post flags with nsfw and stickied
+/// Post flags with NSFW and stickied
 #[derive(Serialize)]
 pub struct Flags {
 	pub spoiler: bool,
@@ -323,7 +323,7 @@ impl GalleryMedia {
 	}
 }
 
-// Post containing content, metadata and media
+/// Post containing content, metadata and media
 #[derive(Serialize)]
 pub struct Post {
 	pub id: String,
@@ -355,7 +355,7 @@ pub struct Post {
 }
 
 impl Post {
-	// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
+	/// Fetch posts of a user or subreddit and return a vector of posts and the "after" value
 	pub async fn fetch(path: &str, quarantine: bool) -> Result<(Vec<Self>, String), String> {
 		// Send a request to the url
 		let res = match json(path.to_string(), quarantine).await {
@@ -468,7 +468,7 @@ impl Post {
 
 #[derive(Template)]
 #[template(path = "comment.html")]
-// Comment with content, post, score and data/time that it was posted
+/// Comment with content, post, score and data/time that it was posted
 pub struct Comment {
 	pub id: String,
 	pub kind: String,
@@ -522,8 +522,8 @@ impl std::fmt::Display for Awards {
 	}
 }
 
-// Convert Reddit awards JSON to Awards struct
 impl Awards {
+	/// Convert Reddit awards JSON to Awards struct
 	pub fn parse(items: &Value) -> Self {
 		let parsed = items.as_array().unwrap_or(&Vec::new()).iter().fold(Vec::new(), |mut awards, item| {
 			let name = item["name"].as_str().unwrap_or_default().to_string();
@@ -583,7 +583,7 @@ pub struct NSFWLandingTemplate {
 }
 
 #[derive(Default)]
-// User struct containing metadata about user
+/// User struct containing metadata about user
 pub struct User {
 	pub name: String,
 	pub title: String,
@@ -596,7 +596,7 @@ pub struct User {
 }
 
 #[derive(Default)]
-// Subreddit struct containing metadata about community
+/// Subreddit struct containing metadata about community
 pub struct Subreddit {
 	pub name: String,
 	pub title: String,
@@ -610,7 +610,7 @@ pub struct Subreddit {
 	pub nsfw: bool,
 }
 
-// Parser for query params, used in sorting (eg. /r/rust/?sort=hot)
+/// Parser for query params, used in sorting (eg. /r/rust/?sort=hot)
 #[derive(serde::Deserialize)]
 pub struct Params {
 	pub t: Option<String>,
@@ -696,7 +696,7 @@ where
 pub struct ThemeAssets;
 
 impl Preferences {
-	// Build preferences from cookies
+	/// Build preferences from cookies
 	pub fn new(req: &Request<Body>) -> Self {
 		// Read available theme names from embedded css files.
 		// Always make the default "system" theme available.
@@ -895,7 +895,7 @@ pub async fn parse_post(post: &Value) -> Post {
 // FORMATTING
 //
 
-// Grab a query parameter from a url
+/// Grab a query parameter from a url
 pub fn param(path: &str, value: &str) -> Option<String> {
 	Some(
 		Url::parse(format!("https://libredd.it/{path}").as_str())
@@ -908,7 +908,7 @@ pub fn param(path: &str, value: &str) -> Option<String> {
 	)
 }
 
-// Retrieve the value of a setting by name
+/// Retrieve the value of a setting by name
 pub fn setting(req: &Request<Body>, name: &str) -> String {
 	// Parse a cookie value from request
 
@@ -979,7 +979,7 @@ pub fn setting(req: &Request<Body>, name: &str) -> String {
 	}
 }
 
-// Retrieve the value of a setting by name or the default value
+/// Retrieve the value of a setting by name or the default value
 pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> String {
 	let value = setting(req, name);
 	if value.is_empty() {
@@ -989,7 +989,7 @@ pub fn setting_or_default(req: &Request<Body>, name: &str, default: String) -> S
 	}
 }
 
-// Detect and redirect in the event of a random subreddit
+/// Detect and redirect in the event of a random subreddit
 pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>, String> {
 	if sub == "random" || sub == "randnsfw" {
 		Ok(redirect(&format!(
@@ -1003,22 +1003,22 @@ pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>,
 	}
 }
 
-static REGEX_URL_WWW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://www\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_OLD: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_NP: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_PLAIN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
-static REGEX_URL_VIDEOS_HLS: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
-static REGEX_URL_IMAGES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
-static REGEX_URL_THUMBS_A: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_THUMBS_B: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_EMOJI: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://emoji\.redditmedia\.com/(.*)/(.*)").unwrap());
-static REGEX_URL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_EXTERNAL_PREVIEW: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_STYLES: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_STATIC_MEDIA: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
+static REGEX_URL_WWW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_OLD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_NP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
+static REGEX_URL_PLAIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
+static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
+static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
+static REGEX_URL_IMAGES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
+static REGEX_URL_THUMBS_A: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_THUMBS_B: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_EMOJI: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://emoji\.redditmedia\.com/(.*)/(.*)").unwrap());
+static REGEX_URL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://preview\.redd\.it/(.*)").unwrap());
+static REGEX_URL_EXTERNAL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
+static REGEX_URL_STYLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
+static REGEX_URL_STATIC_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
 
-// Direct urls to proxy if proxy is enabled
+/// Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
 	if url.is_empty() || url == "self" || url == "default" || url == "nsfw" || url == "spoiler" {
 		String::new()
@@ -1075,8 +1075,8 @@ pub fn format_url(url: &str) -> String {
 	}
 }
 
-static REGEX_BULLET: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
-static REGEX_BULLET_CONSECUTIVE_LINES: Lazy<Regex> = Lazy::new(|| Regex::new(r"</ul>\n<ul>").unwrap());
+static REGEX_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
+static REGEX_BULLET_CONSECUTIVE_LINES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"</ul>\n<ul>").unwrap());
 
 pub fn render_bullet_lists(input_text: &str) -> String {
 	// ref: https://stackoverflow.com/a/4902622
@@ -1087,13 +1087,13 @@ pub fn render_bullet_lists(input_text: &str) -> String {
 }
 
 // These are links we want to replace in-body
-static REDDIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)").unwrap());
-static REDDIT_EMOJI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
-static REDLIB_PREVIEW_TEXT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r">(.*?)</a>").unwrap());
+static REDDIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
+static REDDIT_PREVIEW_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)").unwrap());
+static REDDIT_EMOJI_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
+static REDLIB_PREVIEW_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
+static REDLIB_PREVIEW_TEXT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
-// Rewrite Reddit links to Redlib in body of text
+/// Rewrite Reddit links to Redlib in body of text
 pub fn rewrite_urls(input_text: &str) -> String {
 	let mut text1 =
 		// Rewrite Reddit links to Redlib
@@ -1162,10 +1162,10 @@ pub fn rewrite_urls(input_text: &str) -> String {
 }
 
 // These links all follow a pattern of "https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/SUBREDDIT_ID/RANDOM_FILENAME.png"
-static REDDIT_EMOTE_LINK_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/(.*)"#).unwrap());
+static REDDIT_EMOTE_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/(.*)"#).unwrap());
 
 // These all follow a pattern of '"emote|SUBREDDIT_IT|NUMBER"', we want the number
-static REDDIT_EMOTE_ID_NUMBER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#""emote\|.*\|(.*)""#).unwrap());
+static REDDIT_EMOTE_ID_NUMBER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""emote\|.*\|(.*)""#).unwrap());
 
 pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	/* Create the paths we'll use to look for our data inside the json.
@@ -1242,9 +1242,9 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	rewrite_urls(&comment)
 }
 
-// Format vote count to a string that will be displayed.
-// Append `m` and `k` for millions and thousands respectively, and
-// round to the nearest tenth.
+/// Format vote count to a string that will be displayed.
+/// Append `m` and `k` for millions and thousands respectively, and
+/// round to the nearest tenth.
 pub fn format_num(num: i64) -> (String, String) {
 	let truncated = if num >= 1_000_000 || num <= -1_000_000 {
 		format!("{:.1}m", num as f64 / 1_000_000.0)
@@ -1257,7 +1257,7 @@ pub fn format_num(num: i64) -> (String, String) {
 	(truncated, num.to_string())
 }
 
-// Parse a relative and absolute time from a UNIX timestamp
+/// Parse a relative and absolute time from a UNIX timestamp
 pub fn time(created: f64) -> (String, String) {
 	let time = OffsetDateTime::from_unix_timestamp(created.round() as i64).unwrap_or(OffsetDateTime::UNIX_EPOCH);
 	let now = OffsetDateTime::now_utc();
@@ -1293,7 +1293,7 @@ pub fn time(created: f64) -> (String, String) {
 	)
 }
 
-// val() function used to parse JSON from Reddit APIs
+/// val() function used to parse JSON from Reddit APIs
 pub fn val(j: &Value, k: &str) -> String {
 	j["data"][k].as_str().unwrap_or_default().to_string()
 }
@@ -1384,15 +1384,9 @@ pub fn disable_indexing() -> bool {
 	}
 }
 
-// Determines if a request shoud redirect to a nsfw landing gate.
-pub fn should_be_nsfw_gated(req: &Request<Body>, req_url: &str) -> bool {
-	let sfw_instance = sfw_only();
-	let gate_nsfw = (setting(req, "show_nsfw") != "on") || sfw_instance;
-
-	// Nsfw landing gate should not be bypassed on a sfw only instance,
-	let bypass_gate = !sfw_instance && req_url.contains("&bypass_nsfw_landing");
-
-	gate_nsfw && !bypass_gate
+/// Determines if a request should redirect to a NSFW landing gate.
+pub fn should_be_nsfw_gated(req: &Request<Body>, _req_url: &str) -> bool {
+	(setting(req, "show_nsfw") != "on") || sfw_only()
 }
 
 /// Renders the landing page for NSFW content when the user has not enabled
@@ -1425,21 +1419,21 @@ pub async fn nsfw_landing(req: Request<Body>, req_url: String) -> Result<Respons
 	Ok(Response::builder().status(403).header("content-type", "text/html").body(body.into()).unwrap_or_default())
 }
 
-// Returns the last (non-empty) segment of a path string
+/// Returns the last (non-empty) segment of a path string
 pub fn url_path_basename(path: &str) -> String {
 	let url_result = Url::parse(format!("https://libredd.it/{path}").as_str());
 
-	if url_result.is_err() {
-		path.to_string()
-	} else {
-		let mut url = url_result.unwrap();
-		url.path_segments_mut().unwrap().pop_if_empty();
+	match url_result {
+		Ok(mut url) => {
+			url.path_segments_mut().unwrap().pop_if_empty();
 
-		url.path_segments().unwrap().next_back().unwrap().to_string()
+			url.path_segments().unwrap().next_back().unwrap().to_string()
+		}
+		Err(_) => path.to_string(),
 	}
 }
 
-// Returns the URL of a post, as needed by RSS feeds
+/// Returns the URL of a post, as needed by RSS feeds
 pub fn get_post_url(post: &Post) -> String {
 	if let Some(out_url) = &post.out_url {
 		// Handle cross post
@@ -1628,16 +1622,16 @@ fn test_rewriting_bullet_list() {
 - Super resolution + Off (it looks horrible anyway)
 - Sharpness 50 (default one I think)
 - Black level High (low messes up gray colors)
-- DFC Off 
+- DFC Off
 - Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)
 - Freesync doesn&#39;t matter
 - Black stabilizer 50
-- Gamma setting on 0 
+- Gamma setting on 0
 - Color Temp Medium
 How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
 </div>"#;
 	let output = r#"<div class="md"><p>Hi, I&#39;ve bought this very same monitor and found no calibration whatsoever. I have an ICC profile that has been set up since I&#39;ve installed its driver from the LG website and it works ok. I also used <a href="http://www.lagom.nl/lcd-test/">http://www.lagom.nl/lcd-test/</a> to calibrate it. After some good tinkering I&#39;ve found the following settings + the color profile from the driver gets me past all the tests perfectly:
-<ul><li>Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)</li><li>Contrast 70 (which for me was the default one)</li><li>Picture mode Custom</li><li>Super resolution + Off (it looks horrible anyway)</li><li>Sharpness 50 (default one I think)</li><li>Black level High (low messes up gray colors)</li><li>DFC Off </li><li>Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)</li><li>Freesync doesn&#39;t matter</li><li>Black stabilizer 50</li><li>Gamma setting on 0 </li><li>Color Temp Medium</li></ul>
+<ul><li>Brightness 50 (still have to settle on this one, it&#39;s personal preference, it controls the backlight, not the colors)</li><li>Contrast 70 (which for me was the default one)</li><li>Picture mode Custom</li><li>Super resolution + Off (it looks horrible anyway)</li><li>Sharpness 50 (default one I think)</li><li>Black level High (low messes up gray colors)</li><li>DFC Off</li><li>Response Time Middle (personal preference, <a href="https://www.blurbusters.com/">https://www.blurbusters.com/</a> show horrible overdrive with it on high)</li><li>Freesync doesn&#39;t matter</li><li>Black stabilizer 50</li><li>Gamma setting on 0</li><li>Color Temp Medium</li></ul>
 How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or the panel is pretty good, 0 bleed for me, just the usual IPS glow. How about the pixels? I see the pixels even at one meter away, especially on Microsoft Edge&#39;s icon for example, the blue background is just blocky, don&#39;t know why.</p>
 </div>"#;
 

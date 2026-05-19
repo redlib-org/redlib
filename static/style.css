@@ -1853,6 +1853,14 @@ table {
     border-spacing: 0;
 }
 
+th {
+    white-space: nowrap;
+}
+
+td {
+    word-wrap: break-word;
+}
+
 td,
 th {
     padding: 10px;

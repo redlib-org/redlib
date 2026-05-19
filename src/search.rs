@@ -7,10 +7,10 @@ use crate::{
 	server::RequestExt,
 	subreddit::{can_access_quarantine, quarantine},
 };
+use askama::Template;
 use hyper::{Body, Request, Response};
-use once_cell::sync::Lazy;
 use regex::Regex;
-use rinja::Template;
+use std::sync::LazyLock;
 
 // STRUCTS
 struct SearchParams {
@@ -51,8 +51,8 @@ struct SearchTemplate {
 	no_posts: bool,
 }
 
-// Regex matched against search queries to determine if they are reddit urls.
-static REDDIT_URL_MATCH: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://([^\./]+\.)*reddit.com/").unwrap());
+/// Regex matched against search queries to determine if they are reddit urls.
+static REDDIT_URL_MATCH: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^https?://([^\./]+\.)*reddit.com/").unwrap());
 
 // SERVICES
 pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
