@@ -40,7 +40,7 @@
    - [Binary](#binary)
      - [Running as a systemd service](#running-as-a-systemd-service)
    - [Building from source](#building-from-source)
-   - [Replit/Heroku/Glitch](#replit-heroku-glitch)
+   - [Replit/Heroku](#replit-heroku)
    - [launchd (macOS)](#launchd-macos)
 6. [Configuration](#configuration)
    - [Instance settings](#instance-settings)

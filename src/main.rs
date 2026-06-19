@@ -81,9 +81,9 @@ async fn resource(body: &str, content_type: &str, cache: bool) -> Result<Respons
 		.unwrap_or_default();
 
 	if cache {
-		if let Ok(val) = HeaderValue::from_str("public, max-age=1209600, s-maxage=86400") {
-			res.headers_mut().insert("Cache-Control", val);
-		}
+		res
+			.headers_mut()
+			.insert("Cache-Control", HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"));
 	}
 
 	Ok(res)
@@ -257,12 +257,16 @@ async fn main() {
 		.at("/check_update.js")
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
+	app
+		.at("/static/keyboardcommands.js")
+		.get(|_| resource(include_str!("../static/keyboardcommands.js"), "text/javascript", false).boxed());
 
-	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
-	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
+	app.at("/commits.atom").get(|_| async move { Ok(proxy_commit_info().await.unwrap()) }.boxed()); // TODO: see below
+	app.at("/instances.json").get(|_| async move { Ok(proxy_instances().await.unwrap()) }.boxed()); // TODO: In the process of migrating error handling. (I recommend thiserror crate for dynamic errors.) No proper error handling yes, so functionality unimpacted.
 
 	// Proxy media through Redlib
-	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
+	app.at("/vid/:id/dash/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
+	app.at("/vid/:id/cmaf/:size").get(|r| proxy(r, "https://v.redd.it/{id}/CMAF_{size}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
 	app.at("/img/*path").get(|r| proxy(r, "https://i.redd.it/{path}").boxed());
 	app.at("/thumb/:point/:id").get(|r| proxy(r, "https://{point}.thumbs.redditmedia.com/{id}").boxed());
@@ -276,6 +280,9 @@ async fn main() {
 	app.at("/preview/:loc/:id").get(|r| proxy(r, "https://{loc}view.redd.it/{id}").boxed());
 	app.at("/style/*path").get(|r| proxy(r, "https://styles.redditmedia.com/{path}").boxed());
 	app.at("/static/*path").get(|r| proxy(r, "https://www.redditstatic.com/{path}").boxed());
+	
+	// RedGifs proxy with lazy loading
+	app.at("/redgifs/*path").get(|req| redlib::redgifs::handler(req).boxed());
 
 	// Browse user profile
 	app
@@ -419,12 +426,12 @@ async fn main() {
 	}
 }
 
-pub async fn proxy_commit_info() -> Result<Response<Body>, String> {
+pub async fn proxy_commit_info() -> Result<Response<Body>, hyper::Error> {
 	Ok(
 		Response::builder()
 			.status(200)
 			.header("content-type", "application/atom+xml")
-			.body(Body::from(fetch_commit_info().await))
+			.body(Body::from(fetch_commit_info().await?))
 			.unwrap_or_default(),
 	)
 }
@@ -436,12 +443,12 @@ async fn fetch_commit_info() -> String {
 	CLIENT.get(url).send().await.expect("Failed to request GitHub").text().await.expect("Failed to read body")
 }
 
-pub async fn proxy_instances() -> Result<Response<Body>, String> {
+pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 	Ok(
 		Response::builder()
 			.status(200)
 			.header("content-type", "application/json")
-			.body(Body::from(fetch_instances().await))
+			.body(Body::from(fetch_instances().await?)) // Could fail if no internet
 			.unwrap_or_default(),
 	)
 }

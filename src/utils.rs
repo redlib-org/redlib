@@ -10,6 +10,7 @@ use libflate::deflate::{Decoder, Encoder};
 use log::error;
 use regex::Regex;
 use revision::revisioned;
+use crate::redgifs;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -191,8 +192,11 @@ impl Media {
 		let secure_media = &data["secure_media"]["reddit_video"];
 		let crosspost_parent_media = &data["crosspost_parent_list"][0]["secure_media"]["reddit_video"];
 
-		// If post is a video, return the video
-		let (post_type, url_val, alt_url_val) = if data_preview["fallback_url"].is_string() {
+		// Check RedGifs FIRST before Reddit's cached fallback videos, then other video sources
+		let domain = data["domain"].as_str().unwrap_or_default();
+		let (post_type, url_val, alt_url_val) = if redgifs::is_redgifs_domain(domain) {
+			("video", &data["url"], None)
+		} else if data_preview["fallback_url"].is_string() {
 			(
 				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&data_preview["fallback_url"],
@@ -1004,7 +1008,7 @@ static REGEX_URL_WWW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://w
 static REGEX_URL_OLD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_NP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_PLAIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
+static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/(DASH|CMAF)_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
 static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
 static REGEX_URL_IMAGES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
 static REGEX_URL_THUMBS_A: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
@@ -1014,6 +1018,7 @@ static REGEX_URL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?
 static REGEX_URL_EXTERNAL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
 static REGEX_URL_STYLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
 static REGEX_URL_STATIC_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
+static REGEX_URL_REDGIFS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(?:www\.|v\d+\.)?redgifs\.com/watch/([^?#]*)").unwrap());
 
 /// Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
@@ -1027,6 +1032,7 @@ pub fn format_url(url: &str) -> String {
 				regex.captures(url).map_or(String::new(), |caps| match segments {
 					1 => [format, &caps[1]].join(""),
 					2 => [format, &caps[1], "/", &caps[2]].join(""),
+					3 => [format, &caps[1], "/", &caps[2].to_lowercase().as_str(), "/", &caps[3]].join(""),
 					_ => String::new(),
 				})
 			};
@@ -1057,7 +1063,7 @@ pub fn format_url(url: &str) -> String {
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 3), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
 				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
@@ -1066,6 +1072,9 @@ pub fn format_url(url: &str) -> String {
 				"external-preview.redd.it" => capture(&REGEX_URL_EXTERNAL_PREVIEW, "/preview/external-pre/", 1),
 				"styles.redditmedia.com" => capture(&REGEX_URL_STYLES, "/style/", 1),
 				"www.redditstatic.com" => capture(&REGEX_URL_STATIC_MEDIA, "/static/", 1),
+				"www.redgifs.com" => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
+				"redgifs.com" => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
+				d if d.starts_with("v") && d.ends_with(".redgifs.com") => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
 				_ => url.to_string(),
 			}
 		})
@@ -1108,6 +1117,10 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Remove (html-encoded) "\" from URLs.
 	text1 = text1.replace("%5C", "").replace("\\_", "_");
+
+	/* Remove paragraphs that only contain zero width spaces.
+	Reddit ignores these in their formatting so we want to remove them so they don't mess with ours. */
+	text1 = text1.replace("<p>&#8203;</p>", "").replace("<p>&#x200B;</p>", "");
 
 	// Rewrite external media previews to Redlib
 	loop {
@@ -1501,7 +1514,8 @@ mod tests {
 			format_url("https://preview.redd.it/qwerty.jpg?auto=webp&s=asdf"),
 			"/preview/pre/qwerty.jpg?auto=webp&s=asdf"
 		);
-		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/dash/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/CMAF_720.mp4?source=fallback"), "/vid/foo/cmaf/720.mp4");
 		assert_eq!(
 			format_url("https://v.redd.it/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"),
 			"/hls/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"

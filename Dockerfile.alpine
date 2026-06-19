@@ -31,6 +31,9 @@ RUN echo "finished building redlib!"
 ########################
 FROM alpine:${ALPINE_VERSION} AS release
 
+# Install runtime dependencies for OpenSSL
+RUN apk add --no-cache ca-certificates
+
 # Import redlib binary from builder
 COPY --from=builder /redlib/target/x86_64-unknown-linux-musl/release/redlib /usr/local/bin/redlib
 

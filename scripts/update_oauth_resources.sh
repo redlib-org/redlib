@@ -5,7 +5,7 @@
 # - rg
 # - jq
 
-# Fetch iOS app versions
+# Fetch iOS app versions (DOES NOT WORK)
 ios_version_list=$(curl -s "https://ipaarchive.com/app/usa/1064216828" | rg "(20\d{2}\.\d+.\d+) / (\d+)" --only-matching -r "Version \$1/Build \$2" | sort | uniq)
 
 # Count the number of lines in the version list
@@ -38,6 +38,7 @@ done
 # Close the array in the source file
 echo "];" >> "$filename"
 
+# !CLOUDFLARE BOT PROTECTION!
 # Fetch Android app versions
 page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
 # Append with pages
@@ -80,7 +81,7 @@ done
 # Close the array in the source file
 echo "];" >> "$filename"
 
-# Retrieve iOS versions
+# Retrieve iOS versions (ALSO DOES NOT WORK)
 table=$(curl -s "https://en.wikipedia.org/w/api.php?action=parse&page=IOS_17&prop=wikitext&section=31&format=json" | jq ".parse.wikitext.\"*\"" | rg "(17\.[\d\.]*)\\\n\|(\w*)\\\n\|" --only-matching -r "Version \$1 (Build \$2)")
 
 # Count the number of lines in the version list

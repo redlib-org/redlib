@@ -706,6 +706,11 @@ select,
     margin-bottom: 0;
 }
 
+#searchbox:focus-within {   
+    outline: 2px solid var(--accent);
+}
+
+
 #searchbox > *,
 #sort_submit {
     background: var(--highlighted);

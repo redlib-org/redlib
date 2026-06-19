@@ -73,7 +73,8 @@ impl Oauth {
 	pub(crate) async fn new() -> Self {
 		// Try MobileSpoofAuth first, then fall back to GenericWebAuth
 		let mut failure_count = 0;
-		let mut backend = OauthBackendImpl::MobileSpoof(MobileSpoofAuth::new());
+		//let mut backend = OauthBackendImpl::MobileSpoof(MobileSpoofAuth::new());
+		let mut backend = OauthBackendImpl::GenericWeb(GenericWebAuth::new()); // Use generic web auth
 
 		loop {
 			let attempt = Self::new_with_timeout_with_backend(backend.clone()).await;
