@@ -196,75 +196,79 @@ pub fn get_setting(name: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-use {sealed_test::prelude::*, std::fs::write};
+mod tests {
+	use super::*;
+	use {sealed_test::prelude::*, std::fs::write};
 
-#[test]
-fn test_deserialize() {
-	// Must handle empty input
-	let result = toml::from_str::<Config>("");
-	assert!(result.is_ok(), "Error: {}", result.unwrap_err());
-}
+	#[test]
+	fn test_deserialize() {
+		// Must handle empty input
+		let result = toml::from_str::<Config>("");
+		assert!(result.is_ok(), "Error: {}", result.unwrap_err());
+	}
 
-#[test]
-#[sealed_test(env = [("REDLIB_SFW_ONLY", "on")])]
-fn test_env_var() {
-	assert!(crate::utils::sfw_only())
-}
+	#[test]
+	#[sealed_test(env = [("REDLIB_SFW_ONLY", "on")])]
+	fn test_env_var() {
+		assert!(crate::utils::sfw_only())
+	}
 
-#[test]
-#[sealed_test]
-fn test_config() {
-	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
-}
+	#[test]
+	#[sealed_test]
+	fn test_config() {
+		let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+		write("redlib.toml", config_to_write).unwrap();
+		assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
+	}
 
-#[test]
-#[sealed_test]
-fn test_config_legacy() {
-	let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
-	write("libreddit.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
-}
+	#[test]
+	#[sealed_test]
+	fn test_config_legacy() {
+		let config_to_write = r#"LIBREDDIT_DEFAULT_COMMENT_SORT = "best""#;
+		write("libreddit.toml", config_to_write).unwrap();
+		assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("best".into()));
+	}
 
-#[test]
-#[sealed_test(env = [("LIBREDDIT_SFW_ONLY", "on")])]
-fn test_env_var_legacy() {
-	assert!(crate::utils::sfw_only())
-}
+	#[test]
+	#[sealed_test(env = [("LIBREDDIT_SFW_ONLY", "on")])]
+	fn test_env_var_legacy() {
+		assert!(crate::utils::sfw_only())
+	}
 
-#[test]
-#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
-fn test_env_config_precedence() {
-	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
-}
+	#[test]
+	#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
+	fn test_env_config_precedence() {
+		let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+		write("redlib.toml", config_to_write).unwrap();
+		assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
+	}
 
-#[test]
-#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
-fn test_alt_env_config_precedence() {
-	let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
-}
-#[test]
-#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
-fn test_default_subscriptions() {
-	assert_eq!(get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
-}
+	#[test]
+	#[sealed_test(env = [("REDLIB_DEFAULT_COMMENT_SORT", "top")])]
+	fn test_alt_env_config_precedence() {
+		let config_to_write = r#"REDLIB_DEFAULT_COMMENT_SORT = "best""#;
+		write("redlib.toml", config_to_write).unwrap();
+		assert_eq!(get_setting("REDLIB_DEFAULT_COMMENT_SORT"), Some("top".into()))
+	}
 
-#[test]
-#[sealed_test(env = [("REDLIB_DEFAULT_FILTERS", "news+bestof")])]
-fn test_default_filters() {
-	assert_eq!(get_setting("REDLIB_DEFAULT_FILTERS"), Some("news+bestof".into()));
-}
+	#[test]
+	#[sealed_test(env = [("REDLIB_DEFAULT_SUBSCRIPTIONS", "news+bestof")])]
+	fn test_default_subscriptions() {
+		assert_eq!(get_setting("REDLIB_DEFAULT_SUBSCRIPTIONS"), Some("news+bestof".into()));
+	}
 
-#[test]
-#[sealed_test]
-fn test_pushshift() {
-	let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://api.pushshift.io""#;
-	write("redlib.toml", config_to_write).unwrap();
-	assert!(get_setting("REDLIB_PUSHSHIFT_FRONTEND").is_some());
-	assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://api.pushshift.io".into()));
+	#[test]
+	#[sealed_test(env = [("REDLIB_DEFAULT_FILTERS", "news+bestof")])]
+	fn test_default_filters() {
+		assert_eq!(get_setting("REDLIB_DEFAULT_FILTERS"), Some("news+bestof".into()));
+	}
+
+	#[test]
+	#[sealed_test]
+	fn test_pushshift() {
+		let config_to_write = r#"REDLIB_PUSHSHIFT_FRONTEND = "https://api.pushshift.io""#;
+		write("redlib.toml", config_to_write).unwrap();
+		assert!(get_setting("REDLIB_PUSHSHIFT_FRONTEND").is_some());
+		assert_eq!(get_setting("REDLIB_PUSHSHIFT_FRONTEND"), Some("https://api.pushshift.io".into()));
+	}
 }

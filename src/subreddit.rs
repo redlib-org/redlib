@@ -1,11 +1,10 @@
 #![allow(clippy::cmp_owned)]
 
-use crate::{config, utils};
-// CRATES
 use crate::utils::{
 	Post, Preferences, Subreddit, catch_random, error, filter_posts, format_num, format_url, get_filters, info, nsfw_landing, param, redirect, rewrite_urls, setting, template, to_absolute_url, val
 };
 use crate::{client::json, server::RequestExt, server::ResponseExt};
+use crate::{config, utils};
 use askama::Template;
 use cookie::Cookie;
 use htmlescape::decode_html;
@@ -722,10 +721,21 @@ async fn test_fetching_subreddit() {
 	assert!(subreddit.is_ok());
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_gated_and_quarantined() {
-	let quarantined = subreddit("edgy", true).await;
-	assert!(quarantined.is_ok());
-	let gated = subreddit("drugs", true).await;
-	assert!(gated.is_ok());
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_fetching_subreddit() {
+		let subreddit = subreddit("rust", false).await;
+		assert!(subreddit.is_ok());
+	}
+
+	#[tokio::test(flavor = "multi_thread")]
+	async fn test_gated_and_quarantined() {
+		let quarantined = subreddit("edgy", true).await;
+		assert!(quarantined.is_ok());
+		let gated = subreddit("drugs", true).await;
+		assert!(gated.is_ok());
+	}
 }

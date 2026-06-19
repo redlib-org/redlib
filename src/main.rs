@@ -4,11 +4,9 @@
 
 use cached::proc_macro::cached;
 use clap::{Arg, ArgAction, Command};
-use std::str::FromStr;
 use std::sync::LazyLock;
 
 use futures_lite::FutureExt;
-use hyper::Uri;
 use hyper::{header::HeaderValue, Body, Request, Response};
 use log::{info, warn};
 use redlib::client::{canonical_path, proxy, rate_limit_check, CLIENT};
@@ -438,11 +436,11 @@ pub async fn proxy_commit_info() -> Result<Response<Body>, hyper::Error> {
 	)
 }
 
-#[cached(time = 600, result = true, result_fallback = true)]
-async fn fetch_commit_info() -> Result<String, hyper::Error> {
-	let uri = Uri::from_static("https://github.com/redlib-org/redlib/commits/main.atom");
-	let resp: Body = CLIENT.get(uri).await?.into_body(); // Could fail if there is no internet
-	Ok(hyper::body::to_bytes(resp).await?.iter().copied().map(|x| x as char).collect())
+#[cached(time = 600)]
+async fn fetch_commit_info() -> String {
+	let url = "https://github.com/redlib-org/redlib/commits/main.atom";
+
+	CLIENT.get(url).send().await.expect("Failed to request GitHub").text().await.expect("Failed to read body")
 }
 
 pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
@@ -455,9 +453,9 @@ pub async fn proxy_instances() -> Result<Response<Body>, hyper::Error> {
 	)
 }
 
-#[cached(time = 600, result = true, result_fallback = true)]
-async fn fetch_instances() -> Result<String, hyper::Error> {
-	let uri = Uri::from_static("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json");
-	let resp: Body = CLIENT.get(uri).await?.into_body(); // Could fail if no internet
-	Ok(hyper::body::to_bytes(resp).await?.iter().copied().map(|x| x as char).collect())
+#[cached(time = 600)]
+async fn fetch_instances() -> String {
+	let url = "https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json";
+
+	CLIENT.get(url).send().await.expect("Failed to request GitHub").text().await.expect("Failed to read body")
 }
