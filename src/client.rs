@@ -6,11 +6,9 @@ use arc_swap::ArcSwap;
 use cached::proc_macro::cached;
 use futures_lite::future::block_on;
 use futures_lite::{future::Boxed, FutureExt};
-use hyper::header::HeaderValue;
-use hyper::{body, body::Buf, header, Body, Client, Method, Request as HyperRequest, Response as HyperResponse, Uri};
+use hyper::{body::Buf, header, Body, Request as HyperRequest, Response as HyperResponse};
 //use hyper_rustls::{ConfigBuilderExt, HttpsConnector};
 use hyper_tls::HttpsConnector;
-use libflate::gzip;
 use log::{error, info, trace, warn};
 use percent_encoding::{percent_encode, CONTROLS};
 use serde_json::Value;
@@ -19,8 +17,8 @@ use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
 use wreq::redirect::Policy;
-use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
-use wreq_util::{Emulation, EmulationOS, EmulationOption};
+use wreq::{Client as WreqClient, IntoEmulation, Method, Response as WreqResponse, header as wreq_header};
+use wreq_util::{Emulation, Platform};
 
 const REDDIT_URL_BASE: &str = "https://oauth.reddit.com";
 const REDDIT_URL_BASE_HOST: &str = "oauth.reddit.com";
@@ -69,7 +67,8 @@ pub static HTTPS_CONNECTOR: LazyLock<HttpsConnector<HttpConnector>> = LazyLock::
 */
 
 //pub static CLIENT: LazyLock<Client<HttpsConnector<HttpConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
-pub static CLIENT: LazyLock<Client<HttpsConnector<ProxyConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+//pub static CLIENT: LazyLock<Client<HttpsConnector<ProxyConnector>>> = LazyLock::new(|| Client::builder().build::<_, Body>(HTTPS_CONNECTOR.clone()));
+pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
 pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 	let client = block_on(Oauth::new());
@@ -91,14 +90,14 @@ pub fn build_client() -> WreqClient {
 	// The more emulations, the more unique a fingerprint each instance has.
 	// But some emulations should increase evasiveness.
 	let emulation = [Emulation::Chrome145, Emulation::Firefox147];
-	let emulation_os = [EmulationOS::Android, EmulationOS::Windows];
+	let emulation_os = [Platform::Android, Platform::Windows];
 
 	let rand = fastrand::usize(..);
-	let emulation = EmulationOption::builder()
-		.emulation(emulation[rand % emulation.len()])
-		.emulation_os(emulation_os[rand % emulation_os.len()])
+	let emulation = Emulation::builder()
+		.profile(emulation[rand % emulation.len()])
+		.platform(emulation_os[rand % emulation_os.len()])
 		.build()
-		.emulation();
+		.into_emulation();
 
 	info!("Building Wreq client with random emulation {:?}", emulation);
 	WreqClient::builder()

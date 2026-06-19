@@ -64,7 +64,7 @@ revision = "0.17.0"
 tokio-socks = "0.5.2"
 fake_user_agent = "0.2.2"
 wreq = { version = "6.0.0-rc.28", features = ["brotli", "gzip", "deflate", "zstd", "json", "stream", "socks"] }
-wreq-util = { version = "3.0.0-rc.10" }
+wreq-util = { version = "3.0.0-rc.10", default-features = false, features = ["emulation"] }
 
 [dev-dependencies]
 lipsum = "0.9.0"
