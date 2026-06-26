@@ -372,10 +372,26 @@ async fn main() {
 		Box::pin(async move {
 			let sub = req.param("sub").unwrap_or_default();
 			match req.param("id").as_deref() {
-				// Share link
+				// Subreddit post share link
 				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/r/{sub}/s/{id}"), 3).await {
 					Ok(Some(path)) => Ok(redirect(&path)),
 					Ok(None) => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
+					Err(e) => error(req, &e).await,
+				},
+
+				// Error message for unknown pages
+				_ => error(req, "Nothing here").await,
+			}
+		})
+	});
+	app.at("/u/:name/s/:id").get(|req: Request<Body>| {
+		Box::pin(async move {
+			let name = req.param("name").unwrap_or_default();
+			match req.param("id").as_deref() {
+				// User post share link
+				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/u/{name}/s/{id}"), 3).await {
+					Ok(Some(path)) => Ok(redirect(&path)),
+					Ok(None) => error(req, "Post ID is invalid. It may point to a post on a user that has been banned.").await,
 					Err(e) => error(req, &e).await,
 				},
 
