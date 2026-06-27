@@ -1158,6 +1158,24 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	}
 }
 
+// Match Giphy URLs in comment anchor tags, capturing the GIF ID
+// Handles: giphy.com/gifs/ID, media.giphy.com/media/ID, i.giphy.com/ID
+static GIPHY_EMBED_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+	Regex::new(r#"(?i)<a\s+href="https?://(?:www\.)?(?:giphy\.com/(?:gifs|clips)|media\.giphy\.com/media|i\.giphy\.com)/([a-z0-9]+)[^"]*"[^>]*>[^<]*</a>"#).unwrap()
+});
+
+/// Rewrite Giphy URLs in comment body to embedded video elements
+fn rewrite_giphy_links(comment: &str) -> String {
+	GIPHY_EMBED_REGEX
+		.replace_all(comment, |caps: &regex::Captures| {
+			let id = &caps[1];
+			format!(
+				r#"<div class="giphy-embed-container"><a href="/giphy/{id}/gif"><video class="giphy-embed" loop poster="/giphy/{id}/gif"><source src="/giphy/{id}/mp4" type="video/mp4"></video></a></div>"#
+			)
+		})
+		.to_string()
+}
+
 // These links all follow a pattern of "https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/SUBREDDIT_ID/RANDOM_FILENAME.png"
 static REDDIT_EMOTE_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/(.*)"#).unwrap());
 
@@ -1236,7 +1254,10 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	comment = render_bullet_lists(&comment);
 
 	// Call rewrite_urls() to transform any other Reddit links
-	rewrite_urls(&comment)
+	let comment = rewrite_urls(&comment);
+
+	// Rewrite Giphy links to embedded videos
+	rewrite_giphy_links(&comment)
 }
 
 /// Format vote count to a string that will be displayed.

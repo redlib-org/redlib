@@ -1385,12 +1385,19 @@ a.search_subreddit:hover {
     display: flex;
 }
 
+.giphy-embed-container,
 .comment img {
     max-width: 50%;
     height: auto;
 }
 
+.giphy-embed {
+    width: 100%;
+    display: flex;
+}
+
 @media screen and (max-width: 500px) {
+    .giphy-embed-container,
     .comment img {
         max-width: 80%;
         height: auto;
@@ -1978,7 +1985,7 @@ th {
         max-width: 100%;
     }
     #user { margin: 0 0 20px; }
-    
+
     body.fixed_navbar {
         min-height: calc(100vh - 75px);
         padding-top: 45px;
