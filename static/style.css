@@ -1312,6 +1312,36 @@ a.search_subreddit:hover {
     display: auto;
 }
 
+.download_status {
+    margin-left: 6px;
+    font-size: 13px;
+    font-weight: normal;
+    color: var(--accent);
+    vertical-align: middle;
+}
+
+.download_status[data-stage="done"] {
+    color: var(--green, var(--accent));
+}
+
+.download_status[data-stage="error"] {
+    color: var(--red, #d32f2f);
+}
+
+/* Spin a small marker while a stage is in progress */
+.download_status[data-stage="loading"]::before,
+.download_status[data-stage="downloading"]::before,
+.download_status[data-stage="merging"]::before {
+    content: "↻";
+    display: inline-block;
+    margin-right: 4px;
+    animation: download_status_spin 1s linear infinite;
+}
+
+@keyframes download_status_spin {
+    to { transform: rotate(360deg); }
+}
+
 @media screen and (min-width: 508px) {
     .mobile_item {
         display: none;

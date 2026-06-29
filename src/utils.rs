@@ -175,6 +175,7 @@ pub struct Flags {
 #[derive(Debug, Serialize)]
 pub struct Media {
 	pub url: String,
+	pub url_audio: String,
 	pub alt_url: String,
 	pub width: i64,
 	pub height: i64,
@@ -191,20 +192,25 @@ impl Media {
 		let secure_media = &data["secure_media"]["reddit_video"];
 		let crosspost_parent_media = &data["crosspost_parent_list"][0]["secure_media"]["reddit_video"];
 
+		let mut has_audio=false;
+
 		// If post is a video, return the video
 		let (post_type, url_val, alt_url_val) = if data_preview["fallback_url"].is_string() {
+			has_audio=data_preview["has_audio"].as_bool().unwrap_or(false);
 			(
 				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&data_preview["fallback_url"],
 				Some(&data_preview["hls_url"]),
 			)
 		} else if secure_media["fallback_url"].is_string() {
+			has_audio=secure_media["has_audio"].as_bool().unwrap_or(false);
 			(
 				if secure_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&secure_media["fallback_url"],
 				Some(&secure_media["hls_url"]),
 			)
 		} else if crosspost_parent_media["fallback_url"].is_string() {
+			has_audio=crosspost_parent_media["has_audio"].as_bool().unwrap_or(false);
 			(
 				if crosspost_parent_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&crosspost_parent_media["fallback_url"],
@@ -258,7 +264,32 @@ impl Media {
 			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
 			let media_url_base = url_path_basename(url_val.as_str().unwrap_or_default());
 
+			// Remove .mp4 extension for cleaner combined filename
+			let media_url_base = media_url_base.strip_suffix(".mp4").unwrap_or(&media_url_base);
+
 			format!("redlib_{permalink_base}_{media_url_base}")
+		} else {
+			String::new()
+		};
+
+		// Extract audio URL from video ID
+		// DASH manifest contains direct audio MP4 files: CMAF_AUDIO_64.mp4 and CMAF_AUDIO_128.mp4
+		let video_url = format_url(url_val.as_str().unwrap_or_default());
+		let url_audio = if post_type == "video" && has_audio {
+			// Extract video ID from the video URL
+			// video_url format: /vid/{id}/cmaf/{quality}.mp4 or /vid/{id}/dash/{quality}.mp4
+			if video_url.starts_with("/vid/") {
+				let parts: Vec<&str> = video_url.split('/').collect();
+				if parts.len() >= 5 {
+					let video_id = parts[2];
+					// Use highest quality audio (128 kbps) as direct MP4 file
+					format!("/vid/{video_id}/cmaf/audio/128.mp4")
+				} else {
+					String::new()
+				}
+			} else {
+				String::new()
+			}
 		} else {
 			String::new()
 		};
@@ -266,7 +297,8 @@ impl Media {
 		(
 			post_type.to_string(),
 			Self {
-				url: format_url(url_val.as_str().unwrap_or_default()),
+				url: video_url,
+				url_audio,
 				alt_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
@@ -417,6 +449,7 @@ impl Post {
 				post_type,
 				thumbnail: Media {
 					url: format_url(val(post, "thumbnail").as_str()),
+					url_audio: String::new(),
 					alt_url: String::new(),
 					width: data["thumbnail_width"].as_i64().unwrap_or_default(),
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
@@ -849,6 +882,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		media,
 		thumbnail: Media {
 			url: format_url(val(post, "thumbnail").as_str()),
+			url_audio: String::new(),
 			alt_url: String::new(),
 			width: post["data"]["thumbnail_width"].as_i64().unwrap_or_default(),
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
@@ -1004,7 +1038,7 @@ static REGEX_URL_WWW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://w
 static REGEX_URL_OLD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_NP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_PLAIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
+static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/(DASH|CMAF)_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
 static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
 static REGEX_URL_IMAGES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
 static REGEX_URL_THUMBS_A: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
@@ -1027,6 +1061,7 @@ pub fn format_url(url: &str) -> String {
 				regex.captures(url).map_or(String::new(), |caps| match segments {
 					1 => [format, &caps[1]].join(""),
 					2 => [format, &caps[1], "/", &caps[2]].join(""),
+					3 => [format, &caps[1], "/", &caps[2].to_lowercase().as_str(), "/", &caps[3]].join(""),
 					_ => String::new(),
 				})
 			};
@@ -1057,7 +1092,7 @@ pub fn format_url(url: &str) -> String {
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 3), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
 				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
@@ -1501,7 +1536,8 @@ mod tests {
 			format_url("https://preview.redd.it/qwerty.jpg?auto=webp&s=asdf"),
 			"/preview/pre/qwerty.jpg?auto=webp&s=asdf"
 		);
-		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/dash/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/CMAF_720.mp4?source=fallback"), "/vid/foo/cmaf/720.mp4");
 		assert_eq!(
 			format_url("https://v.redd.it/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"),
 			"/hls/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"
