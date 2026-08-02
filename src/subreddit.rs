@@ -140,6 +140,11 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 		params.push_str(&format!("&geo_filter={geo_filter}"));
 	}
 
+	let posts_per_page: u32 = setting(&req, "posts_per_page").parse().unwrap_or(25).clamp(1, 100);
+	if posts_per_page != 25 {
+		params.push_str(&format!("&limit={}", posts_per_page));
+	}
+
 	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
 	let url = String::from(req.uri().path_and_query().map_or("", |val| val.as_str()));
 	let redirect_url = url[1..].replace('?', "%3F").replace('&', "%26").replace('+', "%2B");
@@ -696,14 +701,14 @@ fn get_rss_image(post: &Post) -> Option<Enclosure> {
 fn get_mime_type(url: &str) -> &'static str {
     // Extract the path component, removing query parameters
     let path = url.split('?').next().unwrap_or(url);
-    
+
     // Get the file extension (everything after the last dot)
     let extension = path
         .rsplit('.')
         .next()
         .unwrap_or("")
         .to_lowercase();
-    
+
     // Match common image extensions
     match extension.as_str() {
         "jpg" | "jpeg" => "image/jpeg",

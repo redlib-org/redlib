@@ -73,6 +73,10 @@
 					</select>
 				</div>
 				<div class="prefs-group">
+					<label for="posts_per_page">Posts per page (max 100):</label>
+					<input type="number" name="posts_per_page" id="posts_per_page" value="{{ prefs.posts_per_page }}">
+				</div>
+				<div class="prefs-group">
 					<label for="blur_spoiler">Blur spoiler previews:</label>
 					<input type="hidden" value="off" name="blur_spoiler">
 					<input type="checkbox" name="blur_spoiler" id="blur_spoiler" {% if prefs.blur_spoiler=="on"
