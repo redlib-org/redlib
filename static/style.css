@@ -659,6 +659,7 @@ aside {
 /* Sorting and Search */
 
 select,
+input[type="number"],
 #search,
 #sort_options,
 #listing_options,
@@ -684,6 +685,7 @@ select {
 #searchbox > * { font-size: 15px; }
 
 select,
+input[type="number"],
 #search {
     border: none;
     padding: 0 10px;
@@ -1683,19 +1685,24 @@ summary.comment_data {
     margin-top: 7px;
 }
 
-.prefs-group > *:not(:last-child) {
+.prefs .prefs-group > *:not(:last-child) {
     margin-right: 1ch;
 }
 
-.prefs-group > *:last-child {
+.prefs .prefs-group > *:last-child {
     margin-left: auto;
 }
 
-.prefs select {
+.prefs select,
+.prefs input[type="number"] {
     border-radius: 5px;
     box-shadow: var(--shadow);
     margin-left: 20px;
     background: var(--foreground);
+}
+
+.prefs input[type="number"] {
+    max-width: 80px;
 }
 
 aside.prefs {
@@ -1978,7 +1985,7 @@ th {
         max-width: 100%;
     }
     #user { margin: 0 0 20px; }
-    
+
     body.fixed_navbar {
         min-height: calc(100vh - 75px);
         padding-top: 45px;
