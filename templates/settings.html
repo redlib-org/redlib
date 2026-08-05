@@ -49,6 +49,12 @@
 					<input type="hidden" value="off" name="wide">
 					<input type="checkbox" name="wide" id="wide" {% if prefs.wide=="on" %}checked{% endif %}>
 				</div>
+				<div class="prefs-group">
+					<label for="geo_filter">Geo Filter:</label>
+					<select name="geo_filter" id="geo_filter">
+						{% call utils::options(prefs.geo_filter, self::GEO_FILTERS, self::GEO_FILTERS[0]) %}
+					</select>
+				</div>
 			</fieldset>
 			<fieldset>
 				<legend>Content</legend>
