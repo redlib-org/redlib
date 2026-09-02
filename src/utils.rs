@@ -7,6 +7,7 @@ use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
+use htmlescape;
 use log::error;
 use chrono::DateTime;
 use regex::Regex;
@@ -1482,7 +1483,7 @@ pub fn build_rss_item(post: &Post) -> Item {
 
 	// Build content:encoded — embed media + body
 	let image_html = build_media_html(&post);
-	let body = &post.body;
+	let body = unescape_html(&post.body);
 	let content = if !image_html.is_empty() || !body.is_empty() {
 		format!("{}{}", image_html, body)
 	} else {
@@ -1522,6 +1523,11 @@ fn build_media_html(post: &Post) -> String {
 		}
 		_ => String::new(),
 	}
+}
+
+/// Decodes HTML entities like &lt;/&gt; back to their character equivalents
+fn unescape_html(html: &str) -> String {
+	htmlescape::decode_html(html).expect("failed to decode HTML entities")
 }
 
 /// Create an RSS enclosure for the first image of a post
