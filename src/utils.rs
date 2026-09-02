@@ -727,7 +727,7 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 			remove_default_feeds: setting(req, "remove_default_feeds"),
-			geo_filter: setting(req, "geo_filter"),
+			geo_filter: setting_or_default(req, "geo_filter", "GLOBAL".to_string()),
 		}
 	}
 

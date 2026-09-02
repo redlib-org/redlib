@@ -151,6 +151,7 @@ impl InstanceInfo {
 				["Hide HLS notification", &convert(&self.config.default_hide_hls_notification)],
 				["Subscriptions", &convert(&self.config.default_subscriptions)],
 				["Filters", &convert(&self.config.default_filters)],
+				["Geo filter", &convert(&self.config.default_geo_filter)],
 			])
 			.with_header_row(["Default preferences"]),
 		);
@@ -187,7 +188,8 @@ impl InstanceInfo {
                     Default use HLS: {:?}\n
                     Default hide HLS notification: {:?}\n
                     Default subscriptions: {:?}\n
-                    Default filters: {:?}\n",
+                    Default filters: {:?}\n,
+					Default geo filter: {:?}\n",
 					self.package_name,
 					self.crate_version,
 					self.git_commit,
@@ -215,6 +217,7 @@ impl InstanceInfo {
 					self.config.default_hide_hls_notification,
 					self.config.default_subscriptions,
 					self.config.default_filters,
+					self.config.default_geo_filter,
 				)
 			}
 			StringType::Html => self.to_table(),
