@@ -136,6 +136,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 	if config::get_setting("REDLIB_ENABLE_RSS").is_none() {
 		return Ok(error(req, "RSS is disabled on this instance.").await.unwrap_or_default());
 	}
+	use crate::subreddit::apply_enclosure;
 	use crate::utils::rewrite_urls;
 	use hyper::header::CONTENT_TYPE;
 	use rss::{ChannelBuilder, Item};
@@ -148,6 +149,8 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Get path
 	let path = format!("/user/{user_str}/{listing}.json?{}&raw_json=1", req.uri().query().unwrap_or_default(),);
 
+	let user_link: String = format!("{}/user/{user_str}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default());
+
 	// Get user
 	let user_obj = user(&user_str).await.unwrap_or_default();
 
@@ -158,16 +161,22 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 	let channel = ChannelBuilder::default()
 		.title(user_str)
 		.description(user_obj.description)
+		.link(&user_link)
 		.items(
 			posts
 				.into_iter()
-				.map(|post| Item {
-					title: Some(post.title.to_string()),
-					link: Some(format_url(&utils::get_post_url(&post))),
-					author: Some(post.author.name),
-					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
-					content: Some(rewrite_urls(&decode_html(&post.body).unwrap_or_else(|_| post.body.clone()))),
-					..Default::default()
+				.map(|post| {
+					let mut item = Item {
+						title: Some(post.title.to_string()),
+						link: Some(format_url(&utils::get_post_url(&post))),
+						author: Some(post.author.name.to_string()),
+						pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
+						content: Some(rewrite_urls(&decode_html(&post.body).unwrap_or_else(|_| post.body.clone()))),
+						..Default::default()
+					};
+
+					apply_enclosure(&mut item, &post);
+					item
 				})
 				.collect::<Vec<_>>(),
 		)
