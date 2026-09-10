@@ -14,6 +14,7 @@ use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
 use std::sync::LazyLock;
+use wreq::dns::{Addrs, Name, Resolve, Resolving};
 use wreq::redirect::Policy;
 use wreq::{header as wreq_header, Client as WreqClient, EmulationFactory, Method, Response as WreqResponse};
 use wreq_util::{Emulation, EmulationOS, EmulationOption};
@@ -26,6 +27,7 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
+const ALTERNATIVE_REDDIT_DNS_HOST: &str = "dualstack.reddit.map.fastly.net";
 
 pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
@@ -43,6 +45,32 @@ const URL_PAIRS: [(&str, &str); 2] = [
 	(ALTERNATIVE_REDDIT_URL_BASE, ALTERNATIVE_REDDIT_URL_BASE_HOST),
 	(REDDIT_SHORT_URL_BASE, REDDIT_SHORT_URL_BASE_HOST),
 ];
+
+#[derive(Debug)]
+struct RedditDnsResolver;
+
+// Keep the original request host for TLS/SNI and HTTP while resolving its
+// addresses through Fastly's dual-stack alias.
+fn reddit_dns_name(name: &str) -> &str {
+	if name.eq_ignore_ascii_case(ALTERNATIVE_REDDIT_URL_BASE_HOST) {
+		ALTERNATIVE_REDDIT_DNS_HOST
+	} else {
+		name
+	}
+}
+
+impl Resolve for RedditDnsResolver {
+	fn resolve(&self, name: Name) -> Resolving {
+		let dns_name = reddit_dns_name(name.as_str()).to_owned();
+
+		Box::pin(async move {
+			tokio::net::lookup_host((dns_name, 0))
+				.await
+				.map(|addresses| Box::new(addresses) as Addrs)
+				.map_err(Into::into)
+		})
+	}
+}
 
 pub fn build_client() -> WreqClient {
 	// Keeping this list short to aid in privacy.
@@ -62,6 +90,7 @@ pub fn build_client() -> WreqClient {
 	WreqClient::builder()
 		.emulation(emulation)
 		.redirect(Policy::none())
+		.dns_resolver(RedditDnsResolver)
 		.build()
 		.expect("Should always be able to build a client")
 }
@@ -510,6 +539,13 @@ mod tests {
 	use {crate::config::get_setting, sealed_test::prelude::*};
 
 	const POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+
+	#[test]
+	fn test_reddit_dns_name_uses_fastly_dualstack_alias() {
+		assert_eq!(reddit_dns_name("www.reddit.com"), ALTERNATIVE_REDDIT_DNS_HOST);
+		assert_eq!(reddit_dns_name("WWW.REDDIT.COM"), ALTERNATIVE_REDDIT_DNS_HOST);
+		assert_eq!(reddit_dns_name("oauth.reddit.com"), "oauth.reddit.com");
+	}
 
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_rate_limit_check() {
