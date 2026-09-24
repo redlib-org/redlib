@@ -1,6 +1,7 @@
 use crate::{
 	client::{CLIENT, OAUTH_CLIENT, OAUTH_IS_ROLLING_OVER, OAUTH_RATELIMIT_REMAINING},
 	oauth_resources::ANDROID_APP_VERSION_LIST,
+	utils::{self, get_oauth_timeout},
 };
 use base64::{engine::general_purpose, Engine as _};
 use log::{error, info, trace, warn};
@@ -10,10 +11,6 @@ use tegen::tegen::TextGenerator;
 use tokio::time::{error::Elapsed, timeout};
 
 const REDDIT_ANDROID_OAUTH_CLIENT_ID: &str = "ohXpoqrZYub1kg";
-
-const AUTH_ENDPOINT: &str = "https://www.reddit.com";
-
-const OAUTH_TIMEOUT: Duration = Duration::from_secs(5);
 
 // Response from OAuth backend authentication
 #[derive(Debug, Clone)]
@@ -111,12 +108,12 @@ impl Oauth {
 				std::process::exit(1);
 			}
 
-			tokio::time::sleep(OAUTH_TIMEOUT).await;
+			tokio::time::sleep(get_oauth_timeout()).await;
 		}
 	}
 
 	async fn new_with_timeout_with_backend(mut backend: OauthBackendImpl) -> Result<Result<Self, AuthError>, Elapsed> {
-		timeout(OAUTH_TIMEOUT, async move {
+		timeout(get_oauth_timeout(), async move {
 			let response = backend.authenticate().await?;
 
 			// Build headers_map from backend headers + Authorization header
@@ -219,7 +216,8 @@ impl MobileSpoofAuth {
 impl OauthBackend for MobileSpoofAuth {
 	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
 		// Construct URL for OAuth token
-		let url = format!("{AUTH_ENDPOINT}/auth/v2/oauth/access-token/loid");
+		let auth_endpoint = utils::get_alternative_reddit_url_base();
+		let url = format!("{auth_endpoint}/auth/v2/oauth/access-token/loid");
 		let mut builder = CLIENT.post(&url);
 
 		// Add headers from spoofed client
@@ -334,11 +332,12 @@ impl GenericWebAuth {
 impl OauthBackend for GenericWebAuth {
 	async fn authenticate(&mut self) -> Result<OauthResponse, AuthError> {
 		// Construct URL for OAuth token
-		let url = "https://www.reddit.com/api/v1/access_token";
-		let mut builder = CLIENT.post(url);
+		let auth_endpoint = utils::get_alternative_reddit_url_base();
+		let url = format!("{auth_endpoint}/api/v1/access_token");
+		let mut builder = CLIENT.post(&url);
 
 		// Add minimal headers
-		builder = builder.header("Host", "www.reddit.com");
+		builder = builder.header("Host", auth_endpoint);
 		builder = builder.header("User-Agent", &self.user_agent);
 		builder = builder.header("Accept", "*/*");
 		builder = builder.header("Accept-Language", "en-US,en;q=0.5");
@@ -402,7 +401,7 @@ impl OauthBackend for GenericWebAuth {
 		);
 
 		// Insert a few necessary headers
-		self.additional_headers.insert("Origin".to_owned(), "https://www.reddit.com".to_owned());
+		self.additional_headers.insert("Origin".to_owned(), auth_endpoint.to_owned());
 		self.additional_headers.insert("User-Agent".to_owned(), self.user_agent.to_owned());
 
 		Ok(OauthResponse {

@@ -210,6 +210,12 @@ impl Media {
 				&crosspost_parent_media["fallback_url"],
 				Some(&crosspost_parent_media["hls_url"]),
 			)
+		} else if data["post_hint"].as_str().unwrap_or("") == "rich:video" && data_preview["fallback_url"].is_string() {
+			(
+				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
+				&data_preview["fallback_url"],
+				Some(&data_preview["hls_url"]),
+			)
 		} else if data["post_hint"].as_str().unwrap_or("") == "image" {
 			// Handle images, whether GIFs or pics
 			let preview = &data["preview"]["images"][0];
@@ -220,7 +226,7 @@ impl Media {
 				("gif", &mp4["source"]["url"], None)
 			} else {
 				// Return the picture if the media is an image
-				if data["domain"] == "i.redd.it" {
+				if data["domain"] == "i.redd.it" || data["domain"] == "i.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion" {
 					("image", &data["url"], None)
 				} else {
 					("image", &preview["source"]["url"], None)
@@ -242,7 +248,9 @@ impl Media {
 			);
 
 			("gallery", &data["url"], None)
-		} else if data["is_reddit_media_domain"].as_bool().unwrap_or_default() && data["domain"] == "i.redd.it" {
+		} else if data["is_reddit_media_domain"].as_bool().unwrap_or_default()
+			&& (data["domain"] == "i.redd.it" || data["domain"] == "i.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion")
+		{
 			// If this post contains a reddit media (image) URL.
 			("image", &data["url"], None)
 		} else {
@@ -1000,20 +1008,37 @@ pub async fn catch_random(sub: &str, additional: &str) -> Result<Response<Body>,
 	}
 }
 
-static REGEX_URL_WWW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_OLD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_NP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
-static REGEX_URL_PLAIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
-static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
-static REGEX_URL_IMAGES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
-static REGEX_URL_THUMBS_A: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_THUMBS_B: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_EMOJI: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://emoji\.redditmedia\.com/(.*)/(.*)").unwrap());
-static REGEX_URL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_EXTERNAL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
-static REGEX_URL_STYLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
-static REGEX_URL_STATIC_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
+/* Thank you to baalajimaestro for mapping out the Tor domains that are set up here and in format_url()
+https://git.ptr.moe/baalajimaestro/redlib/src/branch/main/src/reddit_urls.rs */
+static REGEX_URL_WWW: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://www\.(?:reddit\.com|reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad\.onion)/(.*)").unwrap());
+static REGEX_URL_OLD: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://old\.(?:reddit\.com|reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad\.onion)/(.*)").unwrap());
+static REGEX_URL_NP: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://np\.(?:reddit\.com|reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad\.onion)/(.*)").unwrap());
+static REGEX_URL_PLAIN: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://(?:reddit\.com|reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad\.onion)/(.*)").unwrap());
+static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| {
+	Regex::new(r"https?://v\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/(.*)/(DASH|CMAF)_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap()
+});
+static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://v\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
+static REGEX_URL_IMAGES: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://i\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/(.*)").unwrap());
+static REGEX_URL_THUMBS_A: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.(?:redditmedia\.com|reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd\.onion)/(.*)").unwrap());
+static REGEX_URL_THUMBS_B: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://b\.thumbs\.(?:redditmedia\.com|reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd\.onion)/(.*)").unwrap());
+static REGEX_URL_EMOJI: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://emoji\.(?:redditmedia\.com|reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd\.onion)/(.*)/(.*)").unwrap());
+static REGEX_URL_PREVIEW: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://preview\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/(.*)").unwrap());
+static REGEX_URL_EXTERNAL_PREVIEW: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://external\-preview\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/(.*)").unwrap());
+static REGEX_URL_STYLES: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://styles\.(?:redditmedia\.com|reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd\.onion)/(.*)").unwrap());
+static REGEX_URL_STATIC_MEDIA: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://www\.(?:redditstatic\.com|reddittic34i5gtjcnm2fb7fv2eyop4vbxquuc36prnbs7d2kp3saoqd\.onion)/(.*)").unwrap());
 
 /// Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
@@ -1027,6 +1052,7 @@ pub fn format_url(url: &str) -> String {
 				regex.captures(url).map_or(String::new(), |caps| match segments {
 					1 => [format, &caps[1]].join(""),
 					2 => [format, &caps[1], "/", &caps[2]].join(""),
+					3 => [format, &caps[1], "/", &caps[2], "/", &caps[3]].join(""),
 					_ => String::new(),
 				})
 			};
@@ -1054,18 +1080,31 @@ pub fn format_url(url: &str) -> String {
 
 			match domain {
 				"www.reddit.com" => capture(&REGEX_URL_WWW, "/", 1),
+				"www.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion" => capture(&REGEX_URL_WWW, "/", 1),
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
+				"old.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
+				"np.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion" => capture(&REGEX_URL_PLAIN, "/", 1),
+				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 3), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"v.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 3), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
 				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
+				"i.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion" => capture(&REGEX_URL_IMAGES, "/img/", 1),
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
+				"a.thumbs.reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd.onion" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
+				"b.thumbs.reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd.onion" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
 				"emoji.redditmedia.com" => capture(&REGEX_URL_EMOJI, "/emoji/", 2),
+				"emoji.reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd.onion" => capture(&REGEX_URL_EMOJI, "/emoji/", 2),
 				"preview.redd.it" => capture(&REGEX_URL_PREVIEW, "/preview/pre/", 1),
+				"preview.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion" => capture(&REGEX_URL_PREVIEW, "/preview/pre/", 1),
 				"external-preview.redd.it" => capture(&REGEX_URL_EXTERNAL_PREVIEW, "/preview/external-pre/", 1),
+				"external-preview.redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion" => capture(&REGEX_URL_EXTERNAL_PREVIEW, "/preview/external-pre/", 1),
 				"styles.redditmedia.com" => capture(&REGEX_URL_STYLES, "/style/", 1),
+				"styles.reddit4hkhcpcf2mkmuotdlk3gknuzcatsw4f7dx7twdkwmtrt6ax4qd.onion" => capture(&REGEX_URL_STYLES, "/style/", 1),
 				"www.redditstatic.com" => capture(&REGEX_URL_STATIC_MEDIA, "/static/", 1),
+				"www.reddittic34i5gtjcnm2fb7fv2eyop4vbxquuc36prnbs7d2kp3saoqd.onion" => capture(&REGEX_URL_STATIC_MEDIA, "/static/", 1),
 				_ => url.to_string(),
 			}
 		})
@@ -1084,8 +1123,11 @@ pub fn render_bullet_lists(input_text: &str) -> String {
 }
 
 // These are links we want to replace in-body
-static REDDIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)").unwrap());
+static REDDIT_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+	Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it|reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad\.onion|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)/"#).unwrap()
+});
+static REDDIT_PREVIEW_REGEX: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r"https?://(external-preview|preview|i)\.(?:redd\.it|redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd\.onion)(.*)").unwrap());
 static REDDIT_EMOJI_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(www|).redditstatic\.com/(.*)").unwrap());
 static REDLIB_PREVIEW_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
 static REDLIB_PREVIEW_TEXT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r">(.*?)</a>").unwrap());
@@ -1381,6 +1423,80 @@ pub fn disable_indexing() -> bool {
 	}
 }
 
+/// Returns true if the config/env variable `REDLIB_USE_TOR` carries the value `on`.
+///
+/// If this variable is set as such, the instance will use Tor for oauth.
+pub fn using_tor() -> bool {
+	match get_setting("REDLIB_USE_TOR") {
+		Some(val) => val == "on",
+		None => false,
+	}
+}
+
+// Returns the correct oauth url for either clearnet or Tor usage
+pub fn get_reddit_url_base() -> &'static str {
+	if using_tor() {
+		"https://oauth.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion"
+	} else {
+		"https://oauth.reddit.com"
+	}
+}
+
+// Returns the correct oauth domain for either clearnet or Tor usage
+pub fn get_reddit_url_base_host() -> &'static str {
+	if using_tor() {
+		"oauth.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion"
+	} else {
+		"oauth.reddit.com"
+	}
+}
+
+// Returns the correct short Reddit url for either clearnet or Tor usage
+pub fn get_short_reddit_url_base() -> &'static str {
+	if using_tor() {
+		"https://redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion"
+	} else {
+		"https://redd.it"
+	}
+}
+
+// Returns the correct short Reddit domain for either clearnet or Tor usage
+pub fn get_short_reddit_url_base_host() -> &'static str {
+	if using_tor() {
+		"redditdotzhmh3mao6r5i2j7speppwqkizwo7vksy3mbz5iz7rlhocyd.onion"
+	} else {
+		"redd.it"
+	}
+}
+
+// Returns the correct alternative Reddit url for either clearnet or Tor usage
+pub fn get_alternative_reddit_url_base() -> &'static str {
+	if using_tor() {
+		"https://www.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion"
+	} else {
+		"https://www.reddit.com"
+	}
+}
+
+// Returns the correct alternative domain for either clearnet or Tor usage
+pub fn get_alternative_reddit_url_base_host() -> &'static str {
+	if using_tor() {
+		"www.reddittorjg6rue252oqsxryoxengawnmo46qy4kyii5wtqnwfj4ooad.onion"
+	} else {
+		"www.reddit.com"
+	}
+}
+
+// Returns the oauth timeout to use for either clearnet or Tor usage
+// There's another Duration import that isn't the correct one, so it needs to be fully defined
+pub fn get_oauth_timeout() -> core::time::Duration {
+	if using_tor() {
+		core::time::Duration::from_secs(90)
+	} else {
+		core::time::Duration::from_secs(5)
+	}
+}
+
 /// Determines if a request should redirect to a NSFW landing gate.
 pub fn should_be_nsfw_gated(req: &Request<Body>, _req_url: &str) -> bool {
 	(setting(req, "show_nsfw") != "on") || sfw_only()
@@ -1501,7 +1617,7 @@ mod tests {
 			format_url("https://preview.redd.it/qwerty.jpg?auto=webp&s=asdf"),
 			"/preview/pre/qwerty.jpg?auto=webp&s=asdf"
 		);
-		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/DASH/360.mp4");
 		assert_eq!(
 			format_url("https://v.redd.it/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"),
 			"/hls/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"
