@@ -1334,9 +1334,52 @@ pub fn redirect(path: &str) -> Response<Body> {
 		.unwrap_or_default()
 }
 
+/// Whether the client asked for Markdown (via `Content-Type` or `Accept`) instead of HTML.
+pub fn wants_markdown(req: &Request<Body>) -> bool {
+	[hyper::header::CONTENT_TYPE, hyper::header::ACCEPT]
+		.iter()
+		.filter_map(|name| req.headers().get(name).and_then(|value| value.to_str().ok()))
+		.any(|value| value.to_ascii_lowercase().contains("text/markdown"))
+}
+
+pub fn markdown(t: &impl Template) -> Response<Body> {
+	Response::builder()
+		.status(200)
+		.header("content-type", "text/markdown; charset=utf-8")
+		.body(t.render().unwrap_or_default().into())
+		.unwrap_or_default()
+}
+
+/// Renders `md` if the client asked for Markdown, `html` otherwise.
+pub fn page(req: &Request<Body>, html: &impl Template, md: &impl Template) -> Response<Body> {
+	if wants_markdown(req) {
+		markdown(md)
+	} else {
+		template(html)
+	}
+}
+
+#[derive(Template)]
+#[template(path = "md/message.md")]
+struct MessageMarkdown<'a> {
+	title: &'a str,
+	msg: &'a str,
+}
+
+fn markdown_message(status: u16, title: &str, msg: &str) -> Response<Body> {
+	Response::builder()
+		.status(status)
+		.header("content-type", "text/markdown; charset=utf-8")
+		.body(MessageMarkdown { title, msg }.render().unwrap_or_default().into())
+		.unwrap_or_default()
+}
+
 /// Renders a generic error landing page.
 pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
 	error!("Error page rendered: {}", msg.split('|').next().unwrap_or_default());
+	if wants_markdown(&req) {
+		return Ok(markdown_message(404, "Error", msg));
+	}
 	let url = req.uri().to_string();
 	let body = ErrorTemplate {
 		msg: msg.to_string(),
@@ -1351,6 +1394,9 @@ pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, Stri
 
 /// Renders a generic info landing page.
 pub async fn info(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
+	if wants_markdown(&req) {
+		return Ok(markdown_message(200, "Info", msg));
+	}
 	let url = req.uri().to_string();
 	let body = InfoTemplate {
 		msg: msg.to_string(),
