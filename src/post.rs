@@ -171,7 +171,10 @@ fn build_comment(
 ) -> Comment {
 	let id = val(comment, "id");
 
-	let body = if (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]" {
+	let is_removed = (val(comment, "author") == "[deleted]" && val(comment, "body") == "[removed]") || val(comment, "body") == "[ Removed by Reddit ]";
+	let body_md = if is_removed { "[removed]".to_string() } else { val(comment, "body") };
+
+	let body = if is_removed {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{post_link}{id}\">view removed comment</a></p></div>",
 			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
@@ -234,6 +237,7 @@ fn build_comment(
 		post_link: post_link.to_string(),
 		post_author: post_author.to_string(),
 		body,
+		body_md,
 		author,
 		score: if data["score_hidden"].as_bool().unwrap_or_default() {
 			("\u{2022}".to_string(), "Hidden".to_string())

@@ -327,6 +327,8 @@ pub struct Post {
 	pub title: String,
 	pub community: String,
 	pub body: String,
+	/// Reddit's Markdown source of `body`
+	pub body_md: String,
 	pub author: Author,
 	pub permalink: String,
 	pub link_title: String,
@@ -389,11 +391,18 @@ impl Post {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
 
+			// Markdown source: post text, or comment text in user listings
+			let mut body_md = val(post, "selftext");
+			if body_md.is_empty() {
+				body_md = val(post, "body");
+			}
+
 			posts.push(Self {
 				id: val(post, "id"),
 				title,
 				community: val(post, "subreddit"),
 				body,
+				body_md,
 				author: Author {
 					name: val(post, "author"),
 					flair: Flair {
@@ -474,6 +483,8 @@ pub struct Comment {
 	pub post_link: String,
 	pub post_author: String,
 	pub body: String,
+	/// Reddit's Markdown source of `body`
+	pub body_md: String,
 	pub author: Author,
 	pub score: (String, String),
 	pub rel_time: String,
@@ -803,6 +814,12 @@ pub async fn parse_post(post: &Value) -> Post {
 
 	let poll = Poll::parse(&post["data"]["poll_data"]);
 
+	let body_md = if val(post, "removed_by_category") == "moderator" {
+		"[removed]".to_string()
+	} else {
+		val(post, "selftext")
+	};
+
 	let body = if val(post, "removed_by_category") == "moderator" {
 		format!(
 			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{permalink}\">view removed post</a></p></div>",
@@ -826,6 +843,7 @@ pub async fn parse_post(post: &Value) -> Post {
 		title: val(post, "title"),
 		community: val(post, "subreddit"),
 		body,
+		body_md,
 		author: Author {
 			name: val(post, "author"),
 			flair: Flair {
