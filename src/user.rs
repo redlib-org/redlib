@@ -1,7 +1,7 @@
 #![allow(clippy::cmp_owned)]
 use crate::client::json;
 use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
+use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, page, param, setting, Post, Preferences, User};
 use crate::{config, utils};
 use askama::Template;
 use chrono::DateTime;
@@ -30,6 +30,12 @@ struct UserTemplate {
 	/// Whether all posts were hidden because they are NSFW (and user has disabled show NSFW)
 	all_posts_hidden_nsfw: bool,
 	no_posts: bool,
+}
+
+#[derive(Template)]
+#[template(path = "md/user.md")]
+struct UserMarkdown<'a> {
+	t: &'a UserTemplate,
 }
 
 // FUNCTIONS
@@ -62,7 +68,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	let filters = get_filters(&req);
 	if filters.contains(&["u_", &username].concat()) {
-		Ok(template(&UserTemplate {
+		let t = UserTemplate {
 			user,
 			posts: Vec::new(),
 			sort: (sort, param(&path, "t").unwrap_or_default()),
@@ -75,7 +81,8 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 			all_posts_filtered: false,
 			all_posts_hidden_nsfw: false,
 			no_posts: false,
-		}))
+		};
+		Ok(page(&req, &t, &UserMarkdown { t: &t }))
 	} else {
 		// Request user posts/comments from Reddit
 		match Post::fetch(&path, false).await {
@@ -83,7 +90,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 				let (_, all_posts_filtered) = filter_posts(&mut posts, &filters);
 				let no_posts = posts.is_empty();
 				let all_posts_hidden_nsfw = !no_posts && (posts.iter().all(|p| p.flags.nsfw) && setting(&req, "show_nsfw") != "on");
-				Ok(template(&UserTemplate {
+				let t = UserTemplate {
 					user,
 					posts,
 					sort: (sort, param(&path, "t").unwrap_or_default()),
@@ -96,7 +103,8 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 					all_posts_filtered,
 					all_posts_hidden_nsfw,
 					no_posts,
-				}))
+				};
+				Ok(page(&req, &t, &UserMarkdown { t: &t }))
 			}
 			// If there is an error show error page
 			Err(msg) => error(req, &msg).await,
