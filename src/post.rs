@@ -4,7 +4,7 @@ use crate::config::get_setting;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
-	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
+	error, format_num, get_filters, nsfw_landing, page, param, parse_post, rewrite_emotes, setting, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
 };
 use askama::Template;
 use hyper::{Body, Request, Response};
@@ -24,6 +24,12 @@ struct PostTemplate {
 	url: String,
 	url_without_query: String,
 	comment_query: String,
+}
+
+#[derive(Template)]
+#[template(path = "md/post.md")]
+struct PostMarkdown<'a> {
+	t: &'a PostTemplate,
 }
 
 static COMMENT_SEARCH_CAPTURE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
@@ -86,7 +92,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			};
 
 			// Use the Post and Comment structs to generate a website to show users
-			Ok(template(&PostTemplate {
+			let t = PostTemplate {
 				comments,
 				post,
 				url_without_query: url.clone().trim_end_matches(&format!("?q={query}&type=comment")).to_string(),
@@ -95,7 +101,8 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				single_thread,
 				url: req_url,
 				comment_query: query,
-			}))
+			};
+			Ok(page(&req, &t, &PostMarkdown { t: &t }))
 		}
 		// If the Reddit API returns an error, exit and send error page to user
 		Err(msg) => {

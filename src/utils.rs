@@ -499,6 +499,19 @@ pub struct Comment {
 	pub prefs: Preferences,
 }
 
+#[derive(Template)]
+#[template(path = "md/comment.md")]
+struct CommentMarkdown<'a> {
+	c: &'a Comment,
+}
+
+impl Comment {
+	/// Renders this comment and, indented beneath it, its replies as a Markdown list item.
+	pub fn markdown(&self) -> String {
+		CommentMarkdown { c: self }.render().unwrap_or_default()
+	}
+}
+
 #[derive(Default, Clone, Serialize)]
 pub struct Award {
 	pub name: String,
