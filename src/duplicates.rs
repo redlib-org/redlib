@@ -3,7 +3,7 @@
 use crate::client::json;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
-use crate::utils::{error, filter_posts, get_filters, nsfw_landing, parse_post, template, Post, Preferences};
+use crate::utils::{error, filter_posts, get_filters, nsfw_landing, page, parse_post, Post, Preferences};
 
 use askama::Template;
 use hyper::{Body, Request, Response};
@@ -48,6 +48,12 @@ struct DuplicatesTemplate {
 	/// all_posts_filtered is true if every duplicate was filtered. This is an
 	/// edge case but can still happen.
 	all_posts_filtered: bool,
+}
+
+#[derive(Template)]
+#[template(path = "md/duplicates.md")]
+struct DuplicatesMarkdown<'a> {
+	t: &'a DuplicatesTemplate,
 }
 
 /// Make the GET request to Reddit. It assumes `req` is the appropriate Reddit
@@ -197,7 +203,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				}
 			}
 
-			Ok(template(&DuplicatesTemplate {
+			let t = DuplicatesTemplate {
 				params: DuplicatesParams { before, after, sort },
 				post,
 				duplicates,
@@ -205,7 +211,8 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 				url: req_url,
 				num_posts_filtered,
 				all_posts_filtered,
-			}))
+			};
+			Ok(page(&req, &t, &DuplicatesMarkdown { t: &t }))
 		}
 
 		// Process error.
