@@ -1,5 +1,5 @@
 #![allow(clippy::cmp_owned)]
-use crate::utils::{self, catch_random, error, filter_posts, format_num, format_url, get_filters, param, redirect, setting, template, val, Post, Preferences};
+use crate::utils::{self, catch_random, error, filter_posts, format_num, format_url, get_filters, page, param, redirect, setting, val, Post, Preferences};
 use crate::{
 	client::json,
 	server::RequestExt,
@@ -30,6 +30,13 @@ struct Subreddit {
 	subscribers: (String, String),
 }
 
+impl Subreddit {
+	/// The description on a single line, for use in a Markdown list item.
+	fn one_line_description(&self) -> String {
+		self.description.split_whitespace().collect::<Vec<_>>().join(" ")
+	}
+}
+
 #[derive(Template)]
 #[template(path = "search.html")]
 struct SearchTemplate {
@@ -47,6 +54,12 @@ struct SearchTemplate {
 	/// Whether all posts were hidden because they are NSFW (and user has disabled show NSFW)
 	all_posts_hidden_nsfw: bool,
 	no_posts: bool,
+}
+
+#[derive(Template)]
+#[template(path = "md/search.md")]
+struct SearchMarkdown<'a> {
+	t: &'a SearchTemplate,
 }
 
 /// Regex matched against search queries to determine if they are reddit urls.
@@ -106,7 +119,7 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// If all requested subs are filtered, we don't need to fetch posts.
 	if sub.split('+').all(|s| filters.contains(s)) {
-		Ok(template(&SearchTemplate {
+		let t = SearchTemplate {
 			posts: Vec::new(),
 			subreddits,
 			sub,
@@ -125,14 +138,15 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 			all_posts_filtered: false,
 			all_posts_hidden_nsfw: false,
 			no_posts: false,
-		}))
+		};
+		Ok(page(&req, &t, &SearchMarkdown { t: &t }))
 	} else {
 		match Post::fetch(&path, quarantined).await {
 			Ok((mut posts, after)) => {
 				let (_, all_posts_filtered) = filter_posts(&mut posts, &filters);
 				let no_posts = posts.is_empty();
 				let all_posts_hidden_nsfw = !no_posts && (posts.iter().all(|p| p.flags.nsfw) && setting(&req, "show_nsfw") != "on");
-				Ok(template(&SearchTemplate {
+				let t = SearchTemplate {
 					posts,
 					subreddits,
 					sub,
@@ -151,7 +165,8 @@ pub async fn find(req: Request<Body>) -> Result<Response<Body>, String> {
 					all_posts_filtered,
 					all_posts_hidden_nsfw,
 					no_posts,
-				}))
+				};
+				Ok(page(&req, &t, &SearchMarkdown { t: &t }))
 			}
 			Err(msg) => {
 				if msg == "quarantined" || msg == "gated" {
