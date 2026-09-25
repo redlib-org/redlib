@@ -1,7 +1,7 @@
 #![allow(clippy::cmp_owned)]
 
 use crate::utils::{
-	Post, Preferences, Subreddit, catch_random, error, filter_posts, format_num, format_url, get_filters, info, nsfw_landing, param, redirect, rewrite_urls, setting, template, to_absolute_url, val
+	Post, Preferences, Subreddit, catch_random, error, filter_posts, format_num, format_url, get_filters, info, nsfw_landing, param, redirect, rewrite_urls, page, setting, to_absolute_url, val
 };
 use crate::{client::json, server::RequestExt, server::ResponseExt};
 use crate::{config, utils};
@@ -38,13 +38,27 @@ struct SubredditTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "md/subreddit.md")]
+struct SubredditMarkdown<'a> {
+	t: &'a SubredditTemplate,
+}
+
+#[derive(Template)]
 #[template(path = "wiki.html")]
 struct WikiTemplate {
 	sub: String,
 	wiki: String,
+	/// Reddit's Markdown source of `wiki`
+	wiki_md: String,
 	page: String,
 	prefs: Preferences,
 	url: String,
+}
+
+#[derive(Template)]
+#[template(path = "md/wiki.md")]
+struct WikiMarkdown<'a> {
+	t: &'a WikiTemplate,
 }
 
 #[derive(Template)]
@@ -147,7 +161,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// If all requested subs are filtered, we don't need to fetch posts.
 	if sub_name.split('+').all(|s| filters.contains(s)) {
-		Ok(template(&SubredditTemplate {
+		let t = SubredditTemplate {
 			sub,
 			posts: Vec::new(),
 			sort: (sort, param(&path, "t").unwrap_or_default()),
@@ -159,7 +173,8 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 			all_posts_filtered: false,
 			all_posts_hidden_nsfw: false,
 			no_posts: false,
-		}))
+		};
+		Ok(page(&req, &t, &SubredditMarkdown { t: &t }))
 	} else {
 		match Post::fetch(&path, quarantined).await {
 			Ok((mut posts, after)) => {
@@ -170,7 +185,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 					posts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
 					posts.sort_by(|a, b| b.flags.stickied.cmp(&a.flags.stickied));
 				}
-				Ok(template(&SubredditTemplate {
+				let t = SubredditTemplate {
 					sub,
 					posts,
 					sort: (sort, param(&path, "t").unwrap_or_default()),
@@ -182,7 +197,8 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 					all_posts_filtered,
 					all_posts_hidden_nsfw,
 					no_posts,
-				}))
+				};
+				Ok(page(&req, &t, &SubredditMarkdown { t: &t }))
 			}
 			Err(msg) => match msg.as_str() {
 				"quarantined" | "gated" => Ok(quarantine(&req, sub_name, &msg)),
@@ -469,13 +485,17 @@ pub async fn wiki(req: Request<Body>) -> Result<Response<Body>, String> {
 	let url = req.uri().to_string();
 
 	match json(path, quarantined).await {
-		Ok(response) => Ok(template(&WikiTemplate {
-			sub,
-			wiki: rewrite_urls(response["data"]["content_html"].as_str().unwrap_or("<h3>Wiki not found</h3>")),
-			page,
-			prefs: Preferences::new(&req),
-			url,
-		})),
+		Ok(response) => {
+			let t = WikiTemplate {
+				sub,
+				wiki: rewrite_urls(response["data"]["content_html"].as_str().unwrap_or("<h3>Wiki not found</h3>")),
+				wiki_md: response["data"]["content_md"].as_str().unwrap_or("Wiki not found").to_string(),
+				page,
+				prefs: Preferences::new(&req),
+				url,
+			};
+			Ok(utils::page(&req, &t, &WikiMarkdown { t: &t }))
+		}
 		Err(msg) => {
 			if msg == "quarantined" || msg == "gated" {
 				Ok(quarantine(&req, sub, &msg))
@@ -502,18 +522,22 @@ pub async fn sidebar(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Send a request to the url
 	match json(path, quarantined).await {
 		// If success, receive JSON in response
-		Ok(response) => Ok(template(&WikiTemplate {
-			wiki: rewrite_urls(&val(&response, "description_html")),
-			// wiki: format!(
-			// 	"{}<hr><h1>Moderators</h1><br><ul>{}</ul>",
-			// 	rewrite_urls(&val(&response, "description_html"),
-			// 	moderators(&sub, quarantined).await.unwrap_or(vec!["Could not fetch moderators".to_string()]).join(""),
-			// ),
-			sub,
-			page: "Sidebar".to_string(),
-			prefs: Preferences::new(&req),
-			url,
-		})),
+		Ok(response) => {
+			let t = WikiTemplate {
+				wiki: rewrite_urls(&val(&response, "description_html")),
+				wiki_md: val(&response, "description"),
+				// wiki: format!(
+				// 	"{}<hr><h1>Moderators</h1><br><ul>{}</ul>",
+				// 	rewrite_urls(&val(&response, "description_html"),
+				// 	moderators(&sub, quarantined).await.unwrap_or(vec!["Could not fetch moderators".to_string()]).join(""),
+				// ),
+				sub,
+				page: "Sidebar".to_string(),
+				prefs: Preferences::new(&req),
+				url,
+			};
+			Ok(utils::page(&req, &t, &WikiMarkdown { t: &t }))
+		}
 		Err(msg) => {
 			if msg == "quarantined" || msg == "gated" {
 				Ok(quarantine(&req, sub, &msg))
