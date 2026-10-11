@@ -1,0 +1,93 @@
+name: Lint Check
+
+env:
+  CARGO_TERM_COLOR: always
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rustfmt:
+    name: Run rustfmt
+    runs-on: ubuntu-slim
+    continue-on-error: true
+    outputs:
+      outcome: ${{ steps.test.outcome }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      
+      - name: Install rust with rustfmt
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: stable
+          components: rustfmt
+          cache: false
+          build-warnings: warn
+
+      - id: test
+        name: Rustfmt Check
+        uses: actions-rust-lang/rustfmt@v1
+
+      # commended because we are using problem matcher for better ui
+      # - name: Run cargo fmt
+      #   run: cargo fmt --all -- --check
+
+  clippy:
+    name: Run clippy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      outcome: ${{ steps.test.outcome }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install rust with rustfmt
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: stable
+          components: clippy
+          cache: false
+          build-warnings: warn
+      
+      - name: Install dependencis
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --no-install-suggests gcc g++ git cmake make perl pkg-config libclang-dev nasm
+
+      - id: test
+        name: Run cargo clippy
+        run: cargo clippy -- -D warnings
+
+  conclusion:
+    name: Conclude run
+    needs:
+      - rustfmt
+      - clippy
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Check results
+        run: |
+          echo "Rustfmt result: ${{ needs.rustfmt.outputs.outcome }}"
+          echo "Clippy result: ${{ needs.clippy.outputs.outcome }}"
+
+          if [[ \
+            "${{ needs.clippy.outputs.outcome }}" == "failure" ||
+            "${{ needs.clippy.outputs.outcome }}" == "failure"
+          ]]; then
+            echo "Failed jobs detected"
+            exit 1
+          fi

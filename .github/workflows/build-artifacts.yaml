@@ -1,4 +1,4 @@
-name: Release Build
+name: Build Artifact
 
 on:
   push:
@@ -7,70 +7,102 @@ on:
       - "compose.*"
     branches:
       - "main"
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      skip-debug-build:
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      skip-debug-build:
+        type: boolean
+        default: false
 
 env: 
+  RUST_BACKTRACE: full
   CARGO_TERM_COLOR: always
 
-  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
-  CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
-  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
-  CC_armv7_unknown_linux_musleabihf: arm-linux-gnueabihf-gcc
+  CARGO_TARGET_I586_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-self-contained=yes"
+  CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-self-contained=yes"
+  CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-self-contained=yes"
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-self-contained=yes"
+  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS: "-C target-feature=+crt-static -C link-self-contained=yes"
+
+permissions:
+  contents: read
 
 jobs:
+  prepare:
+    name: Prepare Build
+    runs-on: ubuntu-slim
+    permissions: {}
+    outputs:
+      build_profiles: ${{ steps.set-build-profile-matrix.outputs.BUILD_PROFILES }}
+    steps:
+      - id: set-build-profile-matrix
+        run: |
+          BUILD_PROFILES="[]"
+          BUILD_PROFILES=$(jq -c '. + ["release"]' <<< "$BUILD_PROFILES")
+          if [[ "${{ inputs.skip-debug-build }}" == "false" ]]; then
+            BUILD_PROFILES=$(jq -c '. + ["debug"]' <<< "$BUILD_PROFILES")
+          fi
+          jq 'if length == 0 then error("array is empty") else . end' <<< "$BUILD_PROFILES"
+          echo "BUILD_PROFILES=$BUILD_PROFILES" >> "$GITHUB_OUTPUT"
+
   build:
-    name: Rust project - latest
+    name: Build App
     runs-on: ubuntu-latest
+    needs: prepare
     strategy:
       matrix:
         target:
+          # - i586-unknown-linux-musl
+          - i686-unknown-linux-musl
           - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-musl
           - armv7-unknown-linux-musleabihf
+          - x86_64-pc-windows-gnu
+          # - i686-pc-windows-gnu
+        profile: ${{ fromJson(needs.prepare.outputs.build_profiles) }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v7
         with:
-          target: ${{ matrix.target }}
-      
-      - if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools git cmake perl pkg-config libclang-dev
- 
-      - if: matrix.target == 'armv7-unknown-linux-musleabihf'
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-arm-linux-gnueabihf musl-tools git cmake perl pkg-config libclang-dev
+          persist-credentials: false
 
-      - if: matrix.target == 'aarch64-unknown-linux-musl'
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu musl-tools git cmake perl pkg-config libclang-dev
-
-      - name: Versions
-        id: version
-        run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
-
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Package release
-        run: tar czf redlib-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ redlib
-
-      - name: Upload release
-        uses: softprops/action-gh-release@v1
+      - name: Install rust
+        uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
-          tag_name: ${{ steps.version.outputs.VERSION }}
-          name: ${{ steps.version.outputs.VERSION }} - ${{ github.event.head_commit.message }}
-          draft: true
-          files: |
-            redlib-${{ matrix.target }}.tar.gz
-          body: |
-            - ${{ github.event.head_commit.message }} ${{ github.sha }}
-          generate_release_notes: true
+          toolchain: stable
+          cache: false
+          build-warnings: warn
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.24.0
 
+      - name: Install cross
+        run: cargo binstall --force -y cross
 
+      - name: Build redlib
+        run: |
+          # cargo clean is because https://github.com/cross-rs/cross/issues/724
+          cargo clean
+          if [ "${{ matrix.profile }}" = "release" ]; then
+            cross build --release --target ${{ matrix.target }}
+          elif [ "${{ matrix.profile }}" = "debug" ]; then
+            cross build --target ${{ matrix.target }}
+          else
+            echo "Unknown build profile! ${{ matrix.profile }}"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: redlib-${{ matrix.profile }}-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/redlib
+            target/${{ matrix.target }}/release/redlib.exe
+            target/${{ matrix.target }}/debug/redlib
+            target/${{ matrix.target }}/debug/redlib.exe
+          compression-level: 9
+          if-no-files-found: error

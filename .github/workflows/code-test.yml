@@ -1,0 +1,59 @@
+name: Test
+
+env:
+  RUST_BACKTRACE: full
+  CARGO_TERM_COLOR: always
+  NEXTEST_RETRIES: 10
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      outcome: ${{ steps.test.outcome }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      
+      - name: Install rust
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: stable
+          cache: false
+          build-warnings: warn
+      
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - id: test
+        name: Run cargo nextest
+        run: cargo nextest run
+
+  conclusion:
+    name: Conclude run
+    needs:
+      - test
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Check results
+        run: |
+          echo "Test result: ${{ needs.test.outputs.outcome }}"
+
+          if [[ "${{ needs.test.outputs.outcome }}" == "failure" ]]; then
+            echo "Failed jobs detected"
+            exit 1
+          fi
