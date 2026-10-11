@@ -37,6 +37,13 @@ pub static OAUTH_CLIENT: LazyLock<ArcSwap<Oauth>> = LazyLock::new(|| {
 
 pub static OAUTH_RATELIMIT_REMAINING: AtomicU16 = AtomicU16::new(99);
 
+/// Lower the local quota estimate by one, without ever wrapping below zero.
+pub fn burn_rate_limit_unit() {
+	OAUTH_RATELIMIT_REMAINING
+		.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| Some(v.saturating_sub(1)))
+		.ok();
+}
+
 pub static OAUTH_IS_ROLLING_OVER: AtomicBool = AtomicBool::new(false);
 
 const URL_PAIRS: [(&str, &str); 2] = [
@@ -334,7 +341,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 		warn!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
 		tokio::spawn(force_refresh_token());
 	}
-	OAUTH_RATELIMIT_REMAINING.fetch_sub(1, Ordering::SeqCst);
+	burn_rate_limit_unit();
 
 	// Fetch the url...
 	match reddit_get(path.clone(), quarantine).await {
@@ -562,5 +569,56 @@ mod tests {
 		let link = json("/r/drugs/about.json?raw_json=1".into(), false).await;
 		assert!(link.is_err());
 		assert_eq!(link, Err("gated".into()));
+	}
+
+	#[test]
+	#[sealed_test]
+	fn test_rate_limit_counter_decrements_one_unit() {
+		OAUTH_RATELIMIT_REMAINING.store(50, Ordering::SeqCst);
+		burn_rate_limit_unit();
+		assert_eq!(OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst), 49);
+	}
+
+	#[test]
+	#[sealed_test]
+	fn test_rate_limit_counter_saturates_at_zero() {
+		OAUTH_RATELIMIT_REMAINING.store(0, Ordering::SeqCst);
+		for _ in 0..100 {
+			burn_rate_limit_unit();
+		}
+		assert_eq!(OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst), 0);
+	}
+
+	#[test]
+	#[sealed_test]
+	fn test_rate_limit_burst_across_zero_arms_rollover_guard() {
+		// json() triggers a token rollover when it reads `current_rate_limit < 10`.
+		// A burst crossing zero must leave the counter below that threshold.
+		OAUTH_RATELIMIT_REMAINING.store(5, Ordering::SeqCst);
+		for _ in 0..10 {
+			burn_rate_limit_unit();
+		}
+		assert!(OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst) < 10);
+	}
+
+	#[test]
+	#[sealed_test]
+	fn test_rate_limit_concurrent_bursts_never_wrap() {
+		OAUTH_RATELIMIT_REMAINING.store(2, Ordering::SeqCst);
+		let handles: Vec<_> = (0..8)
+			.map(|_| {
+				std::thread::spawn(|| {
+					let mut max_seen = 0u16;
+					for _ in 0..500 {
+						burn_rate_limit_unit();
+						max_seen = max_seen.max(OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst));
+					}
+					max_seen
+				})
+			})
+			.collect();
+		let max_seen = handles.into_iter().map(|h| h.join().unwrap()).max().unwrap();
+		assert!(max_seen <= 2, "counter wrapped: observed {max_seen}");
+		assert_eq!(OAUTH_RATELIMIT_REMAINING.load(Ordering::SeqCst), 0);
 	}
 }
