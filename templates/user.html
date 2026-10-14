@@ -6,17 +6,18 @@ body %}
 <main>
     {% if !is_filtered %}
     <div id="column_one">
-        <form id="sort">
+        <form id="sort" method="get" action="/user/{{ user.name }}/{{ listing }}">
             <div id="listing_options">
                 {% call utils::sort(["/user/", user.name.as_str()].concat(),
                 ["overview", "comments", "submitted"], listing) %}
             </div>
-            <select id="sort_select" name="sort">
+            <select id="sort_select" name="sort" onchange="this.form.submit()">
                 {% call utils::options(sort.0, ["hot", "new", "top",
                 "controversial"], "") %}</select
             >{% if sort.0 == "top" || sort.0 == "controversial" %}<select
                 id="timeframe"
                 name="t"
+                onchange="this.form.submit()"
             >
                 {% call utils::options(sort.1, ["hour", "day", "week", "month",
                 "year", "all"], "all") %}</select

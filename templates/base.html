@@ -30,7 +30,8 @@
 		<!-- Video quality -->
 		<div id="video_quality" data-value="{{ prefs.video_quality }}"></div>
 		{% endblock %}
-		</head>
+		<script src="/sort.js?v={{ env!("CARGO_PKG_VERSION") }}" defer></script>
+	</head>
 	<body class="
 		{% if prefs.layout != "" %}{{ prefs.layout }}{% endif %}
 		{% if prefs.wide == "on" %} wide{% endif %}

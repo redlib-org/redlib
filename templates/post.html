@@ -53,9 +53,9 @@
 
 		<!-- SORT FORM -->
        <div id="commentQueryForms">
-		<form id="sort">
+		<form id="sort" method="get">
 			<p id="comment_count">{{post.comments.0}} {% if post.comments.0 == "1" %}comment{% else %}comments{% endif %} <span id="sorted_by">sorted by </span></p>
-			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
+			<select name="sort" title="Sort comments by" id="commentSortSelect" onchange="this.form.submit()"> 
 				{% call utils::options(sort, ["confidence", "top", "new", "controversial", "old"], "confidence") %}
       </select>
         <button id="sort_submit" class="submit">

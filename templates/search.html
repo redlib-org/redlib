@@ -20,11 +20,11 @@
 					</div>
 					{% endif %}
 					{% if params.typed == "sr_user" %}<input type="hidden" name="type" value="sr_user">{% endif %}
-					<select id="sort_options" name="sort" title="Sort results by">
+					<select id="sort_options" name="sort" title="Sort results by" onchange="this.form.submit()">
 						{% call utils::options(params.sort, ["relevance", "hot", "top", "new", "comments"], "") %}
 					</select>
 					{% if params.sort != "new" %}
-					<select id="timeframe" name="t" title="Timeframe"> 
+					<select id="timeframe" name="t" title="Timeframe" onchange="this.form.submit()"> 
 						{% call utils::options(params.t, ["hour", "day", "week", "month", "year", "all"], "all") %}
 					</select>
 					{% endif %}

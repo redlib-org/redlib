@@ -732,4 +732,29 @@ mod tests {
 		let gated = subreddit("drugs", true).await;
 		assert!(gated.is_ok());
 	}
+
+	#[test]
+	fn test_subreddit_sort_form_render() {
+		let template = SubredditTemplate {
+			sub: Subreddit {
+				name: "reddit".to_string(),
+				..Subreddit::default()
+			},
+			posts: Vec::new(),
+			sort: ("top".to_string(), "hour".to_string()),
+			ends: (String::new(), String::new()),
+			prefs: Preferences::default(),
+			url: "/r/reddit/top?t=hour".to_string(),
+			redirect_url: "r/reddit/top%3Ft=hour".to_string(),
+			is_filtered: false,
+			all_posts_filtered: false,
+			all_posts_hidden_nsfw: false,
+			no_posts: false,
+		};
+		let html = template.render().unwrap();
+		assert!(html.contains(r#"<form id="sort" method="get" action="/r/reddit/top">"#));
+		assert!(html.contains(r#"<select id="timeframe" name="t" title="Timeframe" onchange="this.form.submit()">"#));
+		assert!(html.contains(r#"<option value="hour" selected>"#));
+		assert!(html.contains(r#"<script src="/sort.js?v="#));
+	}
 }
