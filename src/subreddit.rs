@@ -597,8 +597,11 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 
 	// Get subreddit
 	let sub = req.param("sub").unwrap_or_default();
-	let post_sort = req.cookie("post_sort").map_or_else(|| "hot".to_string(), |c| c.value().to_string());
-	let sort = req.param("sort").unwrap_or_else(|| req.param("id").unwrap_or(post_sort));
+	let query = format!("?{}", req.uri().query().unwrap_or_default());
+	let sort = match param(&query, "sort").as_deref() {
+		Some(s @ ("hot" | "new" | "top" | "rising" | "controversial")) => s.to_string(),
+		_ => "hot".to_string(),
+	};
 
 	// Get path
 	let path = format!("/r/{sub}/{sort}.json?{}", req.uri().query().unwrap_or_default());
