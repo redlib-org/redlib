@@ -336,8 +336,9 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	}
 	OAUTH_RATELIMIT_REMAINING.fetch_sub(1, Ordering::SeqCst);
 
-	// Fetch the url...
-	match reddit_get(path.clone(), quarantine).await {
+	// Fetch the url. Thread routes need the slash between the subreddit and
+	// `comments` encoded; see encode_thread_route().
+	match reddit_get(encode_thread_route(&path), quarantine).await {
 		Ok(response) => {
 			let status = response.status();
 
@@ -440,6 +441,48 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	}
 }
 
+/// Percent-encodes the slash that joins the subreddit to `comments` in a
+/// thread route.
+///
+/// Reddit's edge matches the literal path `/r/<subreddit>/comments/...` and
+/// answers it with an HTML "You've been blocked by network security" page when
+/// the request carries an anonymous or app-only OAuth token - which is every
+/// token Redlib can mint. The same request with just that one slash encoded
+/// (`/r/<subreddit>%2fcomments/...`) is not matched and returns the usual JSON.
+///
+/// `/r/rust/comments/18t5968/foo/.json?raw_json=1`
+///   -> `/r/rust%2fcomments/18t5968/foo/.json?raw_json=1`
+///
+/// Anything that is not a thread route is returned unchanged. This works around
+/// a Reddit-side block and should be removed if Reddit starts normalising the
+/// path. See <https://github.com/redlib-org/redlib/issues/591>.
+fn encode_thread_route(path: &str) -> String {
+	// Split the query string off so that only the path itself is rewritten.
+	let (path_part, query_part) = match path.split_once('?') {
+		Some((path_part, query_part)) => (path_part, Some(query_part)),
+		None => (path, None),
+	};
+
+	let mut encoded_path = path_part.to_string();
+
+	if let Some(rest) = path_part.strip_prefix("/r/") {
+		if let Some(index) = rest.find("/comments") {
+			let tail = &rest[index + "/comments".len()..];
+
+			// `/comments/`, `/comments.json` or a path ending in `/comments` is
+			// the route; `/commentsXYZ` is not.
+			if tail.is_empty() || tail.starts_with('/') || tail.starts_with('.') {
+				encoded_path = format!("/r/{}%2fcomments{tail}", &rest[..index]);
+			}
+		}
+	}
+
+	match query_part {
+		Some(query_part) => format!("{encoded_path}?{query_part}"),
+		None => encoded_path,
+	}
+}
+
 async fn self_check(sub: &str) -> Result<(), String> {
 	let query = format!("/r/{sub}/hot.json?&raw_json=1");
 
@@ -510,6 +553,41 @@ mod tests {
 	use {crate::config::get_setting, sealed_test::prelude::*};
 
 	const POPULAR_URL: &str = "/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL";
+
+	#[test]
+	fn test_thread_route_gets_its_slash_encoded() {
+		// Reddit blocks the literal `/r/<sub>/comments/...` path for app-only
+		// OAuth tokens, and serves the same JSON when that one slash is encoded.
+		assert_eq!(
+			encode_thread_route("/r/politics/comments/1x9xx9e/.json?&sort=confidence&raw_json=1"),
+			"/r/politics%2fcomments/1x9xx9e/.json?&sort=confidence&raw_json=1"
+		);
+		assert_eq!(
+			encode_thread_route("/r/rust/comments/18t5968/why_use_tuple_struct_over_standard_struct/"),
+			"/r/rust%2fcomments/18t5968/why_use_tuple_struct_over_standard_struct/"
+		);
+		assert_eq!(
+			encode_thread_route("/r/rust/comments/18t5968/kfbqlbc/.json?raw_json=1"),
+			"/r/rust%2fcomments/18t5968/kfbqlbc/.json?raw_json=1"
+		);
+		// A subreddit that happens to be called `comments` still resolves.
+		assert_eq!(encode_thread_route("/r/comments/comments/1x9xx9e/.json"), "/r/comments%2fcomments/1x9xx9e/.json");
+	}
+
+	#[test]
+	fn test_non_thread_paths_are_left_alone() {
+		for path in [
+			"/r/popular/hot.json?&raw_json=1&geo_filter=GLOBAL",
+			"/r/rust/about.json?raw_json=1",
+			"/r/rust/hot.json?raw_json=1",
+			"/r/rust/commentsXYZ.json",
+			"/r/rust/s/kPgq8WNHRK",
+			"/user/spez/comments.json?limit=1",
+			"/comments/1x9xx9e",
+		] {
+			assert_eq!(encode_thread_route(path), path, "{path}");
+		}
+	}
 
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_rate_limit_check() {
