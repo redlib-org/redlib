@@ -1,6 +1,6 @@
 # supported versions here: https://hub.docker.com/_/rust
-ARG RUST_BUILDER_VERSION=slim-bookworm
-ARG UBUNTU_RELEASE_VERSION=noble
+ARG RUST_BUILDER_VERSION=slim-trixie
+ARG UBUNTU_RELEASE_VERSION=resolute
 
 ########################
 ## builder image
@@ -12,6 +12,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /redlib
+
+# display backtrace on build error
+ENV RUST_BACKTRACE=full
 
 # download (most) dependencies in their own layer
 COPY Cargo.lock Cargo.toml ./
