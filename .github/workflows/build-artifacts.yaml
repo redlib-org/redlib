@@ -18,6 +18,10 @@ env:
   CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
   CC_armv7_unknown_linux_musleabihf: arm-linux-gnueabihf-gcc
 
+  CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc
+  CC_x86_64_pc_windows_gnu: x86_64-w64-mingw32-gcc
+  CXX_x86_64_pc_windows_gnu: x86_64-w64-mingw32-g++
+
 jobs:
   build:
     name: Rust project - latest
@@ -28,6 +32,7 @@ jobs:
           - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-musl
           - armv7-unknown-linux-musleabihf
+          - x86_64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
       
@@ -50,6 +55,15 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu musl-tools git cmake perl pkg-config libclang-dev
 
+      - if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 nasm git cmake perl pkg-config libclang-dev
+
+          # boring-sys2 (wreq's library) needs mm_alloc.h on MinGW
+          # workaround header conflict between Clang and MinGW headers
+          echo "BINDGEN_EXTRA_CLANG_ARGS=-I$(x86_64-w64-mingw32-gcc -print-file-name=include) -nobuiltininc" >> "$GITHUB_ENV"
+
       - name: Versions
         id: version
         run: echo "VERSION=$(cargo metadata --format-version 1 --no-deps | jq .packages[0].version -r | sed 's/^/v/')" >> "$GITHUB_OUTPUT"
@@ -58,7 +72,13 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package release
-        run: tar czf redlib-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ redlib
+        shell: bash
+        run: |
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            zip -9 -j "redlib-${{ matrix.target }}.zip" "target/${{ matrix.target }}/release/redlib.exe"
+          else
+            tar czf redlib-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ redlib
+          fi
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
@@ -71,6 +91,5 @@ jobs:
           body: |
             - ${{ github.event.head_commit.message }} ${{ github.sha }}
           generate_release_notes: true
-
 
 
