@@ -25,6 +25,7 @@ struct SubredditTemplate {
 	posts: Vec<Post>,
 	sort: (String, String),
 	ends: (String, String),
+	geo_filter: String,
 	prefs: Preferences,
 	url: String,
 	redirect_url: String,
@@ -132,13 +133,15 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 		return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 	}
 
+	let geo_filter = if sub_name == "popular" {
+		GEO_FILTER_MATCH.captures(&query).map(|geo_filter| geo_filter["region"].to_string()).unwrap_or_default()
+	} else {
+		String::new()
+	};
 	let mut params = String::from("&raw_json=1");
 	if sub_name == "popular" {
-		let geo_filter = match GEO_FILTER_MATCH.captures(&query) {
-			Some(geo_filter) => geo_filter["region"].to_string(),
-			None => "GLOBAL".to_owned(),
-		};
-		params.push_str(&format!("&geo_filter={geo_filter}"));
+		let api_geo_filter = if geo_filter.is_empty() { "GLOBAL" } else { &geo_filter };
+		params.push_str(&format!("&geo_filter={api_geo_filter}"));
 	}
 
 	let path = format!("/r/{}/{sort}.json?{}{params}", sub_name.replace('+', "%2B"), req.uri().query().unwrap_or_default());
@@ -153,6 +156,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 			posts: Vec::new(),
 			sort: (sort, param(&path, "t").unwrap_or_default()),
 			ends: (param(&path, "after").unwrap_or_default(), String::new()),
+			geo_filter: geo_filter.clone(),
 			prefs: Preferences::new(&req),
 			url,
 			redirect_url,
@@ -176,6 +180,7 @@ pub async fn community(req: Request<Body>) -> Result<Response<Body>, String> {
 					posts,
 					sort: (sort, param(&path, "t").unwrap_or_default()),
 					ends: (param(&path, "after").unwrap_or_default(), after),
+					geo_filter: geo_filter.clone(),
 					prefs: Preferences::new(&req),
 					url,
 					redirect_url,
@@ -708,6 +713,29 @@ fn get_mime_type(url: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn popular_next_page_preserves_geo_filter() {
+		let mut sub = Subreddit::default();
+		sub.name = "popular".to_string();
+		let page = SubredditTemplate {
+			sub,
+			posts: Vec::new(),
+			sort: ("hot".to_string(), String::new()),
+			ends: (String::new(), "t3_next".to_string()),
+			geo_filter: "IN".to_string(),
+			prefs: Preferences::default(),
+			url: "/?geo_filter=IN".to_string(),
+			redirect_url: String::new(),
+			is_filtered: false,
+			all_posts_filtered: false,
+			all_posts_hidden_nsfw: false,
+			no_posts: false,
+		};
+
+		let html = page.render().unwrap();
+		assert!(html.contains("after=t3_next&geo_filter=IN"));
+	}
 
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_fetching_subreddit() {
