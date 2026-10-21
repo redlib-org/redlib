@@ -31,16 +31,15 @@ jobs:
           toolchain: stable
 
       - name: Install musl cross compiler
-        id: musl
-        uses: arceos-org/setup-musl@v1
-        with:
-          arch: x86_64
-
-      - name: Configure musl compiler
         run: |
-          echo "CC_x86_64_unknown_linux_musl=${{ steps.musl.outputs.cross_compile }}-gcc" >> "$GITHUB_ENV"
-          echo "CXX_x86_64_unknown_linux_musl=${{ steps.musl.outputs.cross_compile }}-g++" >> "$GITHUB_ENV"
-          echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=${{ steps.musl.outputs.cross_compile }}-g++" >> "$GITHUB_ENV"
+          toolchain=x86_64-linux-musl
+          curl -fsSL "https://musl.cc/${toolchain}-cross.tgz" -o "$RUNNER_TEMP/${toolchain}-cross.tgz"
+          mkdir -p "$RUNNER_TEMP/${toolchain}-cross"
+          tar -xzf "$RUNNER_TEMP/${toolchain}-cross.tgz" --strip-components=1 -C "$RUNNER_TEMP/${toolchain}-cross"
+          echo "$RUNNER_TEMP/${toolchain}-cross/bin" >> "$GITHUB_PATH"
+          echo "CC_x86_64_unknown_linux_musl=${toolchain}-gcc" >> "$GITHUB_ENV"
+          echo "CXX_x86_64_unknown_linux_musl=${toolchain}-g++" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=${toolchain}-g++" >> "$GITHUB_ENV"
 
       - name: Install musl-gcc
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ musl-tools git cmake perl pkg-config libclang-dev

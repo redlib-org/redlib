@@ -32,27 +32,28 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install musl cross compiler
-        id: musl
-        uses: arceos-org/setup-musl@v1
-        with:
-          arch: ${{ matrix.target == 'armv7-unknown-linux-musleabihf' && 'arm' || matrix.target == 'aarch64-unknown-linux-musl' && 'aarch64' || 'x86_64' }}
-
-      - name: Configure musl compiler
         run: |
           case "${{ matrix.target }}" in
             x86_64-unknown-linux-musl)
+              toolchain=x86_64-linux-musl
               target_env=x86_64_unknown_linux_musl
               ;;
             aarch64-unknown-linux-musl)
+              toolchain=aarch64-linux-musl
               target_env=aarch64_unknown_linux_musl
               ;;
             armv7-unknown-linux-musleabihf)
+              toolchain=armv7l-linux-musleabihf
               target_env=armv7_unknown_linux_musleabihf
               ;;
           esac
-          echo "CC_${target_env}=${{ steps.musl.outputs.cross_compile }}-gcc" >> "$GITHUB_ENV"
-          echo "CXX_${target_env}=${{ steps.musl.outputs.cross_compile }}-g++" >> "$GITHUB_ENV"
-          echo "CARGO_TARGET_${target_env^^}_LINKER=${{ steps.musl.outputs.cross_compile }}-g++" >> "$GITHUB_ENV"
+          curl -fsSL "https://musl.cc/${toolchain}-cross.tgz" -o "$RUNNER_TEMP/${toolchain}-cross.tgz"
+          mkdir -p "$RUNNER_TEMP/${toolchain}-cross"
+          tar -xzf "$RUNNER_TEMP/${toolchain}-cross.tgz" --strip-components=1 -C "$RUNNER_TEMP/${toolchain}-cross"
+          echo "$RUNNER_TEMP/${toolchain}-cross/bin" >> "$GITHUB_PATH"
+          echo "CC_${target_env}=${toolchain}-gcc" >> "$GITHUB_ENV"
+          echo "CXX_${target_env}=${toolchain}-g++" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_${target_env^^}_LINKER=${toolchain}-g++" >> "$GITHUB_ENV"
       
       - if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
