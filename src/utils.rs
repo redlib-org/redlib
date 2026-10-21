@@ -7,7 +7,9 @@ use askama::Template;
 use cookie::Cookie;
 use hyper::{Body, Request, Response};
 use libflate::deflate::{Decoder, Encoder};
+use htmlescape;
 use log::error;
+use chrono::DateTime;
 use regex::Regex;
 use revision::revisioned;
 use rust_embed::RustEmbed;
@@ -22,6 +24,7 @@ use std::string::ToString;
 use std::sync::LazyLock;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
+use rss::{Enclosure, Guid, Item};
 
 /// Write a message to stderr on debug mode. This function is a no-op on
 /// release code.
@@ -1447,6 +1450,117 @@ pub fn get_post_url(post: &Post) -> String {
 /// Returns an absolute URL given a relative URL, as needed by RSS feeds
 pub fn to_absolute_url(relative_path: &str) -> String {
 	format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), relative_path)
+}
+
+// =====================================================
+// RSS Feed Helpers
+// =====================================================
+
+/// Build an RSS item from a Post, with proper enclosure, GUID, and media embed
+pub fn build_rss_item(post: &Post) -> Item {
+	let mut item = Item {
+		title: Some(post.title.to_string()),
+		link: Some(to_absolute_url(&post.permalink)),
+		author: Some(post.author.name.to_string()),
+		pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
+		guid: Some(Guid {
+			value: to_absolute_url(&post.permalink),
+			permalink: true,
+		}),
+		..Default::default()
+	};
+
+	// Build description
+	let description_str = match post.post_type.as_str() {
+		"gallery" => format!(
+			"<a href='{}'>Gallery with {} images</a>",
+			to_absolute_url(&post.permalink),
+			post.gallery.len()
+		),
+		_ => format!("<a href='{}'>Comments</a>", to_absolute_url(&post.permalink)),
+	};
+	item.set_description(description_str.clone());
+
+	// Build content:encoded — embed media + body
+	let image_html = build_media_html(&post);
+	let body = unescape_html(&post.body);
+	let content = if !image_html.is_empty() || !body.is_empty() {
+		format!("{}{}", image_html, body)
+	} else {
+		description_str
+	};
+	item.set_content(content);
+
+	// Set enclosure for media posts
+	if let Some(enclosure) = get_rss_image(post) {
+		item.set_enclosure(enclosure);
+	}
+
+	item
+}
+
+/// Generate the HTML for embedding media (images/videos) in RSS content
+/// Uses proxied Redlib URLs and inline styles to fit the reader window
+fn build_media_html(post: &Post) -> String {
+	match post.post_type.as_str() {
+		"image" => {
+			let url = to_absolute_url(&post.media.url);
+			format!("<a href=\"{}\"><img src=\"{}\" width=\"100%\" /></a><br/>", url, url)
+		}
+		"gallery" => {
+			post.gallery.iter().map(|media| {
+				let url = to_absolute_url(&media.url);
+				format!("<a href=\"{}\"><img src=\"{}\" width=\"100%\" /></a><br/>", url, url)
+			}).collect::<Vec<_>>().join("\n")
+		}
+		"video" | "gif" => {
+			let poster = to_absolute_url(&post.media.poster);
+			let video_url = to_absolute_url(&post.media.url);
+			format!(
+				"<video controls preload=\"metadata\" poster=\"{}\" width=\"100%\"><source src=\"{}\" type=\"video/mp4\" /></video><br/>",
+				poster, video_url
+			)
+		}
+		_ => String::new(),
+	}
+}
+
+/// Decodes HTML entities like &lt;/&gt; back to their character equivalents
+fn unescape_html(html: &str) -> String {
+	htmlescape::decode_html(html).expect("failed to decode HTML entities")
+}
+
+/// Create an RSS enclosure for the first image of a post
+/// Uses proxied Redlib URLs
+fn get_rss_image(post: &Post) -> Option<Enclosure> {
+	let image_url = match post.post_type.as_str() {
+		"image" => Some(to_absolute_url(&post.media.url)),
+		"gallery" => post.gallery.get(0).map(|media| to_absolute_url(&media.url)),
+		"gif" | "video" => Some(to_absolute_url(&post.media.poster)),
+		_ => None,
+	};
+
+	image_url.map(|url| {
+		let mut enclosure = Enclosure::default();
+		enclosure.set_mime_type(get_mime_type(&url));
+		enclosure.set_url(url);
+		enclosure.set_length("0");
+		enclosure
+	})
+}
+
+/// Determines the MIME type based on file extension in a URL
+fn get_mime_type(url: &str) -> &'static str {
+	let path = url.split('?').next().unwrap_or(url);
+	let extension = path.rsplit('.').next().unwrap_or("").to_lowercase();
+	match extension.as_str() {
+		"jpg" | "jpeg" => "image/jpeg",
+		"png" => "image/png",
+		"gif" => "image/gif",
+		"webp" => "image/webp",
+		"svg" => "image/svg+xml",
+		_ => "application/octet-stream",
+	}
 }
 
 #[cfg(test)]

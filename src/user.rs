@@ -1,12 +1,10 @@
 #![allow(clippy::cmp_owned)]
-use crate::client::json;
-use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
-use crate::{config, utils};
+use crate::{config};
+use crate::{client::json, server::RequestExt};
+use crate::utils::{build_rss_item, error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User, should_be_nsfw_gated};
 use askama::Template;
-use chrono::DateTime;
-use htmlescape::decode_html;
 use hyper::{Body, Request, Response};
+use rss::ChannelBuilder;
 use time::{macros::format_description, OffsetDateTime};
 
 // STRUCTS
@@ -56,7 +54,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Return landing page if this post if this Reddit deems this user NSFW,
 	// but we have also disabled the display of NSFW content or if the instance
 	// is SFW-only.
-	if user.nsfw && utils::should_be_nsfw_gated(&req, &req_url) {
+	if user.nsfw && should_be_nsfw_gated(&req, &req_url) {
 		return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 	}
 
@@ -136,9 +134,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 	if config::get_setting("REDLIB_ENABLE_RSS").is_none() {
 		return Ok(error(req, "RSS is disabled on this instance.").await.unwrap_or_default());
 	}
-	use crate::utils::rewrite_urls;
 	use hyper::header::CONTENT_TYPE;
-	use rss::{ChannelBuilder, Item};
 
 	// Get user
 	let user_str = req.param("name").unwrap_or_default();
@@ -161,14 +157,7 @@ pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
 		.items(
 			posts
 				.into_iter()
-				.map(|post| Item {
-					title: Some(post.title.to_string()),
-					link: Some(format_url(&utils::get_post_url(&post))),
-					author: Some(post.author.name),
-					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
-					content: Some(rewrite_urls(&decode_html(&post.body).unwrap_or_else(|_| post.body.clone()))),
-					..Default::default()
-				})
+				.map(|post| build_rss_item(&post))
 				.collect::<Vec<_>>(),
 		)
 		.build();
