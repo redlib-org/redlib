@@ -15,8 +15,11 @@ env:
 
   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
   CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
+  CXX_aarch64_unknown_linux_musl: aarch64-linux-gnu-g++
   CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
   CC_armv7_unknown_linux_musleabihf: arm-linux-gnueabihf-gcc
+  CXX_armv7_unknown_linux_musleabihf: arm-linux-gnueabihf-g++
+  CXX_x86_64_unknown_linux_musl: g++
 
 jobs:
   build:
@@ -38,17 +41,17 @@ jobs:
       - if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools git cmake perl pkg-config libclang-dev
+          sudo apt-get install -y --no-install-recommends g++ musl-tools git cmake perl pkg-config libclang-dev
  
       - if: matrix.target == 'armv7-unknown-linux-musleabihf'
         run: |
           sudo apt update
-          sudo apt install -y gcc-arm-linux-gnueabihf musl-tools git cmake perl pkg-config libclang-dev
+          sudo apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf musl-tools git cmake perl pkg-config libclang-dev
 
       - if: matrix.target == 'aarch64-unknown-linux-musl'
         run: |
           sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu musl-tools git cmake perl pkg-config libclang-dev
+          sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu musl-tools git cmake perl pkg-config libclang-dev
 
       - name: Versions
         id: version

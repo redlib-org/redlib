@@ -13,6 +13,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CXX_x86_64_unknown_linux_musl: g++
 
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
           toolchain: stable
 
       - name: Install musl-gcc
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends musl-tools git cmake perl pkg-config libclang-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ musl-tools git cmake perl pkg-config libclang-dev
 
       - name: Install cargo musl target
         run: rustup target add x86_64-unknown-linux-musl

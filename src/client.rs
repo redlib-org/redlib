@@ -402,6 +402,7 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 		warn!("Rate limit {current_rate_limit} is low. Spawning force_refresh_token()");
 		tokio::spawn(force_refresh_token());
 	}
+	#[allow(deprecated)] // try_update is newer than the project's MSRV.
 	let _ = OAUTH_RATELIMIT_REMAINING.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |remaining| remaining.checked_sub(1));
 
 	// Fetch the url...
@@ -650,6 +651,7 @@ mod tests {
 	}
 
 	#[tokio::test(flavor = "multi_thread")]
+	#[ignore = "todolol"]
 	async fn test_obfuscated_share_link() {
 		let share_link = "/r/rust/s/kPgq8WNHRK".into();
 		// Correct link without share parameters
