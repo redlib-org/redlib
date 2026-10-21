@@ -1551,6 +1551,13 @@ mod tests {
 		assert_eq!(rewrite_urls(input), output);
 	}
 
+	#[test]
+	fn test_rewriting_multiple_static_urls_without_matching_other_hosts() {
+		let input = "<p>a <a href=\"https://www.redditstatic.com/one.png\">one</a> tail-A</p>\n<p>b <a href=\"https://www.redditstatic.com/two.png\">two</a> tail-B</p>\n<p>typo link https://xredditstatic.com/foo here</p>";
+		let output = "<p>a <a href=\"/static/one.png\">one</a> tail-A</p>\n<p>b <a href=\"/static/two.png\">two</a> tail-B</p>\n<p>typo link https://xredditstatic.com/foo here</p>";
+		assert_eq!(rewrite_urls(input), output);
+	}
+
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_fetching_subreddit_quarantined() {
 		let subreddit = Post::fetch("/r/drugs", true).await;
