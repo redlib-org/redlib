@@ -156,7 +156,7 @@ pub async fn canonical_path(path: String, tries: i8) -> Result<Option<String>, S
 				// So we need to strip the .json suffix from the original path, and
 				// also remove all Reddit domain parts with format_url.
 				// Otherwise, it will literally redirect to Reddit.com.
-				let uri = format_url(stripped_uri);
+				let uri = comments_logical_path(&format_url(stripped_uri));
 
 				// Decrement tries and try again
 				canonical_path(uri, tries - 1).await
@@ -384,6 +384,23 @@ fn comments_transport_path(path: &str) -> Cow<'_, str> {
 	}
 
 	Cow::Owned(format!("{}%2F{}", &path[..separator], &path[separator + 1..]))
+}
+
+/// Remove the comments-route separator encoding if Reddit reflects our
+/// transport-only rewrite in a redirect.
+fn comments_logical_path(path: &str) -> String {
+	let path = path.replace("/comments%2F", "/comments/").replace("/comments%2f", "/comments/");
+
+	let Some(scoped) = path.strip_prefix("/r/") else {
+		return path;
+	};
+	let Some((subreddit, tail)) = scoped.split_once("%2Fcomments/").or_else(|| scoped.split_once("%2fcomments/")) else {
+		return path;
+	};
+	if subreddit.is_empty() || subreddit.contains('/') {
+		return path;
+	}
+	format!("/r/{subreddit}/comments/{tail}")
 }
 
 /// Make a request to a Reddit API and parse the JSON response
@@ -627,6 +644,18 @@ mod tests {
 		assert_eq!(comments_transport_path(path), "/r/rust%2Fcomments/abc.json?sort=new&context=3&q=a%2Bb&empty=&sort=top");
 	}
 
+	#[test]
+	fn test_comments_logical_path_removes_transport_encoding() {
+		for (path, expected) in [
+			("/r/rust%2Fcomments/18t5968/title/kfbqlbc/", "/r/rust/comments/18t5968/title/kfbqlbc/"),
+			("/r/rust%2fcomments/18t5968/title/kfbqlbc/", "/r/rust/comments/18t5968/title/kfbqlbc/"),
+			("/comments%2F18t5968/title/", "/comments/18t5968/title/"),
+			("/r/rust%2Fwiki/page", "/r/rust%2Fwiki/page"),
+		] {
+			assert_eq!(comments_logical_path(path), expected);
+		}
+	}
+
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_rate_limit_check() {
 		rate_limit_check().await.unwrap();
@@ -651,7 +680,6 @@ mod tests {
 	}
 
 	#[tokio::test(flavor = "multi_thread")]
-	#[ignore = "todolol"]
 	async fn test_obfuscated_share_link() {
 		let share_link = "/r/rust/s/kPgq8WNHRK".into();
 		// Correct link without share parameters
