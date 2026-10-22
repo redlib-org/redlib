@@ -192,7 +192,7 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 			// Increment subscriptions cookie number
 			subscriptions_number_to_delete_from += 1;
 		}
-	} else {
+	} else if remove_cookies {
 		// Remove unnumbered subscriptions cookie
 		response.remove_cookie("subscriptions".to_string());
 
@@ -243,7 +243,7 @@ fn set_cookies_method(req: Request<Body>, remove_cookies: bool) -> Response<Body
 			// Increment filters cookie number
 			filters_number_to_delete_from += 1;
 		}
-	} else {
+	} else if remove_cookies {
 		// Remove unnumbered filters cookie
 		response.remove_cookie("filters".to_string());
 
