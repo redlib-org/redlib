@@ -22,34 +22,14 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Cache Packages
-        uses: Swatinem/rust-cache@v2
-
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
-      - name: Install musl cross compiler
-        run: |
-          toolchain=x86_64-linux-musl
-          curl -fsSL "https://musl.cc/${toolchain}-cross.tgz" -o "$RUNNER_TEMP/${toolchain}-cross.tgz"
-          mkdir -p "$RUNNER_TEMP/${toolchain}-cross"
-          tar -xzf "$RUNNER_TEMP/${toolchain}-cross.tgz" --strip-components=1 -C "$RUNNER_TEMP/${toolchain}-cross"
-          echo "$RUNNER_TEMP/${toolchain}-cross/bin" >> "$GITHUB_PATH"
-          echo "CC_x86_64_unknown_linux_musl=${toolchain}-gcc" >> "$GITHUB_ENV"
-          echo "CXX_x86_64_unknown_linux_musl=${toolchain}-g++" >> "$GITHUB_ENV"
-          echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=${toolchain}-g++" >> "$GITHUB_ENV"
-
-      - name: Install musl-gcc
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ musl-tools git cmake perl pkg-config libclang-dev
-
-      - name: Install cargo musl target
-        run: rustup target add x86_64-unknown-linux-musl
-
       # Building actions
       - name: Build
-        run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-musl
+        run: ./scripts/build-musl-docker.sh x86_64-unknown-linux-musl
 
       - name: Versions
         id: version
