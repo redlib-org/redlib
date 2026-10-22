@@ -13,6 +13,9 @@ RUN apt-get update \
 
 RUN rustup target add x86_64-unknown-linux-musl
 
+# Keep bindgen on the musl target sysroot for boring-sys2.
+ENV BINDGEN_EXTRA_CLANG_ARGS_x86_64_unknown_linux_musl="--sysroot=/usr/local/musl/x86_64-unknown-linux-musl -I/usr/local/musl/lib/gcc/x86_64-unknown-linux-musl/12.4.0/include"
+
 WORKDIR /redlib
 
 # download (most) dependencies in their own layer
