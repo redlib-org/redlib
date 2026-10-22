@@ -1,11 +1,15 @@
+FROM rust:1.85-alpine AS builder
+RUN apk add --no-cache musl-dev musl-dev openssl-dev perl make gcc
+WORKDIR /app
+COPY . .
+RUN cargo build --release --target x86_64-unknown-linux-musl
+
 FROM alpine:3.19
 
-ARG TARGET
+RUN apk add --no-cache curl openssl
 
-RUN apk add --no-cache curl
-
-RUN curl -L "https://github.com/redlib-org/redlib/releases/latest/download/redlib-${TARGET}.tar.gz" | \
-    tar xz -C /usr/local/bin/
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/redlib /usr/local/bin/redlib
+RUN chmod +x /usr/local/bin/redlib
 
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
 USER redlib
@@ -17,4 +21,3 @@ EXPOSE 8080
 HEALTHCHECK --interval=1m --timeout=3s CMD wget --spider -q http://localhost:8080/settings || exit 1
 
 CMD ["redlib"]
-
