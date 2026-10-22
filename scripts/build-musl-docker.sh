@@ -26,8 +26,10 @@ case "$target" in
 esac
 
 image="redlib-builder:${target}"
+progress=${DOCKER_BUILD_PROGRESS:-auto}
+printf '\n==> Building %s with Docker (progress: %s)\n' "$target" "$progress"
 docker build \
-  --progress=plain \
+  --progress="$progress" \
   --target builder \
   --build-arg "RUST_CROSS_IMAGE=${cross_image}" \
   --build-arg "RUST_TARGET=${target}" \
@@ -39,6 +41,7 @@ docker build \
 
 artifact="target/${target}/release/redlib"
 mkdir -p "target/${target}/release"
+printf '\n==> Extracting %s binary\n' "$target"
 docker run --rm \
   --entrypoint /bin/bash \
   --volume "$PWD/target/${target}/release:/out" \

@@ -15,6 +15,11 @@ ARG RUST_TARGET
 ARG CROSS_GNU_PACKAGES
 ARG BINDGEN_EXTRA_CLANG_ARGS
 ENV BINDGEN_EXTRA_CLANG_ARGS=${BINDGEN_EXTRA_CLANG_ARGS}
+ENV CARGO_TERM_PROGRESS_WHEN=always
+ENV CARGO_TERM_PROGRESS_WIDTH=80
+# Rust's armv7 musl self-contained link omits libgcc, but libstdc++ needs its
+# __sync_add_and_fetch_4 implementation for this target.
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS="-C link-arg=-lgcc"
 
 RUN apt-get update \
     && apt-get -y install git cmake perl pkg-config libclang-dev ${CROSS_GNU_PACKAGES} \
