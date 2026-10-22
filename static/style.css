@@ -2075,7 +2075,8 @@ th {
         margin-left: 12px;
     }
     .comment_data {
-        margin-left: 12px;
+        margin-left: 8px;
+        padding-left: 8px;
     }
 
     .user-comment .comment_data {
