@@ -186,11 +186,20 @@
 			{% endif %}
 			{% call external_reddit_link(post.permalink) %}
 
-			{% if post.media.download_name != "" %}
+			{% if post.media.download_name != "" && post.post_type != "gallery" %}
 			<li>
 				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}">
 					<span class="mobile_item">dl</span>
 					<span class="desktop_item">download</span>
+				</a>
+			</li>
+			{% endif %}
+			{% if post.post_type == "gallery" %}
+			<!-- Gallery download -->
+			<li class="download_gallery">
+				<a href="#" data-post-id="{{ post.id }}" data-base-name="redlib_{% if post.media.download_name != "" %}{{ post.media.download_name }}{% endif %}">
+					<span class="mobile_item">dl</span>
+					<span class="desktop_item">download all ({{ post.gallery.len() }})</span>
 				</a>
 			</li>
 			{% endif %}

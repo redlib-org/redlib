@@ -1308,6 +1308,14 @@ a.search_subreddit:hover {
     margin-right: 15px;
 }
 
+#post_links li.download_gallery {
+    display: none;
+}
+
+.js-enabled #post_links li.download_gallery {
+    display: list-item;
+}
+
 .desktop_item {
     display: auto;
 }
