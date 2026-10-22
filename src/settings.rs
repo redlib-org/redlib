@@ -303,3 +303,28 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, Strin
 
 	Ok(redirect(&url))
 }
+
+// Get current user settings as JSON for API consumption
+pub async fn get_json(req: Request<Body>) -> Result<Response<Body>, String> {
+	let prefs = Preferences::new(&req);
+
+	// Try to encode preferences and return directly or error with HTTP status
+	match prefs.to_urlencoded() {
+		Ok(encoded) => {
+			Response::builder()
+				.status(200)
+				.header("content-type", "text/plain")
+				.header("cache-control", "no-cache, no-store, must-revalidate")
+				.body(encoded.into())
+				.map_err(|e| format!("Failed to build response: {e}"))
+		}
+		Err(e) => {
+			eprintln!("Warning: Failed to encode preferences for settings transfer: {e}");
+			Response::builder()
+				.status(500)
+				.header("content-type", "text/plain")
+				.body("Failed to encode preferences".into())
+				.map_err(|e| format!("Failed to build error response: {e}"))
+		}
+	}
+}
