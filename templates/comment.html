@@ -3,7 +3,7 @@
 {% if kind == "more" && parent_kind == "t1" %}
 <a class="deeper_replies" href="{{ post_link }}{{ parent_id }}">&rarr; More replies ({{ more_count }})</a>
 {% else if kind == "t1" %}
-<div id="{{ id }}" class="comment">
+<div id="{{ id }}" class="comment" data-comment-id="{{ id }}">
 	<div class="comment_left">
     <p class="comment_score" title="{{ score.1 }}">
          {% if prefs.hide_score != "on" %}
