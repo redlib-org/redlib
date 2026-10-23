@@ -14,7 +14,8 @@ use std::borrow::Cow;
 use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16};
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
+use wreq::cookie::Jar;
 use wreq::dns::{Addrs, Name, Resolve, Resolving};
 use wreq::redirect::Policy;
 use wreq::{header as wreq_header, Client as WreqClient, Method, Response as WreqResponse};
@@ -29,6 +30,19 @@ const REDDIT_SHORT_URL_BASE_HOST: &str = "redd.it";
 const ALTERNATIVE_REDDIT_URL_BASE: &str = "https://www.reddit.com";
 const ALTERNATIVE_REDDIT_URL_BASE_HOST: &str = "www.reddit.com";
 const ALTERNATIVE_REDDIT_DNS_HOST: &str = "dualstack.reddit.map.fastly.net";
+
+const SHREDDIT_PATH_PREFIX: &str = "/svc/shreddit/";
+// Asks for the bare fragment instead of a full page shell, roughly halving the response.
+const SHREDDIT_PARTIAL_ACCEPT: &str = "text/vnd.reddit.partial+html, text/html;q=0.9";
+// Reddit answers rate-limited shreddit requests with this reCAPTCHA page and a 200 status.
+const SHREDDIT_CHALLENGE_TITLE: &str = "<title>Reddit - Prove your humanity</title>";
+
+// Logged-out reddit.com session shared by shreddit requests. Reddit challenges
+// cookieless clients after about ten requests, but gives each session a budget
+// of a couple hundred requests. It is kept apart from the OAuth API requests on purpose.
+static SHREDDIT_SESSION: LazyLock<Arc<Jar>> = LazyLock::new(Arc::default);
+// Leaves room for the requests already in flight when the session is rotated.
+const SHREDDIT_RATELIMIT_ROTATE_BELOW: f32 = 20.0;
 
 pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
@@ -236,6 +250,68 @@ pub async fn proxy(req: HyperRequest<Body>, format: &str) -> Result<HyperRespons
 			res.into_hyper_response()
 		})
 		.map_err(|e| e.to_string())
+}
+
+/// Fetch a server-rendered HTML fragment from Reddit's web frontend.
+///
+/// These are the fragments reddit.com loads for logged-out visitors, so they
+/// are sent without the spoofed OAuth client's headers. A `cursor` turns the
+/// request into the form POST used to expand a "more comments" placeholder.
+pub async fn shreddit_fragment(path: String, cursor: Option<String>) -> Result<String, String> {
+	if !path.starts_with(SHREDDIT_PATH_PREFIX) {
+		return Err(format!("Refusing to fetch non-shreddit path | {path}"));
+	}
+
+	if let Some(body) = shreddit_request(&path, cursor.as_deref()).await? {
+		return Ok(body);
+	}
+
+	warn!("Reddit rate limited the shreddit session, starting a new one");
+	SHREDDIT_SESSION.clear();
+	shreddit_request(&path, cursor.as_deref())
+		.await?
+		.ok_or_else(|| format!("Reddit is rate limiting comment requests. Try refreshing in a few seconds. | {path}"))
+}
+
+/// Returns `Ok(None)` when Reddit rate limits or challenges the session.
+async fn shreddit_request(path: &str, cursor: Option<&str>) -> Result<Option<String>, String> {
+	let url = format!("{ALTERNATIVE_REDDIT_URL_BASE}{path}");
+
+	let builder = match cursor {
+		Some(cursor) => CLIENT
+			.post(&url)
+			.header(wreq_header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+			.body(url::form_urlencoded::Serializer::new(String::new()).append_pair("cursor", cursor).finish()),
+		None => CLIENT.get(&url),
+	};
+
+	let response = builder
+		.header(wreq_header::ACCEPT, SHREDDIT_PARTIAL_ACCEPT)
+		.cookie_provider(Arc::clone(&SHREDDIT_SESSION))
+		.send()
+		.await
+		.map_err(|e| format!("Couldn't send request to Reddit: {e} | {path}"))?;
+
+	let status = response.status();
+	if status == wreq::StatusCode::TOO_MANY_REQUESTS {
+		return Ok(None);
+	}
+	if !status.is_success() {
+		return Err(format!("Reddit returned {status} | {path}"));
+	}
+
+	let remaining = response
+		.headers()
+		.get("x-ratelimit-remaining")
+		.and_then(|value| value.to_str().ok())
+		.and_then(|value| value.parse::<f32>().ok());
+	if remaining.is_some_and(|remaining| remaining < SHREDDIT_RATELIMIT_ROTATE_BELOW) {
+		trace!("Shreddit session rate limit is low ({remaining:?} remaining), starting a new one");
+		SHREDDIT_SESSION.clear();
+	}
+
+	let body = response.text().await.map_err(|e| format!("Failed receiving body from Reddit: {e} | {path}"))?;
+	Ok((!body.contains(SHREDDIT_CHALLENGE_TITLE)).then_some(body))
 }
 
 /// Makes a GET request to Reddit at `path`. By default, this will honor HTTP
@@ -655,6 +731,13 @@ mod tests {
 		}
 	}
 
+	#[tokio::test]
+	async fn test_shreddit_fragment_rejects_other_paths() {
+		for path in ["/api/v1/me", "https://evil.example/svc/shreddit/x", "/svc/shreddit"] {
+			let error = shreddit_fragment(path.to_string(), None).await.unwrap_err();
+			assert!(error.starts_with("Refusing to fetch non-shreddit path"), "{path}: {error}");
+		}
+	}
 	#[tokio::test(flavor = "multi_thread")]
 	async fn test_rate_limit_check() {
 		rate_limit_check().await.unwrap();
