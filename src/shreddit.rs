@@ -43,6 +43,7 @@ static TIMEAGO: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate
 static MORE_COMMENTS: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate-partial[src]").unwrap());
 static CURSOR: LazyLock<Selector> = LazyLock::new(|| Selector::parse(r#"input[name="cursor"]"#).unwrap());
 static COUNT: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate-number[number]").unwrap());
+static PLAYER: LazyLock<Selector> = LazyLock::new(|| Selector::parse("shreddit-player[src]").unwrap());
 
 /// Fetch the comment tree of a post as a Reddit API comment `Listing`.
 ///
@@ -293,7 +294,7 @@ fn parse_comment(element: ElementRef<'_>) -> Option<ParsedComment> {
 	let is_moderator = attr("is-mod-distinguished").is_some();
 
 	let content = comment_content(element, &id);
-	let body_html = content.map(|content| content.inner_html()).unwrap_or_default();
+	let body_html = content.map(native_media_html).unwrap_or_default();
 	let body_text = content.map(|content| content.text().collect::<String>().trim().to_string()).unwrap_or_default();
 
 	Some(ParsedComment {
@@ -330,6 +331,25 @@ fn comment_content<'a>(element: ElementRef<'a>, id: &str) -> Option<ElementRef<'
 			.find(|child| child.value().id().is_some_and(|child_id| child_id.ends_with("-post-rtjson-content")))
 			.unwrap_or(body),
 	)
+}
+
+/// The inner HTML of `content`, with Reddit's script-driven media players
+/// replaced by native videos so they render without Reddit's JavaScript.
+fn native_media_html(content: ElementRef<'_>) -> String {
+	content
+		.select(&PLAYER)
+		.fold(content.inner_html(), |html, player| html.replacen(&player.html(), &native_video(player), 1))
+}
+
+fn native_video(player: ElementRef<'_>) -> String {
+	let src = player.value().attr("src").unwrap_or_default().replace('&', "&amp;").replace('"', "&quot;");
+	// Reddit serves comment GIFs as silent MP4s that it autoplays in a loop.
+	let playback = if player.value().attr("gif").is_some() {
+		"autoplay loop muted playsinline"
+	} else {
+		"controls preload=\"metadata\""
+	};
+	format!(r#"<video src="{src}" {playback}></video>"#)
 }
 
 fn edited_time(element: ElementRef<'_>) -> Option<f64> {
@@ -574,6 +594,35 @@ mod tests {
 		assert_eq!(yara.data["body_html"], r#"<div class="md"><p>Outer only</p></div>"#);
 		assert_eq!(yara.data["distinguished"], "moderator");
 		assert_eq!(yara.data["stickied"], false, "uncollapsed moderator comments are not stickied");
+	}
+
+	#[test]
+	fn test_players_become_native_videos() {
+		let fragment = parse_fragment(
+			r#"
+<shreddit-comment thingId="t1_m">
+  <div id="t1_m-comment-rtjson-content" slot="comment"><shreddit-async-loader bundlename="shreddit_player_loader">
+    <figure class="rte-media"><a href="/preview/external-pre/g.gif?auto=webp&amp;s=1"><div style="width: 200px; height: 200px;">
+      <shreddit-player autoplay="" gif="" src="/preview/external-pre/g.gif?width=200&amp;format=mp4&amp;s=2"><source src="/preview/external-pre/g.gif?width=200&amp;format=mp4&amp;s=2"></shreddit-player>
+    </div></a></figure>
+    <shreddit-player src="/preview/pre/v.mp4?q=&quot;x&quot;"></shreddit-player>
+  </shreddit-async-loader></div>
+</shreddit-comment>"#,
+		);
+		let html = fragment.comments[0].data["body_html"].as_str().unwrap();
+		assert!(!html.contains("<shreddit-player"), "{html}");
+		assert!(
+			html.contains(r#"<a href="/preview/external-pre/g.gif?auto=webp&amp;s=1"><div style="width: 200px; height: 200px;">"#),
+			"the link and sizing around a player are kept: {html}"
+		);
+		assert!(
+			html.contains(r#"<video src="/preview/external-pre/g.gif?width=200&amp;format=mp4&amp;s=2" autoplay loop muted playsinline></video>"#),
+			"{html}"
+		);
+		assert!(
+			html.contains(r#"<video src="/preview/pre/v.mp4?q=&quot;x&quot;" controls preload="metadata"></video>"#),
+			"{html}"
+		);
 	}
 
 	#[test]
