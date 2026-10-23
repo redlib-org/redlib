@@ -1,0 +1,48 @@
+[target.i586-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-i686-linux-gnu g++-i686-linux-gnu libc6-dev-i386-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.i686-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-i686-linux-gnu g++-i686-linux-gnu libc6-dev-i386-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.x86_64-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-x86-64-linux-gnu g++-x86-64-linux-gnu libc6-dev-amd64-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.armv7-unknown-linux-musleabihf]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libc6-dev-armhf-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.aarch64-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.i686-pc-windows-gnu]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-mingw-w64-i686 g++-mingw-w64-i686 libc6-dev-i386-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.x86_64-pc-windows-gnu]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 libc6-dev-amd64-cross musl-tools git cmake make perl pkg-config libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]

@@ -1,0 +1,98 @@
+name: Create Release
+
+env:
+  CARGO_TERM_COLOR: always
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft-release:
+        type: boolean
+        description: Create release draft
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-artifacts.yaml
+    with:
+      skip-debug-build: true
+
+  get-version:
+    uses: ./.github/workflows/parse-version.yml
+
+  make-release:
+    name: Create Release
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+    needs: 
+      - build
+      - get-version
+    steps:
+      - name: Download Redlib Release Artifacts
+        uses: actions/download-artifact@v8
+        with: 
+          pattern: redlib-release-*
+
+      - name: Package binaries
+        run: |
+          for dir in redlib-release-*/release; do
+              [ -d "$dir" ] || continue
+              target=${dir#redlib-release-}
+              target=${target%/release}
+              case "$target" in
+                  *windows*)
+                      binary="$dir/redlib.exe"
+                      archive="redlib-$target.zip"
+
+                      if [ ! -f "$binary" ]; then
+                          echo "Skipping $target: redlib.exe not found" >&2
+                          continue
+                      fi
+                      echo "Compressing $binary -> $archive"
+                      zip -9 -j "$archive" "$binary"
+                      ;;
+                  *)
+                      binary="$dir/redlib"
+                      archive="redlib-$target.tar.gz"
+                      if [ ! -f "$binary" ]; then
+                          echo "Skipping $target: redlib not found" >&2
+                          continue
+                      fi
+                      echo "Compressing $binary -> $archive"
+                      tar -cf - -C "$dir" redlib | gzip -9 > "$archive"
+                      ;;
+              esac
+          done
+
+      - name: Prepare for upload artifact
+        run: |
+          echo "${{ needs.get-version.outputs.redlib_version }}" > ./release_version
+      
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release_artifact
+          path: |
+            ./release_version
+            ./redlib-*.tar.gz
+            ./redlib-*.zip
+          compression-level: 9
+          if-no-files-found: error
+
+      - name: Generate Release
+        uses: softprops/action-gh-release@v3
+        if: ${{ inputs.draft-release }}
+        with:
+          tag_name: ${{ needs.get-version.outputs.redlib_version }}
+          name: ${{ needs.get-version.outputs.redlib_version }} - ${{ github.event.head_commit.message }}
+          draft: true
+          files: |
+            ./redlib-*.tar.gz
+            ./redlib-*.zip
+          body: |
+            - ${{ github.event.head_commit.message }} ${{ github.sha }}
+          generate_release_notes: true
