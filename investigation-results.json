@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "sanitized": true,
+  "checkout": "ba116c1186f6b0f9d45f0ae50c827e13eb2f5ea2",
+  "observed_utc_approx": "2026-10-22T22:52:00Z",
+  "network": "same host and residential connection as target deployment",
+  "client": "isolated Redlib wreq process on 127.0.0.1:18080",
+  "experiments": [
+    {
+      "category": "listing-control",
+      "transport": "anonymous OAuth listing",
+      "outcome": "success",
+      "validated": ["JSON listing", "rate-limit headers"]
+    },
+    {
+      "category": "legacy-comments-json",
+      "transport": "anonymous OAuth comments route",
+      "outcome": "failure",
+      "http_status": 403,
+      "content_category": "HTML policy response"
+    },
+    {
+      "category": "shreddit-thread",
+      "logical_path": "/r/northernireland/comments/1xau6bp/teachers_and_youth_workers_find_out_how_you_can/",
+      "outcome": "success",
+      "parsed_comments": 0,
+      "discussion_state": "legitimately empty"
+    },
+    {
+      "category": "shreddit-thread",
+      "logical_path": "/r/mildlyinfuriating/comments/1xcm2ou/the_guy_next_to_me_claimed_both_armrests_and/",
+      "outcome": "success",
+      "parsed_comments": 25,
+      "declared_comments": "5.4k"
+    },
+    {
+      "category": "shreddit-thread",
+      "logical_path": "/r/politics/comments/1x9xx9e/",
+      "outcome": "success",
+      "parsed_comments": 25,
+      "declared_comments": 926
+    },
+    {
+      "category": "shreddit-sort",
+      "sort": "new",
+      "outcome": "success",
+      "parsed_comments": 25
+    },
+    {
+      "category": "shreddit-continuation",
+      "outcome": "success",
+      "parsed_comments": 10
+    },
+    {
+      "category": "shreddit-focused-comment",
+      "context": 3,
+      "outcome": "success",
+      "parsed_comments": 2,
+      "highlighted_targets": 1
+    }
+  ],
+  "final_build_validation": {
+    "observed_utc": "2026-10-23T07:21:51Z",
+    "fresh_anonymous_identities": 4,
+    "listing_controls_passed": 4,
+    "thread_checks_passed": 12,
+    "format": "pass",
+    "targeted_tests": {
+      "passed": 7,
+      "failed": 0
+    },
+    "clippy_warnings_denied": "pass",
+    "locked_release_build": "pass",
+    "release_artifacts": {
+      "redlib_sha256": "c12ca6f566c8a3261ec5187cc715be9ede0053f18e2bc51c83ad374cdaaa6fe6",
+      "probe_sha256": "0d93931cefb905a1e91dad7cb2f6b6c4bddd576d6698e02fc488039e27ee7cc6"
+    },
+    "loopback_end_to_end": {
+      "address": "127.0.0.1:18081",
+      "listing": "pass",
+      "empty_thread": "pass",
+      "populated_thread": "pass",
+      "sort": "pass",
+      "focused_comment": "pass",
+      "continuation": "pass",
+      "comment_search": "pass",
+      "user_filter": "pass",
+      "cross_sort_continuation_rejected": true
+    },
+    "six_hour_soak_completed": false
+  },
+  "secrets_or_identifiers_recorded": false
+}

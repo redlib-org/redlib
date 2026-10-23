@@ -405,6 +405,12 @@ fn comments_logical_path(path: &str) -> String {
 /// Make a request to a Reddit API and parse the JSON response
 #[cached(size = 100, time = 30, result = true)]
 pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
+	json_uncached(path, quarantine).await
+}
+
+/// Uncached variant used by the opt-in diagnostic harness. Application code
+/// should use [`json`] so successful responses retain the normal 30s cache.
+pub async fn json_uncached(path: String, quarantine: bool) -> Result<Value, String> {
 	// Closure to quickly build errors
 	let err = |msg: &str, e: String, path: String| -> Result<Value, String> {
 		// eprintln!("{} - {}: {}", url, msg, e);
@@ -425,6 +431,12 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 	match reddit_get(path.clone(), quarantine).await {
 		Ok(response) => {
 			let status = response.status();
+			let content_type = response
+				.headers()
+				.get(wreq_header::CONTENT_TYPE)
+				.and_then(|value| value.to_str().ok())
+				.unwrap_or_default()
+				.to_ascii_lowercase();
 
 			let reset: Option<String> = if let (Some(remaining), Some(reset), Some(used)) = (
 				response.headers().get("x-ratelimit-remaining").and_then(|val| val.to_str().ok().map(|s| s.to_string())),
@@ -446,21 +458,25 @@ pub async fn json(path: String, quarantine: bool) -> Result<Value, String> {
 				None
 			};
 
+			// Reddit sometimes returns an HTML policy page for blocked API routes.
+			// Report that accurately and never treat it as an expired OAuth token.
+			if status.as_u16() == 403 && content_type.starts_with("text/html") {
+				return Err("Reddit blocked anonymous access to this endpoint".to_string());
+			}
+			if status.as_u16() == 429 {
+				return Err(reset.map_or_else(
+					|| "Reddit rate limit exceeded".to_string(),
+					|seconds| format!("Reddit rate limit exceeded. Rate limit will reset in: {seconds}"),
+				));
+			}
+
 			// asynchronously aggregate the chunks of the body
 			match hyper::body::aggregate(response.into_hyper_response()).await {
 				Ok(body) => {
 					let has_remaining = body.has_remaining();
 
 					if !has_remaining {
-						// Rate limited, so spawn a force_refresh_token()
-						tokio::spawn(force_refresh_token());
-						return match reset {
-							Some(val) => Err(format!(
-								"Reddit rate limit exceeded. Try refreshing in a few seconds.\
-								 Rate limit will reset in: {val}"
-							)),
-							None => Err("Reddit rate limit exceeded".to_string()),
-						};
+						return Err(format!("Reddit returned an empty response with HTTP {status}"));
 					}
 
 					// Parse the response from Reddit as JSON

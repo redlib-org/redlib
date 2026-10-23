@@ -1,8 +1,8 @@
 #![allow(clippy::cmp_owned)]
-use crate::client::json;
 use crate::config::get_setting;
 use crate::server::RequestExt;
 use crate::subreddit::{can_access_quarantine, quarantine};
+use crate::thread::{fetch as fetch_thread, ThreadError};
 use crate::utils::{
 	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
 };
@@ -57,9 +57,10 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 	let highlighted_comment = &req.param("comment_id").unwrap_or_default();
 
 	// Send a request to the url, receive JSON in response
-	match json(path, quarantined).await {
+	match fetch_thread(path, quarantined).await {
 		// Otherwise, grab the JSON output from the request
-		Ok(response) => {
+		Ok(thread) => {
+			let response = thread.into_legacy_json();
 			// Parse the JSON into Post and Comment structs
 			let post = parse_post(&response[0]["data"]["children"][0]).await;
 
@@ -98,14 +99,11 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			}))
 		}
 		// If the Reddit API returns an error, exit and send error page to user
-		Err(msg) => {
-			if msg == "quarantined" || msg == "gated" {
-				let sub = req.param("sub").unwrap_or_default();
-				Ok(quarantine(&req, sub, &msg))
-			} else {
-				error(req, &msg).await
-			}
+		Err(ThreadError::Restricted(reason)) if reason == "quarantined" || reason == "gated" => {
+			let sub = req.param("sub").unwrap_or_default();
+			Ok(quarantine(&req, sub, &reason))
 		}
+		Err(error_message) => error(req, &error_message.to_string()).await,
 	}
 }
 
@@ -198,7 +196,7 @@ fn build_comment(
 	let awards: Awards = Awards::parse(&data["all_awardings"]);
 
 	let parent_kind_and_id = val(comment, "parent_id");
-	let parent_info = parent_kind_and_id.split('_').collect::<Vec<&str>>();
+	let (parent_kind, parent_id) = parent_kind_and_id.split_once('_').unwrap_or(("", ""));
 
 	let highlighted = id == highlighted_comment;
 
@@ -229,8 +227,8 @@ fn build_comment(
 	Comment {
 		id,
 		kind,
-		parent_id: parent_info[1].to_string(),
-		parent_kind: parent_info[0].to_string(),
+		parent_id: parent_id.to_string(),
+		parent_kind: parent_kind.to_string(),
 		post_link: post_link.to_string(),
 		post_author: post_author.to_string(),
 		body,
@@ -249,6 +247,7 @@ fn build_comment(
 		collapsed,
 		is_filtered,
 		more_count,
+		continuation_sort: val(comment, "continuation_sort"),
 		prefs: Preferences::new(req),
 	}
 }

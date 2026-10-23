@@ -485,6 +485,7 @@ pub struct Comment {
 	pub collapsed: bool,
 	pub is_filtered: bool,
 	pub more_count: i64,
+	pub continuation_sort: String,
 	pub prefs: Preferences,
 }
 

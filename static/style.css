@@ -1131,6 +1131,14 @@ a.search_subreddit:hover {
     margin: auto;
 }
 
+.comment_body video {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 512px;
+}
+
 .post_media_image.short svg,
 .post_media_image.short img {
     width: auto;

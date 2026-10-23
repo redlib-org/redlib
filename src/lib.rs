@@ -9,5 +9,6 @@ pub mod search;
 pub mod server;
 pub mod settings;
 pub mod subreddit;
+pub mod thread;
 pub mod user;
 pub mod utils;

@@ -2,6 +2,8 @@
 
 {% if kind == "more" && parent_kind == "t1" %}
 <a class="deeper_replies" href="{{ post_link }}{{ parent_id }}">&rarr; More replies ({{ more_count }})</a>
+{% else if kind == "more_comments" %}
+<a class="deeper_replies" href="{{ post_link }}?sort={{ continuation_sort }}&amp;cursor={{ id }}">&rarr; More comments{% if more_count > 0 %} ({{ more_count }}){% endif %}</a>
 {% else if kind == "t1" %}
 <div id="{{ id }}" class="comment">
 	<div class="comment_left">
