@@ -132,7 +132,7 @@
 						</div>
 						{% if crate::utils::enable_rss() %}
 						<div id="sub_rss">
-                            <a href="/r/{{ sub.name }}.rss" title="RSS feed for r/{{ sub.name }}">
+                            <a href="/r/{{ sub.name }}.rss{% if sort.0 != "hot" %}?sort={{ sort.0 }}{% if !sort.1.is_empty() %}&t={{ sort.1 }}{% endif %}{% endif %}" title="RSS feed for r/{{ sub.name }}">
                                 <button class="subscribe">RSS feed</button >
                             </a>
 						</div>

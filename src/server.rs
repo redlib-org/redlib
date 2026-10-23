@@ -4,7 +4,6 @@
 use brotli::enc::{BrotliCompress, BrotliEncoderParams};
 use cached::proc_macro::cached;
 use cookie::Cookie;
-use core::f64;
 use futures_lite::{future::Boxed, Future, FutureExt};
 use hyper::{
 	body,

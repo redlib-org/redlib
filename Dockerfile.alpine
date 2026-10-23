@@ -1,29 +1,43 @@
 # supported versions here: https://hub.docker.com/_/rust
 ARG RUST_BUILDER_VERSION=slim-bookworm
 ARG ALPINE_VERSION=3.23
+ARG RUST_CROSS_IMAGE=x86_64-musl
+ARG RUST_TARGET=x86_64-unknown-linux-musl
+ARG CROSS_GNU_PACKAGES=
+ARG BINDGEN_EXTRA_CLANG_ARGS=
 
 ########################
 ## builder image
 ########################
-FROM ghcr.io/rust-cross/rust-musl-cross:x86_64-musl AS builder
+FROM ghcr.io/rust-cross/rust-musl-cross:${RUST_CROSS_IMAGE} AS builder
+
+ARG RUST_TARGET
+ARG CROSS_GNU_PACKAGES
+ARG BINDGEN_EXTRA_CLANG_ARGS
+ENV BINDGEN_EXTRA_CLANG_ARGS=${BINDGEN_EXTRA_CLANG_ARGS}
+ENV CARGO_TERM_PROGRESS_WHEN=always
+ENV CARGO_TERM_PROGRESS_WIDTH=80
+# Rust's armv7 musl self-contained link omits libgcc, but libstdc++ needs its
+# __sync_add_and_fetch_4 implementation for this target.
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS="-C link-arg=-lgcc"
 
 RUN apt-get update \
-    && apt-get -y install git cmake perl pkg-config libclang-dev \
+    && apt-get -y install git cmake perl pkg-config libclang-dev ${CROSS_GNU_PACKAGES} \
     && rm -rf /var/lib/apt/lists/*
 
-RUN rustup target add x86_64-unknown-linux-musl
+RUN rustup target add ${RUST_TARGET}
 
 WORKDIR /redlib
 
 # download (most) dependencies in their own layer
 COPY Cargo.lock Cargo.toml ./
 RUN mkdir src && echo "fn main() { panic!(\"why am i running?\") }" > src/main.rs
-RUN cargo build --release --locked --bin redlib --target x86_64-unknown-linux-musl
+RUN cargo build --release --locked --bin redlib --target ${RUST_TARGET}
 RUN rm ./src/main.rs && rmdir ./src
 
 # copy the source and build the redlib binary
 COPY . ./
-RUN cargo build --release --locked --bin redlib --target x86_64-unknown-linux-musl
+RUN cargo build --release --locked --bin redlib --target ${RUST_TARGET}
 RUN echo "finished building redlib!"
 
 ########################
@@ -32,7 +46,8 @@ RUN echo "finished building redlib!"
 FROM alpine:${ALPINE_VERSION} AS release
 
 # Import redlib binary from builder
-COPY --from=builder /redlib/target/x86_64-unknown-linux-musl/release/redlib /usr/local/bin/redlib
+ARG RUST_TARGET=x86_64-unknown-linux-musl
+COPY --from=builder /redlib/target/${RUST_TARGET}/release/redlib /usr/local/bin/redlib
 
 # Add non-root user for running redlib
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib

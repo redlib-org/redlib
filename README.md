@@ -255,7 +255,7 @@ If you're on Linux, you can grab a binary from [the newest release](https://gith
 Download the binary using [Wget](https://www.gnu.org/software/wget/):
 
 ```bash
-wget https://github.com/redlib-org/redlib/releases/download/v0.31.0/redlib
+wget https://github.com/redlib-org/redlib/releases/download/v0.40.0/redlib
 ```
 
 Make the binary executable and change its ownership to `root`:
