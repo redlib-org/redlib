@@ -43,6 +43,7 @@ const SHREDDIT_CHALLENGE_TITLE: &str = "<title>Reddit - Prove your humanity</tit
 static SHREDDIT_SESSION: LazyLock<Arc<Jar>> = LazyLock::new(Arc::default);
 // Leaves room for the requests already in flight when the session is rotated.
 const SHREDDIT_RATELIMIT_ROTATE_BELOW: f32 = 20.0;
+const SHREDDIT_MAX_REDIRECTS: usize = 3;
 
 pub static CLIENT: LazyLock<WreqClient> = LazyLock::new(build_client);
 
@@ -275,6 +276,31 @@ pub async fn shreddit_fragment(path: String, cursor: Option<String>) -> Result<S
 
 /// Returns `Ok(None)` when Reddit rate limits or challenges the session.
 async fn shreddit_request(path: &str, cursor: Option<&str>) -> Result<Option<String>, String> {
+	// Reddit's bot check answers some clients with a 302 to the same path plus an
+	// `rdt` query parameter and cookie, so a few redirects are expected. The
+	// original method and cursor are kept so "more comments" POSTs still work.
+	let mut target = path.to_owned();
+	for _ in 0..=SHREDDIT_MAX_REDIRECTS {
+		let response = shreddit_send(&target, cursor).await?;
+		if !response.status().is_redirection() {
+			return shreddit_body(response, path).await;
+		}
+
+		let location = response.headers().get(wreq_header::LOCATION).and_then(|value| value.to_str().ok()).unwrap_or_default();
+		target = shreddit_redirect_target(location)
+			.ok_or_else(|| format!("Reddit redirected the comments request to {location:?} | {path}"))?
+			.to_owned();
+	}
+	Err(format!("Reddit redirected the comments request too many times | {path}"))
+}
+
+/// Resolves a redirect `Location` to a shreddit path on reddit.com, refusing anything else.
+fn shreddit_redirect_target(location: &str) -> Option<&str> {
+	let path = location.strip_prefix(ALTERNATIVE_REDDIT_URL_BASE).unwrap_or(location);
+	path.starts_with(SHREDDIT_PATH_PREFIX).then_some(path)
+}
+
+async fn shreddit_send(path: &str, cursor: Option<&str>) -> Result<WreqResponse, String> {
 	let url = format!("{ALTERNATIVE_REDDIT_URL_BASE}{path}");
 
 	let builder = match cursor {
@@ -285,13 +311,16 @@ async fn shreddit_request(path: &str, cursor: Option<&str>) -> Result<Option<Str
 		None => CLIENT.get(&url),
 	};
 
-	let response = builder
+	builder
 		.header(wreq_header::ACCEPT, SHREDDIT_PARTIAL_ACCEPT)
 		.cookie_provider(Arc::clone(&SHREDDIT_SESSION))
 		.send()
 		.await
-		.map_err(|e| format!("Couldn't send request to Reddit: {e} | {path}"))?;
+		.map_err(|e| format!("Couldn't send request to Reddit: {e} | {path}"))
+}
 
+/// Returns `Ok(None)` when Reddit rate limits or challenges the session.
+async fn shreddit_body(response: WreqResponse, path: &str) -> Result<Option<String>, String> {
 	let status = response.status();
 	if status == wreq::StatusCode::TOO_MANY_REQUESTS {
 		return Ok(None);
@@ -728,6 +757,24 @@ mod tests {
 			("/r/rust%2Fwiki/page", "/r/rust%2Fwiki/page"),
 		] {
 			assert_eq!(comments_logical_path(path), expected);
+		}
+	}
+
+	#[test]
+	fn test_shreddit_redirect_target() {
+		for (location, expected) in [
+			("/svc/shreddit/comments/r/rust/t3_abc?rdt=50895", Some("/svc/shreddit/comments/r/rust/t3_abc?rdt=50895")),
+			(
+				"https://www.reddit.com/svc/shreddit/more-comments/rust/t3_abc?rdt=1",
+				Some("/svc/shreddit/more-comments/rust/t3_abc?rdt=1"),
+			),
+			("/login/?dest=%2Fsvc%2Fshreddit%2F", None),
+			("https://www.reddit.com.evil.example/svc/shreddit/x", None),
+			("https://evil.example/svc/shreddit/x", None),
+			("//evil.example/svc/shreddit/x", None),
+			("", None),
+		] {
+			assert_eq!(shreddit_redirect_target(location), expected, "{location}");
 		}
 	}
 

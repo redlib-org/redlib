@@ -14,6 +14,7 @@ use serde_json::{json, Value};
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::sync::LazyLock;
+use tokio::task::JoinSet;
 
 /// How much of a comment tree is crawled beyond the first fragment.
 #[derive(Clone, Copy)]
@@ -70,30 +71,32 @@ fn comments_path(subreddit: &str, post_id: &str, comment_id: Option<&str>, sort:
 	path
 }
 
-/// Expand "more comments" placeholders breadth-first in concurrent batches.
-/// Placeholders that fail or exceed `limits` stay in the tree as stubs.
+/// Expand "more comments" placeholders breadth-first, keeping up to
+/// `limits.concurrency` requests in flight. Placeholders that fail or exceed
+/// `limits` stay in the tree as stubs.
 async fn expand<F, Fut>(tree: &mut CommentTree, limits: CrawlLimits, fetch: F)
 where
 	F: Fn(String, String) -> Fut,
 	Fut: Future<Output = Result<String, String>> + Send + 'static,
 {
+	let mut in_flight = JoinSet::new();
 	let mut expansions = 0;
-	while tree.len() < limits.max_comments && expansions < limits.max_expansions {
-		let batch = tree.next_batch(limits.concurrency.min(limits.max_expansions - expansions));
-		if batch.is_empty() {
-			break;
+	loop {
+		while in_flight.len() < limits.concurrency && expansions < limits.max_expansions && tree.len() < limits.max_comments {
+			let Some(more) = tree.next_wanted() else { break };
+			let request = fetch(more.path.clone(), more.cursor.clone());
+			in_flight.spawn(async move { (more, request.await) });
+			expansions += 1;
 		}
-		expansions += batch.len();
 
-		let requests: Vec<_> = batch.iter().map(|more| tokio::spawn(fetch(more.path.clone(), more.cursor.clone()))).collect();
-		for (more, request) in batch.into_iter().zip(requests) {
-			match request.await.map_err(|e| e.to_string()).and_then(|result| result) {
-				Ok(html) => tree.add(parse_fragment(&html)),
-				Err(e) => {
-					warn!("Couldn't expand more comments: {e}");
-					tree.skip(more);
-				}
+		match in_flight.join_next().await {
+			None => break,
+			Some(Ok((_, Ok(html)))) => tree.add(parse_fragment(&html)),
+			Some(Ok((more, Err(e)))) => {
+				warn!("Couldn't expand more comments: {e}");
+				tree.skip(more);
 			}
+			Some(Err(e)) => warn!("Couldn't expand more comments: {e}"),
 		}
 	}
 }
@@ -184,18 +187,15 @@ impl CommentTree {
 		self.pending.extend(fragment.more);
 	}
 
-	/// Take up to `size` placeholders worth expanding, breadth-first.
-	fn next_batch(&mut self, size: usize) -> Vec<MoreComments> {
-		let mut batch = Vec::new();
-		while batch.len() < size {
-			let Some(more) = self.pending.pop_front() else { break };
+	/// Take the next placeholder worth expanding, breadth-first.
+	fn next_wanted(&mut self) -> Option<MoreComments> {
+		while let Some(more) = self.pending.pop_front() {
 			if self.wants(&more) {
-				batch.push(more);
-			} else {
-				self.skipped.push(more);
+				return Some(more);
 			}
+			self.skipped.push(more);
 		}
-		batch
+		None
 	}
 
 	fn skip(&mut self, more: MoreComments) {
@@ -452,9 +452,9 @@ mod tests {
 	#[test]
 	fn test_listing_builds_tree_and_more_stubs() {
 		let mut tree = tree(None);
-		let batch = tree.next_batch(1);
-		assert_eq!(batch[0].cursor, "c1");
-		tree.skip(batch.into_iter().next().unwrap());
+		let more = tree.next_wanted().unwrap();
+		assert_eq!(more.cursor, "c1");
+		tree.skip(more);
 		tree.add(parse_fragment(MORE_REPLIES));
 
 		let listing = tree.into_listing(0);
@@ -483,8 +483,7 @@ mod tests {
 	#[test]
 	fn test_focused_thread() {
 		let mut tree = tree(Some("t1_b"));
-		let batch = tree.next_batch(10);
-		assert_eq!(batch.iter().map(|more| more.cursor.as_str()).collect::<Vec<_>>(), ["c1"]);
+		assert_eq!(wanted_cursors(&mut tree), ["c1"]);
 		let focused = tree.into_listing(0);
 		assert_eq!(focused["data"]["children"].as_array().unwrap().len(), 1);
 		assert_eq!(focused["data"]["children"][0]["data"]["id"], "b");
@@ -505,6 +504,10 @@ mod tests {
 			.iter()
 			.map(|child| child["data"]["id"].as_str().unwrap().to_string())
 			.collect()
+	}
+
+	fn wanted_cursors(tree: &mut CommentTree) -> Vec<String> {
+		std::iter::from_fn(|| tree.next_wanted()).map(|more| more.cursor).collect()
 	}
 
 	fn limits(max_comments: usize, max_expansions: usize, concurrency: usize) -> CrawlLimits {
@@ -611,19 +614,16 @@ mod tests {
 	}
 
 	#[test]
-	fn test_next_batch_is_breadth_first_and_bounded() {
+	fn test_next_wanted_is_breadth_first() {
 		let mut tree = tree(None);
-		let cursors = |batch: Vec<MoreComments>| batch.into_iter().map(|more| more.cursor).collect::<Vec<_>>();
-		assert_eq!(cursors(tree.next_batch(2)), ["c1", "c2"]);
-		assert_eq!(cursors(tree.next_batch(2)), ["c3"]);
-		assert!(tree.next_batch(2).is_empty());
+		assert_eq!(wanted_cursors(&mut tree), ["c1", "c2", "c3"]);
+		assert!(tree.next_wanted().is_none());
 	}
 
 	#[test]
 	fn test_focus_only_expands_descendants() {
 		let mut tree = tree(Some("t1_a"));
-		let batch: Vec<String> = tree.next_batch(10).into_iter().map(|more| more.cursor).collect();
-		assert_eq!(batch, ["c1", "c2"], "the top-level placeholder is outside the thread");
+		assert_eq!(wanted_cursors(&mut tree), ["c1", "c2"], "the top-level placeholder is outside the thread");
 		assert_eq!(tree.skipped.len(), 1);
 	}
 
@@ -715,5 +715,28 @@ mod tests {
 		expand(&mut tree, limits(100, 100, 10), fetcher(calls.clone())).await;
 
 		assert_eq!(*calls.lock().unwrap(), ["c1"]);
+	}
+
+	#[tokio::test]
+	async fn test_expand_does_not_wait_for_slow_requests() {
+		let (release_c1, c1_released) = tokio::sync::oneshot::channel::<()>();
+		let release_c1 = Mutex::new(Some(release_c1));
+		let c1_released = Mutex::new(Some(c1_released));
+		let fetch = move |_path, cursor: String| -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>> {
+			if cursor == "c1" {
+				let released = c1_released.lock().unwrap().take().unwrap();
+				return Box::pin(async move { released.await.map(|()| String::new()).map_err(|e| e.to_string()) });
+			}
+			if cursor == "c3" {
+				release_c1.lock().unwrap().take().unwrap().send(()).unwrap();
+			}
+			Box::pin(std::future::ready(Ok(String::new())))
+		};
+
+		let mut tree = tree(None);
+		let crawl = expand(&mut tree, limits(100, 100, 2), fetch);
+		tokio::time::timeout(std::time::Duration::from_secs(5), crawl)
+			.await
+			.expect("c3 must start while c1 is still in flight");
 	}
 }
