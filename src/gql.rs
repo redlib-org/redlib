@@ -72,7 +72,9 @@ fn variables(id: &str, comment_id: Option<&str>, path: &str, sort: &str) -> Resu
 	 "id": format!("t3_{id}"), "sortType": sort, "count": COMMENT_COUNT,
 	 "maxDepth": MAX_DEPTH, "includeConsistencyToken": false, "includePremiumAvatarTreatment": false
 	});
-	if let Some(comment_id) = comment_id {
+	if let Some(comment_id) = comment_id.filter(|_| param(path, "cursor").is_none()) {
+		// A continuation cursor already identifies its parent. Combining it with
+		// focusedCommentContext makes Reddit return DEPENDENCY_FAILURE.
 		// With context=..., Reddit also includes ancestors of the focused comment.
 		let context = param(path, "context").and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
 		variables["focusedCommentContext"] = json_value!({
@@ -471,8 +473,12 @@ mod tests {
 			assert_eq!(vars["id"], "t3_abc");
 			assert_eq!(vars["sortType"], expected);
 			assert_eq!(vars["after"], "opaque:+/= cursor");
-			assert_eq!(vars["focusedCommentContext"], json_value!({"commentId": "t1_def", "isFocusedThreadOnly": false}));
+			assert!(vars["focusedCommentContext"].is_null());
 		}
+		assert_eq!(
+			variables("abc", Some("def"), "?context=3", "top").unwrap()["focusedCommentContext"],
+			json_value!({"commentId": "t1_def", "isFocusedThreadOnly": false})
+		);
 		assert_eq!(variables("abc", Some("def"), "?", "top").unwrap()["focusedCommentContext"]["isFocusedThreadOnly"], true);
 		assert!(variables("abc", None, "?cursor=%FF", "top").is_err());
 		assert!(variables("abc", None, "?", "invalid").is_err());
