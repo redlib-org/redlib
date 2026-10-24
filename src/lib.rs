@@ -1,6 +1,7 @@
 pub mod client;
 pub mod config;
 pub mod duplicates;
+mod gql;
 pub mod instance_info;
 pub mod oauth;
 pub mod oauth_resources;
