@@ -97,6 +97,7 @@ Several technical improvements have also been made, including:
 - **OAuth token spoofing**: To circumvent rate limits imposed by Reddit, OAuth token spoofing is used to mimick the most common iOS and Android clients. While spoofing both iOS and Android clients was explored, only the Android client was chosen due to content restrictions when using an anonymous iOS client.
 - **Token refreshing**: The authentication token is refreshed every 24 hours, emulating the behavior of the official Android app.
 - **HTTP header mimicking**: Efforts are made to send along as many of the official app's headers as possible to reduce the likelihood of Reddit's crackdown on Redlib's requests.
+- **GraphQL comments**: Post pages fetch metadata through `/by_id` and comments through Reddit's Android `PostComments` operation, using the existing anonymous OAuth client. This handles Reddit's HTTP 403 block on the comments JSON endpoint. Comment sorting, focused threads, and cursor pagination work without a Reddit account or additional configuration. Each request loads up to 200 comments at 10 levels of depth; links load further comments and replies. The converter and rich text renderer are adapted from [polak14's implementation](https://github.com/polak14/redlib/commit/a63460b4ac29c27401e3e2aaab34b68dca02991e).
 
 ---
 

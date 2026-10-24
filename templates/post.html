@@ -2,7 +2,7 @@
 {% import "utils.html" as utils %}
 
 {% block title %}
-	{% if single_thread %}
+	{% if single_thread && !comments.is_empty() %}
 		{{ comments[0].author.name }} comments on {{ post.title }} - r/{{ post.community }}
 	{% else %}
 		{{ post.title }} - r/{{ post.community }}
@@ -92,6 +92,9 @@
 			{{ c.render().unwrap()|safe }}
 		</div>
 		{%- endfor %}
+		{% if next_cursor != "" %}
+		<a class="deeper_replies" href="{{ post.permalink }}?sort={{ sort }}&amp;cursor={{ next_cursor }}">&rarr; More comments</a>
+		{% endif %}
 
 	</div>
 {% endblock %}
