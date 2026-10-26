@@ -2,6 +2,7 @@
 use crate::client::json;
 use crate::config::get_setting;
 use crate::server::RequestExt;
+use crate::shreddit;
 use crate::subreddit::{can_access_quarantine, quarantine};
 use crate::utils::{
 	error, format_num, get_filters, nsfw_landing, param, parse_post, rewrite_emotes, setting, template, time, val, Author, Awards, Comment, Flair, FlairPart, Post, Preferences,
@@ -29,39 +30,27 @@ struct PostTemplate {
 static COMMENT_SEARCH_CAPTURE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\?q=(.*)&type=comment").unwrap());
 
 pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
-	// Build Reddit API path
-	let mut path: String = format!("{}.json?{}&raw_json=1", req.uri().path(), req.uri().query().unwrap_or_default());
+	let id = req.param("id").unwrap_or_default();
 	let sub = req.param("sub").unwrap_or_default();
 	let quarantined = can_access_quarantine(&req, &sub);
 	let url = req.uri().to_string();
 
-	// Set sort to sort query parameter
-	let sort = param(&path, "sort").unwrap_or_else(|| {
-		// Grab default comment sort method from Cookies
-		let default_sort = setting(&req, "comment_sort");
-
-		// If there's no sort query but there's a default sort, set sort to default_sort
-		if default_sort.is_empty() {
-			String::new()
-		} else {
-			path = format!("{}.json?{}&sort={}&raw_json=1", req.uri().path(), req.uri().query().unwrap_or_default(), default_sort);
-			default_sort
-		}
-	});
-
-	// Log the post ID being fetched in debug mode
-	#[cfg(debug_assertions)]
-	req.param("id").unwrap_or_default();
+	// Set sort to sort query parameter, or else the default comment sort from cookies
+	let sort = param(&url, "sort").unwrap_or_else(|| setting(&req, "comment_sort"));
 
 	let single_thread = req.param("comment_id").is_some();
 	let highlighted_comment = &req.param("comment_id").unwrap_or_default();
 
-	// Send a request to the url, receive JSON in response
-	match json(path, quarantined).await {
-		// Otherwise, grab the JSON output from the request
+	// Reddit blocks the comments API for anonymous clients, so fetch the post
+	// by ID and its comments from the web frontend.
+	match json(format!("/by_id/t3_{id}.json?raw_json=1"), quarantined).await {
 		Ok(response) => {
+			let post_json = &response["data"]["children"][0];
+			if post_json.is_null() {
+				return error(req, "Post not found").await;
+			}
 			// Parse the JSON into Post and Comment structs
-			let post = parse_post(&response[0]["data"]["children"][0]).await;
+			let post = parse_post(post_json).await;
 
 			let req_url = req.uri().to_string();
 			// Return landing page if this post if this Reddit deems this post
@@ -70,6 +59,11 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			if post.nsfw && crate::utils::should_be_nsfw_gated(&req, &req_url) {
 				return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 			}
+
+			let comments_json = match shreddit::comments(post.community.clone(), id, req.param("comment_id"), sort.clone(), param(&url, "context")).await {
+				Ok(comments_json) => comments_json,
+				Err(msg) => return error(req, &msg).await,
+			};
 
 			let query_body = match COMMENT_SEARCH_CAPTURE.captures(&url) {
 				Some(captures) => captures.get(1).unwrap().as_str().replace("%20", " ").replace('+', " "),
@@ -81,8 +75,8 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 			let query = form.get("q").unwrap().clone().to_string();
 
 			let comments = match query.as_str() {
-				"" => parse_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
-				_ => query_comments(&response[1], &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &query, &req),
+				"" => parse_comments(&comments_json, &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &req),
+				_ => query_comments(&comments_json, &post.permalink, &post.author.name, highlighted_comment, &get_filters(&req), &query, &req),
 			};
 
 			// Use the Post and Comment structs to generate a website to show users
