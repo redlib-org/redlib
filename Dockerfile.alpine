@@ -1,43 +1,33 @@
-# supported versions here: https://hub.docker.com/_/rust
-ARG RUST_BUILDER_VERSION=slim-bookworm
-ARG ALPINE_VERSION=3.23
-ARG RUST_CROSS_IMAGE=x86_64-musl
-ARG RUST_TARGET=x86_64-unknown-linux-musl
-ARG CROSS_GNU_PACKAGES=
-ARG BINDGEN_EXTRA_CLANG_ARGS=
+# supported versions here: 
+# - https://hub.docker.com/_/rust
+# - https://hub.docker.com/_/alpine
+ARG ALPINE_VERSION=3.24
 
 ########################
 ## builder image
 ########################
-FROM ghcr.io/rust-cross/rust-musl-cross:${RUST_CROSS_IMAGE} AS builder
+FROM rust:alpine${ALPINE_VERSION} AS builder
 
-ARG RUST_TARGET
-ARG CROSS_GNU_PACKAGES
-ARG BINDGEN_EXTRA_CLANG_ARGS
-ENV BINDGEN_EXTRA_CLANG_ARGS=${BINDGEN_EXTRA_CLANG_ARGS}
-ENV CARGO_TERM_PROGRESS_WHEN=always
-ENV CARGO_TERM_PROGRESS_WIDTH=80
-# Rust's armv7 musl self-contained link omits libgcc, but libstdc++ needs its
-# __sync_add_and_fetch_4 implementation for this target.
-ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS="-C link-arg=-lgcc"
-
-RUN apt-get update \
-    && apt-get -y install git cmake perl pkg-config libclang-dev ${CROSS_GNU_PACKAGES} \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN rustup target add ${RUST_TARGET}
+RUN apk add --update-cache --no-cache gcc g++ clang-dev git cmake make perl pkgconf \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /redlib
+
+# display backtrace on build error
+ENV RUST_BACKTRACE=full
+
+# enable dynamic linking, older rust disabled this for musl target by default
+ENV RUSTFLAGS="-C target-feature=-crt-static -C link-self-contained=no"
 
 # download (most) dependencies in their own layer
 COPY Cargo.lock Cargo.toml ./
 RUN mkdir src && echo "fn main() { panic!(\"why am i running?\") }" > src/main.rs
-RUN cargo build --release --locked --bin redlib --target ${RUST_TARGET}
+RUN cargo build --release --locked --bin redlib
 RUN rm ./src/main.rs && rmdir ./src
 
 # copy the source and build the redlib binary
 COPY . ./
-RUN cargo build --release --locked --bin redlib --target ${RUST_TARGET}
+RUN cargo build --release --locked --bin redlib
 RUN echo "finished building redlib!"
 
 ########################
@@ -45,9 +35,12 @@ RUN echo "finished building redlib!"
 ########################
 FROM alpine:${ALPINE_VERSION} AS release
 
+# without gcc compat layer, redlib will crash with undefined symbols
+RUN apk add --update-cache --no-cache libgcc libstdc++ \
+    && rm -rf /var/cache/apk/*
+
 # Import redlib binary from builder
-ARG RUST_TARGET=x86_64-unknown-linux-musl
-COPY --from=builder /redlib/target/${RUST_TARGET}/release/redlib /usr/local/bin/redlib
+COPY --from=builder /redlib/target/release/redlib /usr/local/bin/redlib
 
 # Add non-root user for running redlib
 RUN adduser --home /nonexistent --no-create-home --disabled-password redlib
