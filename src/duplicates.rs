@@ -176,7 +176,7 @@ pub async fn item(req: Request<Body>) -> Result<Response<Body>, String> {
 					let new_path: String = format!(
 						"{}.json?before=t3_{}&sort={}&limit=1&raw_json=1",
 						req.uri().path(),
-						&duplicates[0].id,
+						duplicates[0].id,
 						if sort.is_empty() { "num_comments".to_string() } else { sort.clone() }
 					);
 					match json(new_path, true).await {

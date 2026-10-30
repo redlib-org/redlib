@@ -22,23 +22,14 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Cache Packages
-        uses: Swatinem/rust-cache@v2
-
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
-      - name: Install musl-gcc
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends musl-tools git cmake perl pkg-config libclang-dev
-
-      - name: Install cargo musl target
-        run: rustup target add x86_64-unknown-linux-musl
-
       # Building actions
       - name: Build
-        run: RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-musl
+        run: ./scripts/build-musl-docker.sh x86_64-unknown-linux-musl
 
       - name: Versions
         id: version
@@ -67,7 +58,7 @@ jobs:
         
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         if: github.base_ref != 'main' && github.event_name == 'release'
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
