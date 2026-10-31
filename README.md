@@ -320,6 +320,8 @@ cargo run
 
 <a href="https://repl.it/github/redlib-org/redlib"><img src="https://repl.it/badge/github/redlib-org/redlib" alt="Run on Repl.it" height="32" /></a>
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/redlib-org/redlib)
+<a href="https://repocloud.io/details/Redlib/"><img src="https://d16t0pc4846x52.cloudfront.net/deploylobe.svg" alt="Deploy on RepoCloud" height="32" /></a>
+<a href="https://railway.com/deploy/redlib"><img src="https://railway.com/button.svg" alt="Deploy on Railway" height="32" /></a>
 
 ## launchd (macOS)
 
