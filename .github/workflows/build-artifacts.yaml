@@ -76,19 +76,19 @@ jobs:
           # - i686-pc-windows-gnu
         profile: ${{ fromJson(needs.prepare.outputs.build_profiles) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Install rust
-        uses: actions-rust-lang/setup-rust-toolchain@v2
+        uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
         with:
           toolchain: stable
           cache: false
           build-warnings: warn
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.24.0
+        uses: cargo-bins/cargo-binstall@851112458b5f28a29e5bc14a690c3f283d9dcc6f # v1.26.2
 
       - name: Install cross
         run: cargo binstall --force -y cross
