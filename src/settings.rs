@@ -569,3 +569,21 @@ pub async fn encoded_restore(req: Request<Body>) -> Result<Response<Body>, Strin
 
 	Ok(redirect(&url))
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	/// A raw `+` in the link would come back as a space, a raw `&` would end the address.
+	#[test]
+	fn test_settings_link_encodes_the_page_it_returns_to() {
+		let html = SettingsTemplate {
+			prefs: Preferences::new(&Request::new(Body::from(""))),
+			url: "/r/a+b/new?after=x&t=day".to_string(),
+			return_url: String::new(),
+		}
+		.render()
+		.unwrap();
+		assert!(html.contains(r#"href="/settings?return_to=/r/a%2Bb/new%3Fafter%3Dx%26t%3Dday""#));
+	}
+}
