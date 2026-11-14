@@ -183,6 +183,10 @@ pub struct Config {
 	#[serde(skip_serializing)]
 	pub(crate) hsts: Option<String>,
 
+	#[serde(rename = "REDLIB_CACERT")]
+	#[serde(skip_serializing)]
+	pub(crate) cacert: Option<String>,
+
 	#[serde(rename = "REDLIB_IPV4_ONLY")]
 	#[serde(skip_serializing)]
 	pub(crate) ipv4_only: Option<String>,
@@ -311,6 +315,7 @@ impl Config {
 			port: parse("REDLIB_LISTEN_PORT"),
 			address: parse("REDLIB_LISTEN_ADDRESS"),
 			hsts: parse("REDLIB_HSTS"),
+			cacert: parse("REDLIB_CACERT"),
 			ipv4_only: parse("REDLIB_IPV4_ONLY"),
 			ipv6_only: parse("REDLIB_IPV6_ONLY"),
 			endpoints: parse("REDLIB_ENDPOINTS"),
@@ -392,6 +397,7 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_LISTEN_PORT" => config.port.clone(),
 		"REDLIB_LISTEN_ADDRESS" => config.address.clone(),
 		"REDLIB_HSTS" => config.hsts.clone(),
+		"REDLIB_CACERT" => config.cacert.clone(),
 		"REDLIB_IPV4_ONLY" => config.ipv4_only.clone(),
 		"REDLIB_IPV6_ONLY" => config.ipv6_only.clone(),
 		"REDLIB_ENDPOINTS" => config.endpoints.clone(),

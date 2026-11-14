@@ -204,14 +204,14 @@ async fn main() {
 		)
 		.get_matches();
 
-	if let Some(path) = matches.get_one::<String>("cacert") {
+	if let Some(path) = &matches.get_one::<String>("cacert").cloned().or_else(|| config::get_setting("REDLIB_CACERT")) {
 		match std::fs::read(path).map_err(|e| e.to_string()).and_then(|pem| redlib::client::ca_store(&pem)) {
 			Ok(store) => {
 				_ = redlib::client::CA_STORE.set(store);
-				warn!("--cacert: upstream TLS now trusts only the certificates in {path}. This is for debugging.");
+				warn!("--cacert / REDLIB_CACERT: upstream TLS now trusts only the certificates in {path}. This is for debugging.");
 			}
 			Err(e) => {
-				eprintln!("--cacert {path}: {e}");
+				eprintln!("--cacert / REDLIB_CACERT {path}: {e}");
 				std::process::exit(1);
 			}
 		}
