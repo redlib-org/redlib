@@ -1,0 +1,11 @@
+name: Lint Check (PR)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint-check.yml

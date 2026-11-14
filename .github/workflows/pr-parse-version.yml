@@ -1,0 +1,11 @@
+name: Parse Version (PR)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  parse-version:
+    uses: ./.github/workflows/parse-version.yml

@@ -1,0 +1,108 @@
+[build.env]
+passthrough = [
+    "RUST_BACKTRACE",
+    "BINDGEN_EXTRA_CLANG_ARGS",
+    "CFLAGS",
+    "CXXFLAGS",
+    "BORING_BSSL_RUST_CPPLIB"
+]
+
+# Compiler packages: gcc-i686-linux-gnu g++-i686-linux-gnu
+[target.i586-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.i586-unknown-linux-musl.env]
+passthrough = [
+    "CFLAGS_i586_unknown_linux_musl",
+    "CXXFLAGS_i586_unknown_linux_musl",
+]
+
+# Compiler packages: gcc-i686-linux-gnu g++-i686-linux-gnu
+[target.i686-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.i686-unknown-linux-musl.env]
+passthrough = [
+    "CFLAGS_i686_unknown_linux_musl",
+    "CXXFLAGS_i686_unknown_linux_musl",
+]
+
+# Compiler packages: gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
+[target.x86_64-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.x86_64-unknown-linux-musl.env]
+passthrough = [
+    "CFLAGS_x86_64_unknown_linux_musl",
+    "CXXFLAGS_x86_64_unknown_linux_musl",
+]
+
+# Compiler packages: gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+[target.armv7-unknown-linux-musleabihf]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.armv7-unknown-linux-musleabihf.env]
+passthrough = [
+    "CFLAGS_armv7_unknown_linux_musleabihf",
+    "CXXFLAGS_armv7_unknown_linux_musleabihf",
+]
+
+# Compiler packages: gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+[target.aarch64-unknown-linux-musl]
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.aarch64-unknown-linux-musl.env]
+passthrough = [
+    "CFLAGS_aarch64_unknown_linux_musl",
+    "CXXFLAGS_aarch64_unknown_linux_musl",
+]
+
+# Compiler packages: gcc-mingw-w64-i686 g++-mingw-w64-i686
+[target.i686-pc-windows-gnu]
+image = "ghcr.io/cross-rs/i686-pc-windows-gnu:main"
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.i686-pc-windows-gnu.env]
+passthrough = [
+    "CFLAGS_i686_pc_windows_gnu",
+    "CXXFLAGS_i686_pc_windows_gnu",
+]
+
+# Compiler packages: gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+[target.x86_64-pc-windows-gnu]
+image = "ghcr.io/cross-rs/x86_64-pc-windows-gnu:main"
+pre-build = [
+  "apt-get update",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests git cmake make perl pkg-config clang libclang-dev nasm",
+  "rm -rf /var/cache/apt/*"
+]
+
+[target.x86_64-pc-windows-gnu.env]
+passthrough = [
+    "CFLAGS_x86_64_pc_windows_gnu",
+    "CXXFLAGS_x86_64_pc_windows_gnu",
+]
