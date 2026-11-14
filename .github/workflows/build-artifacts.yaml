@@ -105,9 +105,9 @@ jobs:
           # cargo clean is because https://github.com/cross-rs/cross/issues/724
           cargo clean
           if [ "${{ matrix.profile }}" = "release" ]; then
-            cross build --release --target ${{ matrix.target }}
+            cross build --release --locked --target ${{ matrix.target }}
           elif [ "${{ matrix.profile }}" = "debug" ]; then
-            cross build --target ${{ matrix.target }}
+            cross build --locked --target ${{ matrix.target }}
           else
             echo "Unknown build profile! ${{ matrix.profile }}"
             exit 1
