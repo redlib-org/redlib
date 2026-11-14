@@ -43,6 +43,8 @@ Redlib supports the following command line flags. They take precedence over envi
 - `-a`, `--address <ADDRESS>`: Sets address to listen on. Default is `[::]`.
 - `-p`, `--port <PORT>`: Port to listen on. Default is `8080`.
 - `-H`, `--hsts <EXPIRE_TIME>`: HSTS header to tell browsers that this site should only be accessed over HTTPS. Default is `604800`.
+- `-h`, `--help`: Print the flags and exit.
+- `-V`, `--version`: Print the version and exit.
 
 ## Instance settings
 
