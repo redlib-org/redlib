@@ -43,6 +43,7 @@ Redlib supports the following command line flags. They take precedence over envi
 - `-a`, `--address <ADDRESS>`: Sets address to listen on. Default is `[::]`.
 - `-p`, `--port <PORT>`: Port to listen on. Default is `8080`.
 - `-H`, `--hsts <EXPIRE_TIME>`: HSTS header to tell browsers that this site should only be accessed over HTTPS. Default is `604800`.
+- `--cacert <FILE>`: Trust only the CA certificates in this PEM file for requests to Reddit and the other upstream hosts. For debugging: `ALL_PROXY=http://127.0.0.1:8080 redlib --cacert ~/.mitmproxy/mitmproxy-ca-cert.pem` shows the decrypted traffic in mitmproxy.
 - `-h`, `--help`: Print the flags and exit.
 - `-V`, `--version`: Print the version and exit.
 
