@@ -195,7 +195,27 @@ async fn main() {
 				.default_value(setting_or("REDLIB_HSTS", "604800"))
 				.num_args(1),
 		)
+		.arg(
+			Arg::new("cacert")
+				.long("cacert")
+				.value_name("FILE")
+				.help("Trust only the CA certificates in this PEM file for upstream TLS, to inspect traffic through a proxy (debugging only)")
+				.num_args(1),
+		)
 		.get_matches();
+
+	if let Some(path) = matches.get_one::<String>("cacert") {
+		match std::fs::read(path).map_err(|e| e.to_string()).and_then(|pem| redlib::client::ca_store(&pem)) {
+			Ok(store) => {
+				_ = redlib::client::CA_STORE.set(store);
+				warn!("--cacert: upstream TLS now trusts only the certificates in {path}. This is for debugging.");
+			}
+			Err(e) => {
+				eprintln!("--cacert {path}: {e}");
+				std::process::exit(1);
+			}
+		}
+	}
 
 	redlib::backends::log_orders();
 

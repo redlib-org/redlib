@@ -16,10 +16,11 @@ use std::path::Path;
 use std::result::Result;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, AtomicUsize};
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 use wreq::dns::{Addrs, Name, Resolve, Resolving};
 use wreq::redirect::Policy;
+use wreq::tls::trust::{CertStore, Certificate};
 use wreq::{header as wreq_header, Client as WreqClient, Method, Response as WreqResponse};
 use wreq_util::{Emulation, Platform, Profile};
 
@@ -229,13 +230,28 @@ fn pick(weights: &[u32], current: usize) -> usize {
 	unreachable!("the draw is below the total weight")
 }
 
+/// Set by `--cacert`: the only CAs upstream TLS trusts.
+pub static CA_STORE: OnceLock<CertStore> = OnceLock::new();
+
+pub fn ca_store(pem: &[u8]) -> Result<CertStore, String> {
+	// An empty store would build fine and then fail every request.
+	if Certificate::stack_from_pem(pem).map_or(true, |certs| certs.is_empty()) {
+		return Err("no PEM certificate found".to_string());
+	}
+	CertStore::from_pem_stack(pem).map_err(|e| e.to_string())
+}
+
 fn client_for(profile: Profile, platform: Platform) -> WreqClient {
-	WreqClient::builder()
+	let builder = WreqClient::builder()
 		.emulation(Emulation::builder().profile(profile).platform(platform).build())
 		.redirect(Policy::none())
-		.dns_resolver(RedgifsIpv4Resolver)
-		.build()
-		.expect("Should always be able to build a client")
+		.dns_resolver(RedgifsIpv4Resolver);
+	match CA_STORE.get() {
+		Some(store) => builder.tls_cert_store(store.clone()),
+		None => builder,
+	}
+	.build()
+	.expect("Should always be able to build a client")
 }
 
 /// Builds a client with another, weighted random browser emulation.
@@ -761,6 +777,26 @@ impl IntoHyperResponse for WreqResponse {
 mod tests {
 	use super::*;
 	use {crate::config::get_setting, sealed_test::prelude::*};
+
+	const TEST_CA: &str = "-----BEGIN CERTIFICATE-----\n\
+MIIBUDCB+KADAgECAhRED88nDZthjUlD/IIXaY8MNRk21TAKBggqhkjOPQQDAjAP\n\
+MQ0wCwYDVQQDDAR0ZXN0MB4XDTI2MTExNDIwNTU0N1oXDTM2MTExMTIwNTU0N1ow\n\
+DzENMAsGA1UEAwwEdGVzdDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABH7o5Su4\n\
+etzvDuOqBYIWTtzao5kU1TpntVypPI3eurgaViAPt0LxYCwWHcsngqme6KiKR7dd\n\
+DJCEZ8+eFSpvw/qjMjAwMB0GA1UdDgQWBBTKAS2aqFF5erv/3/tcpuuw2B2DIzAP\n\
+BgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA0cAMEQCICp94OaVVBYIXxrP3b/X\n\
+grOg7/TIT6QE0pDX4NMn6NqkAiARp8TS/g6Pmz3BaKRf5UH/7ifLPrQ9z+rk+LT3\n\
++puoPQ==\n\
+-----END CERTIFICATE-----\n\
+";
+
+	#[test]
+	fn test_ca_store_needs_a_certificate() {
+		assert!(ca_store(TEST_CA.as_bytes()).is_ok());
+		assert!(ca_store(b"").is_err());
+		assert!(ca_store(b"not a certificate\n").is_err());
+		assert!(ca_store(b"-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n").is_err());
+	}
 
 	#[test]
 	fn test_session_tokens_leave_the_anonymous_device_out() {
