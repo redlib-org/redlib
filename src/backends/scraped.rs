@@ -1,12 +1,15 @@
-//! Comment trees from Reddit's server-rendered web frontend ("shreddit").
+//! Pages scraped from the HTML reddit.com serves logged-out visitors.
 //!
-//! Reddit's edge blocks the OAuth comments API for anonymous clients, but
-//! reddit.com still serves logged-out visitors HTML fragments of comment
-//! trees. This module crawls those fragments and converts them into the API's
-//! `Listing` JSON, so comment parsing and rendering stay unchanged.
+//! Comment trees: Reddit's edge blocks the OAuth comments API for anonymous
+//! clients, but its web frontend ("shreddit") still serves HTML fragments of
+//! comment trees. This module crawls those fragments and converts them into
+//! the API's `Listing` JSON, so comment parsing and rendering stay unchanged.
+//!
+//! Combined feeds (`r/a+b`): Reddit refuses some sorts to the JSON API, but
+//! serves the old listing page. Its post IDs are read and loaded from `/by_id`.
 
-use super::{json as reddit_json, Backend, Failure, Fetch, Kind};
-use crate::client::{ALTERNATIVE_REDDIT_URL_BASE, CLIENT};
+use super::{is_blocked_error, json as reddit_json, Backend, Failure, Fetch, Kind};
+use crate::client::{ALTERNATIVE_REDDIT_URL_BASE, CLIENT, DESKTOP_CLIENT};
 use crate::utils::{enable_scrape_fallback, param, scrape_comment_prefetch};
 use cached::proc_macro::cached;
 use chrono::DateTime;
@@ -60,6 +63,9 @@ static TIMEAGO: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate
 static MORE_COMMENTS: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate-partial[src]").unwrap());
 static CURSOR: LazyLock<Selector> = LazyLock::new(|| Selector::parse(r#"input[name="cursor"]"#).unwrap());
 static COUNT: LazyLock<Selector> = LazyLock::new(|| Selector::parse("faceplate-number[number]").unwrap());
+static FEED: LazyLock<Selector> = LazyLock::new(|| Selector::parse("#siteTable").unwrap());
+static FEED_POST: LazyLock<Selector> = LazyLock::new(|| Selector::parse(r#"#siteTable .thing[data-fullname^="t3_"]"#).unwrap());
+static FEED_NEXT: LazyLock<Selector> = LazyLock::new(|| Selector::parse(".next-button a[href]").unwrap());
 
 /// A "more comments" placeholder to load: its cursor and the query string of
 /// its `/svc/shreddit/more-comments/` path.
@@ -81,12 +87,122 @@ impl Backend for Scraped {
 	}
 
 	fn supports(&self, kind: Kind) -> bool {
-		kind == Kind::Comments
+		matches!(kind, Kind::Comments | Kind::Listing)
 	}
 
 	fn fetch<'a>(&'a self, path: &'a str, quarantine: bool) -> Fetch<'a> {
-		Box::pin(async move { thread(path, quarantine).await.map_err(Failure::Invalid) })
+		Box::pin(async move {
+			match Kind::of(path) {
+				Kind::Listing => combined_feed(path, quarantine, None).await,
+				_ => thread(path, quarantine).await.map_err(Failure::Invalid),
+			}
+		})
 	}
+}
+
+/// The listing for a combined feed's API `path` (`/r/a+b/new.json`): the old
+/// listing page gives the post IDs and the next page's cursor, `/by_id` the posts.
+/// The page is asked for logged out, or as the session cookie `session`.
+pub(super) async fn combined_feed(path: &str, quarantine: bool, session: Option<&str>) -> Result<Value, Failure> {
+	let page = combined_feed_page(path).ok_or(Failure::Unsupported)?;
+	let html = feed_page(&page, session).await?;
+	let (ids, after) = parse_feed_page(&html).ok_or_else(|| Failure::Invalid(format!("Reddit didn't send the listing page | {page}")))?;
+	if ids.is_empty() {
+		return Ok(listing(Vec::new()));
+	}
+
+	let mut posts = reddit_json(format!("/by_id/{}.json?raw_json=1", ids.join(",")), quarantine).await.map_err(|msg| {
+		if is_blocked_error(&msg) {
+			Failure::Blocked
+		} else {
+			Failure::Invalid(msg)
+		}
+	})?;
+	if let Some(children) = posts["data"]["children"].as_array_mut() {
+		children.sort_by_key(|post| ids.iter().position(|id| id.strip_prefix("t3_") == post["data"]["id"].as_str()));
+	}
+	posts["data"]["after"] = after.into();
+	Ok(posts)
+}
+
+/// The reddit.com page for a combined feed's API `path`, `None` for other
+/// listings: Reddit serves single subreddits as shreddit pages without posts.
+fn combined_feed_page(path: &str) -> Option<String> {
+	let (route, query) = path.split_once('?').unwrap_or((path, ""));
+	let segments: Vec<&str> = route.trim_end_matches(".json").split('/').filter(|s| !s.is_empty()).collect();
+	let ["r", subs, sort @ ("hot" | "new" | "rising" | "top" | "controversial")] = segments.as_slice() else {
+		return None;
+	};
+	// The page only exists with a literal `+`
+	let subs = subs.replace("%2B", "+");
+	if !subs.contains('+') || !subs.chars().all(|c| c.is_ascii_alphanumeric() || "_-+".contains(c)) {
+		return None;
+	}
+	let query = url::form_urlencoded::Serializer::new(String::new())
+		.extend_pairs(url::form_urlencoded::parse(query.as_bytes()).filter(|(key, value)| ["after", "limit", "t"].contains(&&**key) && !value.is_empty()))
+		.finish();
+	// Only the bare path is the old page for hot; `/hot/` is a shreddit page
+	let sort = if *sort == "hot" { String::new() } else { format!("{sort}/") };
+	Some(format!("/r/{subs}/{sort}?{query}"))
+}
+
+/// Fetches a listing page as a visitor who confirmed their age, which Reddit
+/// asks logged-out ones for when a subreddit of the feed is NSFW. Phones are
+/// sent to the front page instead, so this asks as a desktop browser.
+async fn feed_page(page: &str, session: Option<&str>) -> Result<String, Failure> {
+	let cookie = session.map_or("over18=1".to_string(), |session| format!("{session}; over18=1"));
+	let mut url = format!("{ALTERNATIVE_REDDIT_URL_BASE}{page}");
+	// Reddit redirects once, to its own spelling and order of the names
+	for _ in 0..2 {
+		let response = DESKTOP_CLIENT
+			.get(&url)
+			.header(wreq_header::ACCEPT, "text/html")
+			.header(wreq_header::COOKIE, &cookie)
+			.send()
+			.await
+			.map_err(|e| Failure::Network(format!("Couldn't send request to Reddit: {e} | {page}")))?;
+		let status = response.status();
+		if status.is_redirection() {
+			let location = response.headers().get(wreq_header::LOCATION).and_then(|location| location.to_str().ok());
+			match location.filter(|location| location.starts_with(&format!("{ALTERNATIVE_REDDIT_URL_BASE}/r/"))) {
+				Some(location) => url = location.to_string(),
+				None => return Err(Failure::Invalid(format!("Reddit redirected the listing page to {location:?} | {page}"))),
+			}
+			continue;
+		}
+		return match status.as_u16() {
+			200 => response
+				.text()
+				.await
+				.map_err(|e| Failure::Network(format!("Failed receiving body from Reddit: {e} | {page}"))),
+			403 => Err(Failure::Blocked),
+			429 => Err(Failure::RateLimited(format!(
+				"Reddit is rate limiting listing pages (429 Too Many Requests). Try again in a minute. | {page}"
+			))),
+			500..=599 => Err(Failure::Network(format!("Reddit returned {status} | {page}"))),
+			_ => Err(Failure::Invalid(format!("Reddit returned {status} | {page}"))),
+		};
+	}
+	Err(Failure::Invalid(format!("Reddit keeps redirecting the listing page | {page}")))
+}
+
+/// The post IDs (`t3_…`) of a listing page in its order and the cursor of the
+/// next page, `None` when the page isn't a listing (a challenge, a login wall).
+fn parse_feed_page(html: &str) -> Option<(Vec<String>, Option<String>)> {
+	let document = Html::parse_document(html);
+	document.select(&FEED).next()?;
+	let ids = document
+		.select(&FEED_POST)
+		.filter(|post| post.value().attr("data-promoted") != Some("true"))
+		.filter_map(|post| post.value().attr("data-fullname"))
+		.map(str::to_string)
+		.collect();
+	let after = document
+		.select(&FEED_NEXT)
+		.next()
+		.and_then(|next| next.value().attr("href")?.split_once('?'))
+		.and_then(|(_, query)| param(&format!("?{query}"), "after"));
+	Some((ids, after))
 }
 
 /// The thread's API response (`[post listing, comment listing]`) for a
@@ -561,6 +677,55 @@ mod tests {
 		for path in ["/api/v1/me", "https://evil.example/svc/shreddit/x", "/svc/shreddit"] {
 			let error = shreddit_fragment(path.to_string(), None).await.unwrap_err();
 			assert!(error.starts_with("Refusing to fetch non-shreddit path"), "{path}: {error}");
+		}
+	}
+
+	/// An old listing page cut down to what is read from it.
+	const FEED_PAGE: &str = r#"
+<body class="listing-page multi-page new-page"><div class="side"><div class="thing" data-fullname="t5_2s7lj"></div></div>
+<div id="siteTable" class="sitetable linklisting">
+  <div class=" thing id-t3_c promoted link" data-fullname="t3_c" data-promoted="true"></div>
+  <div class=" thing id-t3_a odd link self" data-fullname="t3_a" data-subreddit="rust" data-promoted="false"><a class="title" href="/r/rust/comments/a/x/">A</a></div>
+  <div class="clearleft"></div>
+  <div class=" thing id-t3_b even link" data-fullname="t3_b" data-subreddit="golang" data-promoted="false"></div>
+  <div class="nav-buttons"><span class="nextprev">view more:
+    <span class="prev-button"><a href="https://www.reddit.com/r/golang+rust/new/?count=26&amp;before=t3_a" rel="nofollow prev">prev</a></span>
+    <span class="next-button"><a href="https://www.reddit.com/r/golang+rust/new/?count=50&amp;after=t3_b" rel="nofollow next">next</a></span>
+  </span></div>
+</div></body>"#;
+
+	#[test]
+	fn test_parse_feed_page() {
+		let (ids, after) = parse_feed_page(FEED_PAGE).unwrap();
+		assert_eq!(ids, ["t3_a", "t3_b"], "posts in page order, without the ad and the sidebar");
+		assert_eq!(after.as_deref(), Some("t3_b"));
+
+		let last = FEED_PAGE.replace("next-button", "gone");
+		assert_eq!(parse_feed_page(&last).unwrap().1, None, "the last page has no cursor");
+		assert_eq!(parse_feed_page(r#"<div id="siteTable"></div>"#), Some((Vec::new(), None)), "an empty feed");
+		assert_eq!(parse_feed_page("<title>Reddit - Prove your humanity</title>"), None, "not a listing page");
+	}
+
+	#[test]
+	fn test_combined_feed_page() {
+		let page = |path| combined_feed_page(path);
+		assert_eq!(page("/r/rust%2Bgolang/new.json?&raw_json=1").as_deref(), Some("/r/rust+golang/new/?"));
+		assert_eq!(
+			page("/r/a+u_b-c/top.json?t=week&after=t3_x&limit=50&raw_json=1&x=1&before=").as_deref(),
+			Some("/r/a+u_b-c/top/?t=week&after=t3_x&limit=50")
+		);
+		assert_eq!(page("/r/a+b/hot.json?limit=5").as_deref(), Some("/r/a+b/?limit=5"));
+		// Single subreddits and other pages have no old listing page
+		for path in [
+			"/r/rust/new.json",
+			"/r/popular/hot.json",
+			"/r/a+b/search.json?q=x",
+			"/r/a+b/about.json",
+			"/r/a+b/../new.json",
+			"/r/a+b?x/new.json",
+			"/.json",
+		] {
+			assert_eq!(page(path), None, "{path}");
 		}
 	}
 

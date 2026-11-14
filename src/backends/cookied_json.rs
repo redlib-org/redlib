@@ -1,6 +1,6 @@
 //! Reddit with the sessions from `REDLIB_REDDIT_COOKIE`, on the web host and the API.
 
-use super::{check_json, Backend, Failure, Fetch, Kind};
+use super::{check_json, scraped, Backend, Failure, Fetch, Kind};
 use crate::client::{now_secs, reddit_get_as, reroll_client, session_cookies, IntoHyperResponse, ALTERNATIVE_REDDIT_URL_BASE, CLIENT};
 use crate::oauth::session_token;
 use bytes::Buf;
@@ -31,8 +31,34 @@ impl Backend for CookiedJson {
 		2.0
 	}
 
-	fn fetch<'a>(&'a self, path: &'a str, _quarantine: bool) -> Fetch<'a> {
-		Box::pin(fetch(path))
+	fn fetch<'a>(&'a self, path: &'a str, quarantine: bool) -> Fetch<'a> {
+		Box::pin(async move {
+			match combined_feed(path, quarantine).await {
+				Some(feed) => feed,
+				None => fetch(path).await,
+			}
+		})
+	}
+}
+
+/// New and Rising of a combined feed (`r/a+b`): both JSON hosts refuse them to
+/// sessions, but reddit.com serves a session the old listing page, also where
+/// it blocks logged-out visitors. One session per request, taking turns.
+async fn combined_feed(path: &str, quarantine: bool) -> Option<Result<Value, Failure>> {
+	let route = path.split('?').next().unwrap_or_default().trim_end_matches(".json");
+	if !(route.ends_with("/new") || route.ends_with("/rising")) {
+		return None;
+	}
+	let sessions = awake(session_cookies(), now_secs());
+	let (label, cookie) = sessions.get(NEXT_SESSION.fetch_add(1, Ordering::Relaxed) % sessions.len().max(1))?;
+	match scraped::combined_feed(path, quarantine, Some(cookie)).await {
+		Err(Failure::Unsupported) => None,
+		feed => {
+			if let Err(failure) = &feed {
+				warn!("Session {label} didn't get the listing page for {path}: {failure:?}");
+			}
+			Some(feed)
+		}
 	}
 }
 
