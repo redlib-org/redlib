@@ -48,6 +48,9 @@ const REDDIT_COOKIE_MAX_LEN: usize = 8192;
 
 pub static CLIENT: LazyLock<ArcSwap<WreqClient>> = LazyLock::new(|| ArcSwap::from_pointee(build_client()));
 
+/// A desktop browser, for pages reddit.com doesn't serve to phones, which `CLIENT` may emulate.
+pub(crate) static DESKTOP_CLIENT: LazyLock<WreqClient> = LazyLock::new(|| client_for(Profile::Safari26_4, Platform::MacOS));
+
 /// Runs `future` on one runtime shared by every test. `CLIENT` keeps its
 /// connections in a pool, and each connection lives on the runtime that opened
 /// it, so with a runtime per test, a test that finishes takes down

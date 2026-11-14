@@ -5,7 +5,7 @@
 //! pass without doing anything (CI sets it from a repository secret, which
 //! pull requests from forks don't get).
 
-use super::{cookied_json::CookiedJson, gql::Gql, json::Json, Backend};
+use super::{cookied_json::CookiedJson, gql::Gql, json::Json, scraped::Scraped, Backend};
 use crate::client::block_on_shared;
 use sealed_test::prelude::*;
 use serde_json::Value;
@@ -95,6 +95,37 @@ fn test_gql_subreddit_feed() {
 #[test]
 fn test_gql_popular() {
 	assert_posts(&get(&Gql, "/r/popular/hot.json?raw_json=1"), "gql popular");
+}
+
+/// Reddit refuses `/new` to the JSON API; the old listing page still has it.
+#[test]
+#[ignore = "www.reddit.com answers GitHub's runners with 403; run with --include-ignored"]
+fn test_scraped_combined_feed() {
+	// Reddit redirects to `golang+rust`
+	let page = get(&Scraped, "/r/rust%2Bgolang/new.json?&raw_json=1&limit=5");
+	assert_posts(&page, "scraped combined feed");
+	let posts = children(&page, "scraped combined feed");
+	assert!(posts.len() <= 5, "{page}");
+	assert!(
+		posts.iter().all(|p| ["rust", "golang"].contains(&p["data"]["subreddit"].as_str().unwrap_or_default())),
+		"{page}"
+	);
+	let created: Vec<f64> = posts.iter().filter_map(|p| p["data"]["created_utc"].as_f64()).collect();
+	assert!(created.first() > created.last(), "scraped combined feed: not newest first: {created:?}");
+
+	// The next page has other posts
+	let after = page["data"]["after"].as_str().expect("scraped combined feed: no next page");
+	let next = get(&Scraped, &format!("/r/rust%2Bgolang/new.json?&raw_json=1&limit=5&after={after}"));
+	assert_posts(&next, "scraped combined feed page 2");
+	let first = &posts[0]["data"]["id"];
+	assert!(children(&next, "scraped combined feed page 2").iter().all(|p| &p["data"]["id"] != first), "{next}");
+
+	// Hot is the page without a sort
+	assert_posts(&get(&Scraped, "/r/golang%2Brust/hot.json?&raw_json=1&limit=5"), "scraped combined feed hot");
+	assert!(matches!(
+		block_on_shared(Scraped.fetch("/r/rust/new.json?raw_json=1", false)),
+		Err(super::Failure::Unsupported)
+	));
 }
 
 /// `AllFeedSdui` is gone from the app; this fails once Reddit drops its hash.
