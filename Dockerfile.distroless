@@ -52,7 +52,6 @@ FROM scratch AS release
 COPY --from=distroless / /
 COPY --from=builder /usr/local/bin/redlib /usr/local/bin/redlib
 
-ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 USER 65532
 WORKDIR /home/nonroot
 EXPOSE 8080
