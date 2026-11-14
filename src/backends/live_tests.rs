@@ -128,6 +128,18 @@ fn test_scraped_combined_feed() {
 	));
 }
 
+/// Sessions get the old listing page too, for hosts Reddit blocks logged out.
+#[test]
+#[ignore = "www.reddit.com answers GitHub's runners with 403; run with --include-ignored"]
+fn test_cookied_json_combined_feed() {
+	if !has_session(&CookiedJson) {
+		return;
+	}
+	let page = get(&CookiedJson, "/r/rust%2Bgolang/new.json?&raw_json=1&limit=5");
+	assert_posts(&page, "cookied-json combined feed");
+	assert!(page["data"]["after"].as_str().is_some_and(|after| after.starts_with("t3_")), "{page}");
+}
+
 /// `AllFeedSdui` is gone from the app; this fails once Reddit drops its hash.
 #[test]
 fn test_gql_all() {

@@ -111,7 +111,7 @@ A listing page takes about 20 KB, a post with its comments 5–10 KB, so the def
 
 When the backends before it fail, the `scraped` backend loads a post page's comments from the HTML Reddit serves logged-out visitors. It shows Reddit's first batch; "More comments" and "More replies" fetch more when clicked. To load more up front, set `REDLIB_SCRAPE_COMMENT_PREFETCH` to the number of extra requests per page, e.g. `5`.
 
-It also loads combined feeds (`r/a+b`, the front page of your subscriptions) when the JSON API refuses them, which Reddit does for New and Rising: the post IDs come from the old listing page Reddit still serves logged-out visitors for these feeds, the posts themselves from the other backends. That takes two requests per page. Reddit allows an address about 100 of these pages per 10 minutes.
+It also loads combined feeds (`r/a+b`, the front page of your subscriptions) when the JSON API refuses them, which Reddit does for New and Rising: the post IDs come from the old listing page Reddit still serves logged-out visitors for these feeds, the posts themselves from the other backends. That takes two requests per page. Reddit allows an address about 100 of these pages per 10 minutes. Where Reddit refuses the page to logged-out visitors, `cookied-json` asks for it with a session from `REDLIB_REDDIT_COOKIE`.
 
 Scraped pages cost Reddit extra requests and may break when Reddit changes its pages. Set `REDLIB_ENABLE_SCRAPE_FALLBACK=off` to show the block error instead.
 

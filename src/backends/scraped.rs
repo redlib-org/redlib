@@ -93,7 +93,7 @@ impl Backend for Scraped {
 	fn fetch<'a>(&'a self, path: &'a str, quarantine: bool) -> Fetch<'a> {
 		Box::pin(async move {
 			match Kind::of(path) {
-				Kind::Listing => combined_feed(path, quarantine).await,
+				Kind::Listing => combined_feed(path, quarantine, None).await,
 				_ => thread(path, quarantine).await.map_err(Failure::Invalid),
 			}
 		})
@@ -102,9 +102,10 @@ impl Backend for Scraped {
 
 /// The listing for a combined feed's API `path` (`/r/a+b/new.json`): the old
 /// listing page gives the post IDs and the next page's cursor, `/by_id` the posts.
-async fn combined_feed(path: &str, quarantine: bool) -> Result<Value, Failure> {
+/// The page is asked for logged out, or as the session cookie `session`.
+pub(super) async fn combined_feed(path: &str, quarantine: bool, session: Option<&str>) -> Result<Value, Failure> {
 	let page = combined_feed_page(path).ok_or(Failure::Unsupported)?;
-	let html = feed_page(&page).await?;
+	let html = feed_page(&page, session).await?;
 	let (ids, after) = parse_feed_page(&html).ok_or_else(|| Failure::Invalid(format!("Reddit didn't send the listing page | {page}")))?;
 	if ids.is_empty() {
 		return Ok(listing(Vec::new()));
@@ -145,17 +146,18 @@ fn combined_feed_page(path: &str) -> Option<String> {
 	Some(format!("/r/{subs}/{sort}?{query}"))
 }
 
-/// Fetches a listing page as a logged-out visitor who confirmed their age,
-/// which Reddit asks for when a subreddit of the feed is NSFW. Phones are
+/// Fetches a listing page as a visitor who confirmed their age, which Reddit
+/// asks logged-out ones for when a subreddit of the feed is NSFW. Phones are
 /// sent to the front page instead, so this asks as a desktop browser.
-async fn feed_page(page: &str) -> Result<String, Failure> {
+async fn feed_page(page: &str, session: Option<&str>) -> Result<String, Failure> {
+	let cookie = session.map_or("over18=1".to_string(), |session| format!("{session}; over18=1"));
 	let mut url = format!("{ALTERNATIVE_REDDIT_URL_BASE}{page}");
 	// Reddit redirects once, to its own spelling and order of the names
 	for _ in 0..2 {
 		let response = DESKTOP_CLIENT
 			.get(&url)
 			.header(wreq_header::ACCEPT, "text/html")
-			.header(wreq_header::COOKIE, "over18=1")
+			.header(wreq_header::COOKIE, &cookie)
 			.send()
 			.await
 			.map_err(|e| Failure::Network(format!("Couldn't send request to Reddit: {e} | {page}")))?;
