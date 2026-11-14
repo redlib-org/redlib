@@ -43,7 +43,7 @@ Redlib supports the following command line flags. They take precedence over envi
 - `-a`, `--address <ADDRESS>`: Sets address to listen on. Default is `[::]`.
 - `-p`, `--port <PORT>`: Port to listen on. Default is `8080`.
 - `-H`, `--hsts <EXPIRE_TIME>`: HSTS header to tell browsers that this site should only be accessed over HTTPS. Default is `604800`.
-- `--cacert <FILE>`: Trust only the CA certificates in this PEM file for requests to Reddit and the other upstream hosts. For debugging: `ALL_PROXY=http://127.0.0.1:8080 redlib --cacert ~/.mitmproxy/mitmproxy-ca-cert.pem` shows the decrypted traffic in mitmproxy.
+- `--cacert <FILE>`: Trust only the CA certificates in this PEM file for requests to Reddit and the other upstream hosts. For debugging: `ALL_PROXY=http://127.0.0.1:8080 redlib --cacert ~/.mitmproxy/mitmproxy-ca-cert.pem` shows the decrypted traffic in mitmproxy. `REDLIB_CACERT` sets the same; the flag takes precedence.
 - `-h`, `--help`: Print the flags and exit.
 - `-V`, `--version`: Print the version and exit.
 
@@ -77,6 +77,7 @@ Assign a default value for each instance-specific setting by passing environment
 | `HSTS`                    | Integer         | `604800`                               | `max-age` of the HSTS header in seconds. `-H` takes precedence. |
 | `IPV4_ONLY`               | `["on", "off"]` | `off`                                  | Listens on IPv4 only, like `-4` or `IPV4_ONLY`. |
 | `IPV6_ONLY`               | `["on", "off"]` | `off`                                  | Listens on IPv6 only, like `-6` or `IPV6_ONLY`. |
+| `CACERT`                  | String          | (empty)                                | PEM file with the only CA certificates trusted for requests to Reddit, for debugging through a proxy. `--cacert` takes precedence. |
 
 ### Reddit session
 
