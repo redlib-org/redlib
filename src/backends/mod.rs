@@ -110,7 +110,8 @@ impl Kind {
 			// Reddit answers anonymous user and wiki JSON with 403 whatever the client
 			Self::User | Self::Wiki => "gql, cookied-json",
 			Self::Comments => "gql, cookied-json, scraped, json",
-			Self::Listing => "json, gql, cookied-json",
+			// Only `scraped` serves the sorts Reddit refuses to the JSON API for combined feeds
+			Self::Listing => "json, gql, scraped, cookied-json",
 			Self::All => "json, gql, cookied-json",
 			Self::Duplicates => "json, cookied-json",
 		}
@@ -508,7 +509,7 @@ mod tests {
 	#[sealed_test]
 	fn test_default_order() {
 		assert_eq!(names(&order(Kind::Comments)), ["gql", "cookied-json", "scraped", "json"]);
-		assert_eq!(names(&order(Kind::Listing)), ["json", "gql", "cookied-json"]);
+		assert_eq!(names(&order(Kind::Listing)), ["json", "gql", "scraped", "cookied-json"]);
 		assert_eq!(names(&order(Kind::Wiki)), ["gql", "cookied-json"]);
 		assert_eq!(names(&order(Kind::All)), ["json", "gql", "cookied-json"]);
 	}
