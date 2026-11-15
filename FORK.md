@@ -124,7 +124,7 @@ Own features:
 - **Instance info shows the values in use**: `/info` shows the default for settings that aren't configured, marked `(default)`, instead of `Unset` or `None`.
 - **`/healthz` endpoint**: returns `200 ok` without contacting Reddit.
 - **`/healthz/reddit` endpoint**: for status pages. Reports how the last 20 post pages visitors opened went (`ok`, `scraped`, `blocked`) and returns `503` when fewer than half got Reddit's JSON. It never contacts Reddit itself. `/healthz/reddit.json` serves the same status as a [shields.io endpoint badge](https://shields.io/badges/endpoint-badge).
-- **The footer shows the running commit**: a GitHub icon and the short commit hash link to the source repository, in place of the version number and the separate "Code" link. `/info` shows the same: a Source row and the short commit linked to the commit itself (full hash on hover), with no crate version, and the deploy date to the second.
+- **The footer shows the running commit**: a GitHub icon and the short commit hash link to the source repository, in place of the version number and the separate "Code" link. `/info` shows the same: a Source row and the short commit linked to the commit itself (full hash on hover), with no crate version, and the deploy date to the second. A hidden HTML comment keeps the `id="version">` marker so upstream's instance list still picks the instance up.
 - **Search tabs like Reddit's**: Posts, Comments, Media, Communities and People.
   Each tab is a plain link with only its own filters (post type, sort, time),
   so they work without JavaScript. Results come from `DynamicSearch`, the query
