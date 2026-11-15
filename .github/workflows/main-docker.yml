@@ -34,6 +34,8 @@ jobs:
           - linux/arm64
           - linux/arm/v7
           - linux/arm/v6
+          - linux/riscv64
+          - linux/mips64le
     steps:
       - name: Prepare
         run: |
@@ -177,7 +179,8 @@ jobs:
           image=ghcr.io/${GITHUB_REPOSITORY,,}:sha-${GITHUB_SHA::7}
           mkdir dist
           for pair in amd64=x86_64-unknown-linux-musl 386=i686-unknown-linux-musl arm64=aarch64-unknown-linux-musl \
-            arm/v7=armv7-unknown-linux-musleabihf arm/v6=arm-unknown-linux-musleabihf; do
+            arm/v7=armv7-unknown-linux-musleabihf arm/v6=arm-unknown-linux-musleabihf \
+            riscv64=riscv64gc-unknown-linux-musl mips64le=mips64el-unknown-linux-muslabi64; do
             id=$(docker create --platform "linux/${pair%%=*}" "$image")
             docker cp "$id:/usr/local/bin/redlib" "dist/redlib-${pair#*=}"
             docker rm "$id"
