@@ -7,11 +7,11 @@ This fork is based on [redlib-org/redlib](https://github.com/redlib-org/redlib) 
 | | Upstream | This fork |
 |---|---|---|
 | Registry | `quay.io/redlib/redlib` | `ghcr.io/nachtalb/redlib` (forks publish to `ghcr.io/<owner>/<repo>`) |
-| Platforms | `linux/amd64`, `linux/arm64`, `linux/arm/v7` | `linux/amd64`, `linux/386`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6` |
+| Platforms | `linux/amd64`, `linux/arm64`, `linux/arm/v7` | `linux/amd64`, `linux/386`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6`, `linux/riscv64`, `linux/mips64le` |
 | Base | Alpine | Distroless `static:nonroot`: static musl binary, no shell or package manager, runs as uid 65532, ~16 MB |
 | Tags | `latest` | `latest` (from `main`) and `sha-<short commit>` |
 | Health check | Docker `HEALTHCHECK` with `wget /settings` | `GET /healthz` for the orchestrator to probe (the image has no `wget`) |
-| Binaries | Tarballs on versioned releases | The image's static binaries for all five platforms on the [`latest` release](https://github.com/Nachtalb/redlib/releases/latest), refreshed on every push to `main` ([#44](https://github.com/Nachtalb/redlib/issues/44)) |
+| Binaries | Tarballs on versioned releases | The image's static binaries for every platform on the [`latest` release](https://github.com/Nachtalb/redlib/releases/latest), refreshed on every push to `main` ([#44](https://github.com/Nachtalb/redlib/issues/44)), plus untested macOS, Windows and Android builds (target list from [mycodedoesnotcompile2](https://github.com/mycodedoesnotcompile2/redlib_nachtalb_fork_prebuilt_binaries)) |
 
 All platforms are cross-compiled natively on the build host and published under one multi-arch tag, so `docker pull` picks the right one.
 
