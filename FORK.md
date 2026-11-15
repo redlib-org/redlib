@@ -42,6 +42,7 @@ Bugs present in upstream Redlib that are fixed here:
 - **Video Speed Controller overlays landed in the wrong place**: post media, comment images and the comment sidebar had no positioned container ([Sparronator9999 `ed63495`](https://github.com/Sparronator9999/redlib/commit/ed63495b12cf5d6b66d87c0ed43055e498423a08)).
 - **Inconsistent margins** inside posts and comments, and headings without margins; empty zero-width-space paragraphs no longer add gaps ([redlib-org#413](https://github.com/redlib-org/redlib/pull/413)).
 - **Autoplaying videos played with sound**: with "Autoplay videos" on, every video on a listing could start with audio at once. Autoplay is now muted.
+- **HLS videos sometimes failed to load**: v.redd.it answered the playlist with `403` while its link carried Reddit's query, often for several minutes. Redlib now requests the playlist without the query.
 - **Pausing an HLS video while it loads** was ignored and the video started playing anyway.
 - **"Enable HLS to view with audio" showed on every video**, also when the MP4 played without HLS has sound or the video has none. It now only shows when HLS is the only way to hear it.
 - **Tapping a video on an iPhone could open the post below it**: Safari shrank the video when it started loading, so the posts below jumped up under the finger. Videos now keep their size ([#137](https://github.com/Nachtalb/redlib/issues/137)).
