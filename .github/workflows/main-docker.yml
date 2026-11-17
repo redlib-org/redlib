@@ -191,7 +191,7 @@ jobs:
           title="Latest build ($short)"
           notes="Built from [\`$short\`]($GITHUB_SERVER_URL/$GH_REPO/commit/$GITHUB_SHA) ($subject) on $(date -u '+%Y-%m-%d %H:%M') UTC.
 
-          Static Linux binaries, the same ones as in the \`ghcr.io/${GITHUB_REPOSITORY,,}:sha-$short\` image. This release is replaced on every push to \`main\`."
+          Static Linux binaries, the same ones as in the \`ghcr.io/${GITHUB_REPOSITORY,,}:sha-$short\` image. This release is replaced by each container build from \`master\`."
           if gh release view latest > /dev/null 2>&1; then
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
             gh release upload latest dist/* --clobber
