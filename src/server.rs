@@ -115,6 +115,14 @@ const BANNED_USER_AGENTS: &[&str] = &[
 	"wpbot",
 ];
 
+// Banned crawlers still get robots.txt, so they can read its Disallow.
+fn should_block_banned_user_agent(path: &str, user_agent: Option<&str>, indexing_disabled: bool) -> bool {
+	if !indexing_disabled || path == "/robots.txt" {
+		return false;
+	}
+	user_agent.is_some_and(|user_agent| BANNED_USER_AGENTS.iter().any(|banned| user_agent.contains(banned)))
+}
+
 type BoxResponse = Pin<Box<dyn Future<Output = Result<Response<Body>, String>> + Send>>;
 
 /// Compressors for the response Body, in ascending order of preference.
@@ -315,19 +323,10 @@ impl Server {
 
 			// Catch robots.txt-disrespecful bots who still identify themselves
 			// Typically justified as "human triggered" actions.
-			if match config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING") {
-				Some(val) => val == "on",
-				None => false,
-			} {
-				if let Some(user_agent) = req_headers.get("user-agent") {
-					if let Ok(user_agent_str) = user_agent.to_str() {
-						for banned in BANNED_USER_AGENTS {
-							if user_agent_str.contains(banned) {
-								return new_boilerplate(def_headers, req_headers, 403, Body::from("Forbidden")).boxed();
-							}
-						}
-					}
-				}
+			let indexing_disabled = config::get_setting("REDLIB_ROBOTS_DISABLE_INDEXING").is_some_and(|val| val == "on");
+			let user_agent = req_headers.get("user-agent").and_then(|value| value.to_str().ok());
+			if should_block_banned_user_agent(req.uri().path(), user_agent, indexing_disabled) {
+				return new_boilerplate(def_headers, req_headers, 403, Body::from("Forbidden")).boxed();
 			}
 
 			// Remove double slashes and decode encoded slashes
@@ -782,6 +781,15 @@ mod tests {
 	use futures_lite::future::block_on;
 	use lipsum::lipsum;
 	use std::{boxed::Box, io};
+
+	#[test]
+	fn disabled_indexing_serves_robots_to_banned_crawlers() {
+		let user_agent = "Mozilla/5.0 (compatible; GPTBot/1.4; +https://openai.com/gptbot)";
+
+		assert!(!should_block_banned_user_agent("/robots.txt", Some(user_agent), true));
+		assert!(should_block_banned_user_agent("/", Some(user_agent), true));
+		assert!(!should_block_banned_user_agent("/", Some(user_agent), false));
+	}
 
 	#[test]
 	fn test_determine_compressor() {

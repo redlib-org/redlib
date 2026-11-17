@@ -25,6 +25,7 @@ Without Docker, download a binary from the [`latest` release](https://github.com
 
 Bugs present in upstream Redlib that are fixed here:
 
+- **Blocked crawlers could not read `robots.txt`**: with `REDLIB_ROBOTS_DISABLE_INDEXING=on`, known crawlers got a 403 for `/robots.txt` too, so they never saw its `Disallow: /`. They now get the file ([redlib-org#613](https://github.com/redlib-org/redlib/pull/613)).
 - **Rate-limit counter wrapped around**: requests near the end of the quota could push it below zero to 65535, which skipped the token refresh ([redlib-org#586](https://github.com/redlib-org/redlib/pull/586)).
 - **The fallback token login was dead**: after 5 failed Android app logins, Redlib asked `/api/v1/access_token` for a token with a web client ID, which Reddit answers with `401 Unauthorized`. It now gets the anonymous `token_v2` the website gets, by answering the JS challenge on `www.reddit.com`.
 - **`/commits.atom` and `/instances.json` crashed the request** when GitHub was unreachable. They now serve the last good copy, or a 502 ([redlib-org#396](https://github.com/redlib-org/redlib/pull/396), ported).
