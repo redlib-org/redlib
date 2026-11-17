@@ -544,7 +544,7 @@ pub async fn proxy_commit_info() -> Result<Response<Body>, String> {
 
 #[cached(ttl_secs = 600, result_fallback = true)]
 async fn fetch_commit_info() -> Result<String, String> {
-	fetch_text(&format!("{}/commits/main.atom", get_source_url().trim_end_matches('/'))).await
+	fetch_text(&format!("{}/commits.atom", get_source_url().trim_end_matches('/'))).await
 }
 
 pub async fn proxy_instances() -> Result<Response<Body>, String> {

@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths: &paths
       - "src/**"
       - "templates/**"
@@ -34,7 +34,7 @@ jobs:
       # Pushes to main save the cache that pull requests restore.
       - uses: Swatinem/rust-cache@v2
         with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          save-if: ${{ github.ref == 'refs/heads/master' }}
       - name: Clippy
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Test

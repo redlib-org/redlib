@@ -28,7 +28,7 @@ Numbers and booleans work as well as strings; `true`/`false` mean `on`/`off`.
 > If using the Docker CLI, add ` --env-file .env` to the command that runs Redlib. For example:
 >
 > ```bash
-> docker run -d --name redlib -p 8080:8080 --env-file .env ghcr.io/nachtalb/redlib:latest
+> docker run -d --name redlib -p 8080:8080 --env-file .env ghcr.io/project516/redlib:latest
 > ```
 >
 > If using Docker Compose, no changes are needed as the `.env` file is already referenced in `compose.yaml` via the `env_file: .env` line.
@@ -62,7 +62,7 @@ Assign a default value for each instance-specific setting by passing environment
 | `ENABLE_REDGIFS`          | `["on", "off"]` | `on`                                   | Proxies RedGifs videos and plays them inline. Set to `off` to leave RedGifs as plain links.               |
 | `ENABLE_GIPHY`            | `["on", "off"]` | `on`                                   | Proxies GIPHY GIFs in comments and plays them inline. Set to `off` to leave them as plain links.          |
 | `FULL_URL`                | String          | (empty)                                | Allows for proper URLs (for now, only needed by RSS)                                                      |
-| `SOURCE_URL`              | String          | `https://github.com/Nachtalb/redlib`   | Link to the source code for this instance. The update check on error pages compares against this GitHub repository's `main` branch. |
+| `SOURCE_URL`              | String          | `https://github.com/Project516/redlib`   | Link to the source code for this instance. The update check on error pages compares against this GitHub repository's default branch. |
 | `ENABLE_SCRAPE_FALLBACK`  | `["on", "off"]` | `on`                                   | Allows the `scraped` backend: comments and combined feeds scraped from Reddit's HTML. See [Scrape fallback](#scrape-fallback). |
 | `ENABLE_GQL`              | `["on", "off"]` | `on`                                   | Allows the `gql` backend: Reddit's GraphQL API. `off` never contacts it. |
 | `ENDPOINTS`, `ENDPOINTS_<KIND>` | List      | per kind                               | Which backends load Reddit data, in which order. See [Backend order](#backend-order). |

@@ -1,2 +1,2 @@
-run = "while :; do set -ex; curl -o ./redlib -fsSL -- https://github.com/Nachtalb/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl; chmod +x redlib; set +e; ./redlib -H 63115200; sleep 1; done"
+run = "while :; do set -ex; curl -o ./redlib -fsSL -- https://github.com/Project516/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl; chmod +x redlib; set +e; ./redlib -H 63115200; sleep 1; done"
 language = "bash"

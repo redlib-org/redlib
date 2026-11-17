@@ -87,7 +87,7 @@
 
         packages.default = redlib;
         packages.docker = pkgs.dockerTools.buildImage {
-          name = "ghcr.io/nachtalb/redlib";
+          name = "ghcr.io/project516/redlib";
           tag = "latest";
           created = "now";
           copyToRoot = with pkgs.dockerTools; [ caCertificates fakeNss ];

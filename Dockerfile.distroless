@@ -58,9 +58,8 @@ EXPOSE 8080
 
 LABEL org.opencontainers.image.title="redlib" \
       org.opencontainers.image.description="Private front-end for Reddit" \
-      org.opencontainers.image.authors="Nachtalb <na@nachtalb.io>" \
-      org.opencontainers.image.url="https://github.com/Nachtalb/redlib" \
-      org.opencontainers.image.source="https://github.com/Nachtalb/redlib" \
+      org.opencontainers.image.url="https://github.com/Project516/redlib" \
+      org.opencontainers.image.source="https://github.com/Project516/redlib" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.base.name="gcr.io/distroless/static:nonroot"
 

@@ -1,25 +1,25 @@
 # Changes compared to upstream Redlib
 
-This fork is based on [redlib-org/redlib](https://github.com/redlib-org/redlib) and tracks its `main` branch. It adds unmerged upstream pull requests, changes from [Sparronator9999/redlib](https://github.com/Sparronator9999/redlib), pull requests from contributors, and its own work.
+This fork is based on [Nachtalb/redlib](https://github.com/Nachtalb/redlib), itself a fork of [redlib-org/redlib](https://github.com/redlib-org/redlib), and tracks the `main` branch of both. It adds unmerged upstream pull requests, changes from [Sparronator9999/redlib](https://github.com/Sparronator9999/redlib), pull requests from contributors, and its own work.
 
 ## Container images
 
 | | Upstream | This fork |
 |---|---|---|
-| Registry | `quay.io/redlib/redlib` | `ghcr.io/nachtalb/redlib` (forks publish to `ghcr.io/<owner>/<repo>`) |
+| Registry | `quay.io/redlib/redlib` | `ghcr.io/project516/redlib` (forks publish to `ghcr.io/<owner>/<repo>`) |
 | Platforms | `linux/amd64`, `linux/arm64`, `linux/arm/v7` | `linux/amd64`, `linux/386`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6` |
 | Base | Alpine | Distroless `static:nonroot`: static musl binary, no shell or package manager, runs as uid 65532, ~16 MB |
-| Tags | `latest` | `latest` (from `main`) and `sha-<short commit>` |
+| Tags | `latest` | `latest` (from `master`) and `sha-<short commit>` |
 | Health check | Docker `HEALTHCHECK` with `wget /settings` | `GET /healthz` for the orchestrator to probe (the image has no `wget`) |
-| Binaries | Tarballs on versioned releases | The image's static binaries for all five platforms on the [`latest` release](https://github.com/Nachtalb/redlib/releases/latest), refreshed on every push to `main` ([#44](https://github.com/Nachtalb/redlib/issues/44)) |
+| Binaries | Tarballs on versioned releases | The image's static binaries for all five platforms on the [`latest` release](https://github.com/Project516/redlib/releases/latest), refreshed on every push to `master` ([#44](https://github.com/Nachtalb/redlib/issues/44)) |
 
 All platforms are cross-compiled natively on the build host and published under one multi-arch tag, so `docker pull` picks the right one.
 
 ```bash
-docker run -d --name redlib -p 8080:8080 ghcr.io/nachtalb/redlib:latest
+docker run -d --name redlib -p 8080:8080 ghcr.io/project516/redlib:latest
 ```
 
-Without Docker, download a binary from the [`latest` release](https://github.com/Nachtalb/redlib/releases/latest) or build from source with `cargo build --release`.
+Without Docker, download a binary from the [`latest` release](https://github.com/Project516/redlib/releases/latest) or build from source with `cargo build --release`.
 
 ## Fixes
 
@@ -149,7 +149,7 @@ Own features:
 | `REDLIB_SCRAPE_COMMENT_PREFETCH` | `0` | Extra requests a scraped post page makes to load more comments up front. `0` loads them only when asked. |
 | `REDLIB_GQL_FEED_REQUESTS` | `2` | Requests the `gql` backend makes to fill one r/all page. Reddit sends only about 8 posts for the first. At least `1`. |
 | `REDLIB_REDDIT_COOKIE` | (empty) | `Cookie` header of a logged-in reddit.com session, several separated by `\|`, for the `cookied-json` backend. **Secret.** |
-| `REDLIB_SOURCE_URL` | `https://github.com/Nachtalb/redlib` | Source code link in the footer, and the GitHub repository whose `main` branch the update check on error pages compares against. |
+| `REDLIB_SOURCE_URL` | `https://github.com/Project516/redlib` | Source code link in the footer, and the GitHub repository whose default branch the update check on error pages compares against. |
 | `REDLIB_LISTEN_PORT`, `REDLIB_LISTEN_ADDRESS`, `REDLIB_HSTS`, `REDLIB_IPV4_ONLY`, `REDLIB_IPV6_ONLY` | `8080`, `[::]`, `604800`, `off`, `off` | The listener options, so they also work in `redlib.toml`. The flags and `PORT`/`IPV4_ONLY`/`IPV6_ONLY` take precedence. Not `REDLIB_PORT`: Kubernetes sets that to `tcp://…` for a Service named `redlib`. |
 
 ### New user settings
@@ -222,7 +222,7 @@ Upgraded in the hope of reducing Reddit's TLS/SSL and fingerprinting errors (rat
 - Formatting is enforced with pre-commit and a Lint workflow: `cargo fmt`, [djhtml](https://github.com/rtts/djhtml) for templates, Prettier for CSS and JS, plus whitespace and line-ending checks. Run `pre-commit install` once.
 - `.editorconfig`: tabs for Rust, 4 spaces for templates, CSS and JS, 2 spaces for YAML and JSON.
 - CI builds each platform in its own job, with the Cargo registry and `target/` cached between runs.
-- A Tests workflow runs `cargo test` on every pull request and push to `main`, including the tests that need reddit.com. Those share one runtime (`client::block_on_shared`), because `CLIENT`'s pooled connections die with the runtime that opened them. Only `test_generic_web_backend`, `test_scraped_combined_feed` and `test_cookied_json_combined_feed` are `#[ignore]`d, because `www.reddit.com` answers GitHub's runners with 403; run them with `cargo test -- --include-ignored`. The tests only emulate a fixed list of browsers Reddit serves anonymous `oauth.reddit.com` JSON to, so they don't depend on the draw. `backends::live_tests` calls each backend directly (every GraphQL query, the session backends) so one can't break unnoticed behind another; the session backends use a throwaway account's `REDLIB_REDDIT_COOKIE` from a repository secret and skip without it.
+- A Tests workflow runs `cargo test` on every pull request and push to `master`, including the tests that need reddit.com. Those share one runtime (`client::block_on_shared`), because `CLIENT`'s pooled connections die with the runtime that opened them. Only `test_generic_web_backend`, `test_scraped_combined_feed` and `test_cookied_json_combined_feed` are `#[ignore]`d, because `www.reddit.com` answers GitHub's runners with 403; run them with `cargo test -- --include-ignored`. The tests only emulate a fixed list of browsers Reddit serves anonymous `oauth.reddit.com` JSON to, so they don't depend on the draw. `backends::live_tests` calls each backend directly (every GraphQL query, the session backends) so one can't break unnoticed behind another; the session backends use a throwaway account's `REDLIB_REDDIT_COOKIE` from a repository secret and skip without it.
 - A manual Fingerprints workflow asks Reddit about every browser the client can emulate, writes the table to the run summary, and fails when the tests' list has one Reddit blocks.
 - A new push cancels the Lint, Tests and Container build runs still going for the same branch.
 - CI only runs when files it checks change: a commit that touches only Markdown runs Lint but no Tests or Container build.

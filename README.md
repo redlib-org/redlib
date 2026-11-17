@@ -2,18 +2,18 @@
 
 # Redlib
 
-[![Fork of redlib-org/redlib](https://img.shields.io/badge/fork%20of-redlib--org%2Fredlib-lightgrey?logo=github)](https://github.com/redlib-org/redlib) [![ghcr.io](https://img.shields.io/badge/ghcr.io-nachtalb%2Fredlib-blue?logo=docker)](https://github.com/Nachtalb/redlib/pkgs/container/redlib) [![r.naa.gg](https://img.shields.io/endpoint?url=https://r.naa.gg/healthz/reddit.json&label=r.naa.gg)](https://r.naa.gg) [![Container build](https://github.com/Nachtalb/redlib/actions/workflows/main-docker.yml/badge.svg?branch=main)](https://github.com/Nachtalb/redlib/actions/workflows/main-docker.yml) [![Tests](https://github.com/Nachtalb/redlib/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Nachtalb/redlib/actions/workflows/test.yml) [![Lint](https://github.com/Nachtalb/redlib/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/Nachtalb/redlib/actions/workflows/lint.yml) [![Last commit](https://img.shields.io/github/last-commit/Nachtalb/redlib/main)](https://github.com/Nachtalb/redlib/commits/main)
+[![Fork of redlib-org/redlib](https://img.shields.io/badge/fork%20of-redlib--org%2Fredlib-lightgrey?logo=github)](https://github.com/redlib-org/redlib) [![ghcr.io](https://img.shields.io/badge/ghcr.io-project516%2Fredlib-blue?logo=docker)](https://github.com/Project516/redlib/pkgs/container/redlib) [![Container build](https://github.com/Project516/redlib/actions/workflows/main-docker.yml/badge.svg?branch=master)](https://github.com/Project516/redlib/actions/workflows/main-docker.yml) [![Tests](https://github.com/Project516/redlib/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/Project516/redlib/actions/workflows/test.yml) [![Lint](https://github.com/Project516/redlib/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/Project516/redlib/actions/workflows/lint.yml) [![Last commit](https://img.shields.io/github/last-commit/Project516/redlib/master)](https://github.com/Project516/redlib/commits/master)
 
 An alternative private front-end to Reddit, with its origins in [Libreddit](https://github.com/libreddit/libreddit).
 
 </div>
 
 > [!IMPORTANT]
-> **This is a fork of [redlib-org/redlib](https://github.com/redlib-org/redlib).**
+> **This is a fork of [redlib-org/redlib](https://github.com/redlib-org/redlib), built on [Nachtalb/redlib](https://github.com/Nachtalb/redlib).**
 > It ships multi-arch images for amd64, 386, arm64, arm/v7 and arm/v6, and includes many features and fixes from unmerged upstream pull requests plus its own. See [FORK.md](FORK.md) for the full list of changes.
 
 > [!TIP]
-> Run this fork's image, **`ghcr.io/nachtalb/redlib:latest`**, rather than upstream's `quay.io/redlib/redlib`.
+> Run this fork's image, **`ghcr.io/project516/redlib:latest`**, rather than upstream's `quay.io/redlib/redlib`.
 
 > [!WARNING]
 > If Reddit blocks your instance's requests, set a session in `REDLIB_REDDIT_COOKIE` ([setup](CONFIGURATION.md#reddit-session)).
@@ -104,7 +104,7 @@ This section covers multiple ways of deploying Redlib. Using Docker is recommend
 
 For configuration options, see [CONFIGURATION.md](CONFIGURATION.md).
 
-Images are on [ghcr.io](https://github.com/Nachtalb/redlib/pkgs/container/redlib) for `amd64`, `386`, `arm64`, `arm/v7` and `arm/v6`.
+Images are on [ghcr.io](https://github.com/Project516/redlib/pkgs/container/redlib) for `amd64`, `386`, `arm64`, `arm/v7` and `arm/v6`.
 
 <details>
 <summary><b>Docker Compose</b></summary>
@@ -122,9 +122,9 @@ docker logs -f redlib   # follow its logs
 <summary><b>Docker CLI</b></summary>
 
 ```bash
-docker run -d --name redlib -p 8080:8080 ghcr.io/nachtalb/redlib:latest             # listen on port 8080
-docker run -d --name redlib -p 127.0.0.1:8080:8080 ghcr.io/nachtalb/redlib:latest   # behind a reverse proxy: local only
-docker run -d --name redlib -p 8080:8080 --env-file .env ghcr.io/nachtalb/redlib:latest  # with settings from .env
+docker run -d --name redlib -p 8080:8080 ghcr.io/project516/redlib:latest             # listen on port 8080
+docker run -d --name redlib -p 127.0.0.1:8080:8080 ghcr.io/project516/redlib:latest   # behind a reverse proxy: local only
+docker run -d --name redlib -p 8080:8080 --env-file .env ghcr.io/project516/redlib:latest  # with settings from .env
 docker logs -f redlib                                                              # follow its logs
 ```
 
@@ -148,10 +148,10 @@ systemctl --user status redlib.service  # check on it
 <details>
 <summary><b>Binary (Linux)</b></summary>
 
-On Linux, grab a static binary from [the latest release](https://github.com/Nachtalb/redlib/releases/latest), rebuilt on every push to `main`. It has builds for `x86_64`, `i686`, `aarch64`, `armv7` and `arm` (v6), plus `SHA256SUMS`.
+On Linux, grab a static binary from [the latest release](https://github.com/Project516/redlib/releases/latest), rebuilt on every push to `master`. It has builds for `x86_64`, `i686`, `aarch64`, `armv7` and `arm` (v6), plus `SHA256SUMS`.
 
 ```bash
-curl -fL -o redlib https://github.com/Nachtalb/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl  # pick your architecture
+curl -fL -o redlib https://github.com/Project516/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl  # pick your architecture
 sudo chmod +x redlib && sudo chown root:root redlib  # make it executable, owned by root
 sudo cp ./redlib /usr/bin/redlib                     # install it
 redlib                                               # listen on 0.0.0.0:8080
@@ -185,8 +185,8 @@ Before=nginx.service
 
 > ⚠️ **Warning:** These are free hosting options, but they are _not_ private and will monitor server usage to prevent abuse. If you need a free and easy setup, this method may work best for you.
 
-<a href="https://repl.it/github/Nachtalb/redlib"><img src="https://repl.it/badge/github/Nachtalb/redlib" alt="Run on Repl.it" height="32" /></a>
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Nachtalb/redlib)
+<a href="https://repl.it/github/Project516/redlib"><img src="https://repl.it/badge/github/Project516/redlib" alt="Run on Repl.it" height="32" /></a>
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Project516/redlib)
 
 </details>
 
@@ -266,7 +266,7 @@ Redlib is configured with environment variables, a `redlib.toml` file or command
 # Building from source
 
 ```bash
-git clone https://github.com/Nachtalb/redlib && cd redlib
+git clone https://github.com/Project516/redlib && cd redlib
 cargo build --release              # the binary ends up in target/release/redlib
 ```
 

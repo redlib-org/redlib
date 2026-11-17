@@ -5,8 +5,8 @@
     <div id="error">
         <h1>{{ msg }}</h1>
         {% if !detail.is_empty() || blocked %}<p class="error_detail">{{ detail }}
-            {% if !subreddits.is_empty() %}</p><p class="error_detail">If you host this instance, setting <a href="https://github.com/Nachtalb/redlib/blob/main/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a> usually fixes it.
-            {% else if blocked %}If you host this instance, set or renew <a href="https://github.com/Nachtalb/redlib/blob/main/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a>.{% endif %}</p>{% endif %}
+            {% if !subreddits.is_empty() %}</p><p class="error_detail">If you host this instance, setting <a href="https://github.com/Project516/redlib/blob/master/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a> usually fixes it.
+            {% else if blocked %}If you host this instance, set or renew <a href="https://github.com/Project516/redlib/blob/master/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a>.{% endif %}</p>{% endif %}
         {% if !subreddits.is_empty() %}
             <ul class="error_subreddits">
                 {% for sub in subreddits %}
@@ -17,7 +17,7 @@
         {% if !reddit_url.is_empty() %}<pre class="error_url">{{ reddit_url }}</pre>{% endif %}
         <p class="error_links">
             <a href="https://www.redditstatus.com/">Reddit status</a> &middot;
-            <a href="https://github.com/Nachtalb/redlib/issues/new?labels=bug&title={{ msg }}">Report an issue</a><a id="random-instance"></a>
+            <a href="https://github.com/Project516/redlib/issues/new?labels=bug&title={{ msg }}">Report an issue</a><a id="random-instance"></a>
         </p>
     </div>
 {% endblock %}

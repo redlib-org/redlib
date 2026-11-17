@@ -1,6 +1,6 @@
 services:
   redlib:
-    image: ghcr.io/nachtalb/redlib:latest
+    image: ghcr.io/project516/redlib:latest
     restart: always
     container_name: "redlib"
     ports:

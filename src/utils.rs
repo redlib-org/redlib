@@ -1782,7 +1782,7 @@ pub fn disable_indexing() -> bool {
 /// Returns the currently configured source code URL to display in the footer.
 /// Defaults to the upstream Github repository URL when not explicitly configured.
 pub fn get_source_url() -> String {
-	get_setting("REDLIB_SOURCE_URL").unwrap_or("https://github.com/Nachtalb/redlib".into())
+	get_setting("REDLIB_SOURCE_URL").unwrap_or("https://github.com/Project516/redlib".into())
 }
 
 /// Display name of a theme; its id stays the file name.
