@@ -1,0 +1,67 @@
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+########################
+## builder image
+########################
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:x86_64-musl AS cross-amd64
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:i686-musl AS cross-386
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:aarch64-musl AS cross-arm64
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:armv7-musleabihf AS cross-armv7
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:arm-musleabihf AS cross-armv6
+
+FROM cross-${TARGETARCH}${TARGETVARIANT} AS builder
+
+RUN apt-get update \
+    && apt-get -y install git cmake perl pkg-config libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# bindgen (btls-sys) must parse the target's musl headers, not the build host's glibc ones.
+ENV BINDGEN_EXTRA_CLANG_ARGS="--sysroot=${TARGET_HOME}"
+# The musl headers use a 64-bit time_t on 32-bit targets; make the libc crate match them.
+# On 32-bit ARM, libstdc++ (btls) needs libgcc's __sync_* helpers.
+ENV CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS="--cfg libc_unstable_musl_v1_2_3" \
+    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS="--cfg libc_unstable_musl_v1_2_3 -C link-arg=-lgcc" \
+    CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS="--cfg libc_unstable_musl_v1_2_3 -C link-arg=-lgcc"
+# BoringSSL's x86 assembly requires SSE2, which Rust's i686 target already assumes.
+ENV CFLAGS_i686_unknown_linux_musl="-msse2" \
+    CXXFLAGS_i686_unknown_linux_musl="-msse2"
+
+RUN rustup toolchain install 1.99 --profile minimal --no-self-update --target $CARGO_BUILD_TARGET && rustup default 1.99
+
+WORKDIR /redlib
+COPY . ./
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG GIT_HASH=dev
+RUN --mount=type=cache,id=cargo-registry,target=/root/.cargo/registry \
+    --mount=type=cache,id=cargo-git,target=/root/.cargo/git \
+    --mount=type=cache,id=redlib-target-${TARGETARCH}${TARGETVARIANT},target=/redlib/target \
+    cargo build --release --locked --bin redlib && cp target/$CARGO_BUILD_TARGET/release/redlib /usr/local/bin/redlib
+
+########################
+## release image
+########################
+# distroless/static contains no binaries, so the build host's copy also serves 386 and arm/v6,
+# which distroless doesn't publish.
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/static:nonroot AS distroless
+
+FROM scratch AS release
+
+COPY --from=distroless / /
+COPY --from=builder /usr/local/bin/redlib /usr/local/bin/redlib
+
+USER 65532
+WORKDIR /home/nonroot
+EXPOSE 8080
+
+LABEL org.opencontainers.image.title="redlib" \
+      org.opencontainers.image.description="Private front-end for Reddit" \
+      org.opencontainers.image.authors="Nachtalb <na@nachtalb.io>" \
+      org.opencontainers.image.url="https://github.com/Nachtalb/redlib" \
+      org.opencontainers.image.source="https://github.com/Nachtalb/redlib" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.base.name="gcr.io/distroless/static:nonroot"
+
+CMD ["redlib"]

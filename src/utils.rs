@@ -1,15 +1,20 @@
 #![allow(dead_code)]
 #![allow(clippy::cmp_owned)]
 
+use crate::body::Body;
 use crate::config::{self, get_setting};
-use crate::{client::json, server::RequestExt};
+use crate::redgifs;
+use crate::{backends::json, server::RequestExt};
 use askama::Template;
+use chrono::DateTime;
+use clearurls::UrlCleaner;
 use cookie::Cookie;
-use hyper::{Body, Request, Response};
+use hyper::{Request, Response};
 use libflate::deflate::{Decoder, Encoder};
 use log::error;
 use regex::Regex;
-use revision::revisioned;
+use revision::{revisioned, Error};
+use rss::{Channel, Enclosure, Guid, Item};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -19,7 +24,7 @@ use std::env;
 use std::io::{Read, Write};
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 
@@ -27,13 +32,14 @@ use url::Url;
 /// release code.
 #[macro_export]
 macro_rules! dbg_msg {
+	// `cfg!` rather than `#[cfg]`, so release builds still see the value used
 	($x:expr) => {
-		#[cfg(debug_assertions)]
-		eprintln!("{}:{}: {}", file!(), line!(), $x.to_string())
+		if cfg!(debug_assertions) {
+			eprintln!("{}:{}: {}", file!(), line!(), $x.to_string())
+		}
 	};
 
 	($($x:expr),+) => {
-		#[cfg(debug_assertions)]
 		dbg_msg!(format!($($x),+))
 	};
 }
@@ -105,6 +111,8 @@ pub struct Author {
 	pub name: String,
 	pub flair: Flair,
 	pub distinguished: String,
+	/// Posted from Reddit's ads platform, or the advertiser OP of such a post
+	pub advertiser: bool,
 }
 
 #[derive(Serialize)]
@@ -180,6 +188,7 @@ pub struct Media {
 	pub height: i64,
 	pub poster: String,
 	pub download_name: String,
+	pub needs_hls_for_audio: bool,
 }
 
 impl Media {
@@ -191,24 +200,33 @@ impl Media {
 		let secure_media = &data["secure_media"]["reddit_video"];
 		let crosspost_parent_media = &data["crosspost_parent_list"][0]["secure_media"]["reddit_video"];
 
-		// If post is a video, return the video
-		let (post_type, url_val, alt_url_val) = if data_preview["fallback_url"].is_string() {
+		// Check RedGifs FIRST before Reddit's cached fallback videos, then other video sources
+		let domain = data["domain"].as_str().unwrap_or_default();
+		let (post_type, url_val, video) = if enable_redgifs() && redgifs::is_redgifs_domain(domain) {
+			("video", &data["url"], None)
+		} else if data_preview["fallback_url"].is_string() {
 			(
 				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&data_preview["fallback_url"],
-				Some(&data_preview["hls_url"]),
+				Some(data_preview),
 			)
 		} else if secure_media["fallback_url"].is_string() {
 			(
 				if secure_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&secure_media["fallback_url"],
-				Some(&secure_media["hls_url"]),
+				Some(secure_media),
 			)
 		} else if crosspost_parent_media["fallback_url"].is_string() {
 			(
 				if crosspost_parent_media["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
 				&crosspost_parent_media["fallback_url"],
-				Some(&crosspost_parent_media["hls_url"]),
+				Some(crosspost_parent_media),
+			)
+		} else if data["post_hint"].as_str().unwrap_or("") == "rich:video" && data_preview["fallback_url"].is_string() {
+			(
+				if data_preview["is_gif"].as_bool().unwrap_or(false) { "gif" } else { "video" },
+				&data_preview["fallback_url"],
+				Some(data_preview),
 			)
 		} else if data["post_hint"].as_str().unwrap_or("") == "image" {
 			// Handle images, whether GIFs or pics
@@ -252,7 +270,11 @@ impl Media {
 
 		let source = &data["preview"]["images"][0]["source"];
 
-		let alt_url = alt_url_val.map_or(String::new(), |val| format_url(val.as_str().unwrap_or_default()));
+		let alt_url = video.map_or(String::new(), |video| format_url(video["hls_url"].as_str().unwrap_or_default()));
+		let url = format_url(url_val.as_str().unwrap_or_default());
+		// Only the muxed MP4s from packaged media have sound without HLS
+		let needs_hls_for_audio =
+			post_type == "video" && !alt_url.is_empty() && !url.starts_with("/packaged") && video.is_some_and(|video| video["has_audio"].as_bool() != Some(false));
 
 		let download_name = if post_type == "image" || post_type == "gif" || post_type == "video" {
 			let permalink_base = url_path_basename(data["permalink"].as_str().unwrap_or_default());
@@ -266,7 +288,7 @@ impl Media {
 		(
 			post_type.to_string(),
 			Self {
-				url: format_url(url_val.as_str().unwrap_or_default()),
+				url,
 				alt_url,
 				// Note: in the data["is_reddit_media_domain"] path above
 				// width and height will be 0.
@@ -274,6 +296,7 @@ impl Media {
 				height: source["height"].as_i64().unwrap_or_default(),
 				poster: format_url(source["url"].as_str().unwrap_or_default()),
 				download_name,
+				needs_hls_for_audio,
 			},
 			gallery,
 		)
@@ -384,7 +407,7 @@ impl Post {
 			let awards = Awards::parse(&data["all_awardings"]);
 
 			// selftext_html is set for text posts when browsing.
-			let mut body = rewrite_urls(&val(post, "selftext_html"));
+			let mut body = rewrite_urls(&body_html(post, "selftext", "selftext_html"));
 			if body.is_empty() {
 				body = rewrite_urls(&val(post, "body_html"));
 			}
@@ -407,6 +430,7 @@ impl Post {
 						foreground_color: val(post, "author_flair_text_color"),
 					},
 					distinguished: val(post, "distinguished"),
+					advertiser: data["is_created_from_ads_ui"] == true,
 				},
 				score: if data["hide_score"].as_bool().unwrap_or_default() {
 					("\u{2022}".to_string(), "Hidden".to_string())
@@ -422,6 +446,7 @@ impl Post {
 					height: data["thumbnail_height"].as_i64().unwrap_or_default(),
 					poster: String::new(),
 					download_name: String::new(),
+					needs_hls_for_audio: false,
 				},
 				media,
 				domain: val(post, "domain"),
@@ -485,6 +510,10 @@ pub struct Comment {
 	pub collapsed: bool,
 	pub is_filtered: bool,
 	pub more_count: i64,
+	/// Where a `more` link leads without JavaScript; empty if it has nowhere to go.
+	pub more_href: String,
+	/// The page with just the comments a `more` cursor loads, which JavaScript inserts in place; empty without a cursor.
+	pub more_load: String,
 	pub prefs: Preferences,
 }
 
@@ -546,6 +575,12 @@ impl Awards {
 #[template(path = "error.html")]
 pub struct ErrorTemplate {
 	pub msg: String,
+	pub detail: String,
+	pub reddit_url: String,
+	/// Show instance hosts how to get past Reddit's block.
+	pub blocked: bool,
+	/// Subreddits of a combined feed Reddit blocked, linked one by one.
+	pub subreddits: Vec<String>,
 	pub prefs: Preferences,
 	pub url: String,
 }
@@ -592,6 +627,55 @@ pub struct User {
 	pub nsfw: bool,
 }
 
+/// A box of the sidebar new Reddit shows, from `/r/<sub>/api/widgets`.
+pub enum Widget {
+	Text {
+		title: String,
+		html: String,
+	},
+	/// Rules as (title, description HTML).
+	Rules {
+		title: String,
+		rules: Vec<(String, String)>,
+	},
+	/// Long lists show the first few, the rest behind "Show N more".
+	Communities {
+		title: String,
+		communities: Vec<crate::search::Subreddit>,
+		more: Vec<crate::search::Subreddit>,
+	},
+	Image {
+		title: String,
+		url: String,
+		link: Option<String>,
+	},
+	/// A link menu or button box.
+	Links {
+		title: String,
+		links: Vec<Link>,
+	},
+}
+
+impl Widget {
+	pub fn title(&self) -> &str {
+		match self {
+			Self::Text { title, .. } | Self::Rules { title, .. } | Self::Communities { title, .. } | Self::Image { title, .. } | Self::Links { title, .. } => title,
+		}
+	}
+
+	/// Titled boxes start closed so the sidebar stays short, except the rules.
+	pub fn starts_open(&self) -> bool {
+		matches!(self, Self::Rules { .. })
+	}
+}
+
+/// A sidebar link, or a submenu of links when `url` is empty.
+pub struct Link {
+	pub text: String,
+	pub url: String,
+	pub children: Vec<(String, String)>,
+}
+
 #[derive(Default)]
 /// Subreddit struct containing metadata about community
 pub struct Subreddit {
@@ -602,9 +686,14 @@ pub struct Subreddit {
 	// pub moderators: Vec<String>,
 	pub icon: String,
 	pub members: (String, String),
-	pub active: (String, String),
+	/// Reddit's weekly visitors and contributions; it reports no active users
+	/// anymore. Only gql has them.
+	pub weekly_visitors: Option<(String, String)>,
+	pub weekly_contributions: Option<(String, String)>,
 	pub wiki: bool,
 	pub nsfw: bool,
+	/// New Reddit's sidebar; `info` is the old one.
+	pub widgets: Vec<Widget>,
 }
 
 /// Parser for query params, used in sorting (eg. /r/rust/?sort=hot)
@@ -617,8 +706,86 @@ pub struct Params {
 	pub before: Option<String>,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
-#[revisioned(revision = 1)]
+/// First byte of a revisioned settings code. Plain-bincode codes start with the
+/// little-endian length of the theme name, which is never 255.
+const REVISIONED_PREFS_MARKER: u8 = 0xFF;
+
+/// Settings code layout before the revisioned format: plain bincode of the
+/// original upstream fields. Frozen; never add fields here.
+#[derive(Deserialize)]
+struct LegacyPreferences {
+	theme: String,
+	front_page: String,
+	layout: String,
+	wide: String,
+	blur_spoiler: String,
+	show_nsfw: String,
+	blur_nsfw: String,
+	hide_hls_notification: String,
+	video_quality: String,
+	hide_sidebar_and_summary: String,
+	use_hls: String,
+	autoplay_videos: String,
+	fixed_navbar: String,
+	disable_visit_reddit_confirmation: String,
+	comment_sort: String,
+	post_sort: String,
+	#[serde(deserialize_with = "deserialize_vec_with_plus")]
+	subscriptions: Vec<String>,
+	#[serde(deserialize_with = "deserialize_vec_with_plus")]
+	filters: Vec<String>,
+	hide_awards: String,
+	hide_score: String,
+	remove_default_feeds: String,
+}
+
+impl LegacyPreferences {
+	fn decode(bytes: &[u8]) -> Result<Preferences, String> {
+		let mut rest = bytes;
+		let old: Self = bincode::deserialize_from(&mut rest).map_err(|e| e.to_string())?;
+		// Codes exported by this fork before the revisioned format carry geo_filter next.
+		let geo_filter = if rest.is_empty() {
+			None
+		} else {
+			bincode::deserialize_from::<_, String>(&mut rest).ok()
+		};
+		let defaults = |f: fn(u16) -> Result<String, Error>| f(1).unwrap_or_default();
+		Ok(Preferences {
+			available_themes: Vec::new(),
+			theme: old.theme,
+			front_page: old.front_page,
+			layout: old.layout,
+			wide: old.wide,
+			blur_spoiler: old.blur_spoiler,
+			show_nsfw: old.show_nsfw,
+			blur_nsfw: old.blur_nsfw,
+			hide_hls_notification: old.hide_hls_notification,
+			video_quality: old.video_quality,
+			hide_sidebar_and_summary: old.hide_sidebar_and_summary,
+			use_hls: old.use_hls,
+			autoplay_videos: old.autoplay_videos,
+			fixed_navbar: old.fixed_navbar,
+			disable_visit_reddit_confirmation: old.disable_visit_reddit_confirmation,
+			comment_sort: old.comment_sort,
+			post_sort: old.post_sort,
+			subscriptions: old.subscriptions,
+			filters: old.filters,
+			hide_awards: old.hide_awards,
+			hide_score: old.hide_score,
+			remove_default_feeds: old.remove_default_feeds,
+			geo_filter: geo_filter.unwrap_or_else(|| defaults(Preferences::default_geo_filter)),
+			clean_urls: defaults(Preferences::default_off),
+			posts_per_page: defaults(Preferences::default_instance_setting),
+			max_comment_thread_depth: defaults(Preferences::default_instance_setting),
+			more_replies_new_page: defaults(Preferences::default_off),
+			light_theme: String::new(),
+			dark_theme: String::new(),
+		})
+	}
+}
+
+#[derive(Default, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[revisioned(revision = 4)]
 pub struct Preferences {
 	#[revision(start = 1)]
 	#[serde(skip_serializing, skip_deserializing)]
@@ -667,6 +834,22 @@ pub struct Preferences {
 	pub hide_score: String,
 	#[revision(start = 1)]
 	pub remove_default_feeds: String,
+	#[revision(start = 2, default_fn = "default_geo_filter")]
+	pub geo_filter: String,
+	#[revision(start = 2, default_fn = "default_off")]
+	pub clean_urls: String,
+	#[revision(start = 2, default_fn = "default_instance_setting")]
+	pub posts_per_page: String,
+	#[revision(start = 2, default_fn = "default_instance_setting")]
+	pub max_comment_thread_depth: String,
+	// Revision 2 codes are already out there, so new fields can't join it.
+	#[revision(start = 3, default_fn = "default_off")]
+	pub more_replies_new_page: String,
+	/// Themes the "system" theme switches between; empty = built-in light or dark.
+	#[revision(start = 4, default_fn = "default_instance_setting")]
+	pub light_theme: String,
+	#[revision(start = 4, default_fn = "default_instance_setting")]
+	pub dark_theme: String,
 }
 
 fn serialize_vec_with_plus<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
@@ -725,6 +908,13 @@ impl Preferences {
 			hide_awards: setting(req, "hide_awards"),
 			hide_score: setting(req, "hide_score"),
 			remove_default_feeds: setting(req, "remove_default_feeds"),
+			geo_filter: setting_or_default(req, "geo_filter", "GLOBAL".to_string()),
+			clean_urls: setting(req, "clean_urls"),
+			posts_per_page: setting(req, "posts_per_page"),
+			max_comment_thread_depth: setting(req, "max_comment_thread_depth"),
+			more_replies_new_page: setting(req, "more_replies_new_page"),
+			light_theme: setting(req, "light_theme"),
+			dark_theme: setting(req, "dark_theme"),
 		}
 	}
 
@@ -732,14 +922,39 @@ impl Preferences {
 		serde_urlencoded::to_string(self).map_err(|e| e.to_string())
 	}
 
+	/// Encode for a settings code: marker byte + `revision` encoding, which stores the
+	/// revision so fields added later decode to their `default_fn` in older codes.
 	pub fn to_bincode(&self) -> Result<Vec<u8>, String> {
-		bincode::serialize(self).map_err(|e| e.to_string())
+		let prefs = Self {
+			available_themes: Vec::new(),
+			..self.clone()
+		};
+		let mut out = vec![REVISIONED_PREFS_MARKER];
+		revision::to_writer(&mut out, &prefs).map_err(|e| e.to_string())?;
+		Ok(out)
+	}
+	/// Decode a settings code: the revisioned format, or the original plain-bincode one.
+	pub fn from_bincode(bytes: &[u8]) -> Result<Self, String> {
+		match bytes.split_first() {
+			Some((&REVISIONED_PREFS_MARKER, rest)) => revision::from_slice(rest).map_err(|e| e.to_string()),
+			_ => LegacyPreferences::decode(bytes),
+		}
 	}
 	pub fn to_compressed_bincode(&self) -> Result<Vec<u8>, String> {
 		deflate_compress(self.to_bincode()?)
 	}
 	pub fn to_bincode_str(&self) -> Result<String, String> {
 		Ok(base2048::encode(&self.to_compressed_bincode()?))
+	}
+	fn default_geo_filter(_revision: u16) -> Result<String, Error> {
+		Ok("GLOBAL".to_owned())
+	}
+	/// Empty = fall back to the instance default at read time.
+	fn default_instance_setting(_revision: u16) -> Result<String, Error> {
+		Ok(String::new())
+	}
+	fn default_off(_revision: u16) -> Result<String, Error> {
+		Ok("off".to_owned())
 	}
 }
 
@@ -803,21 +1018,20 @@ pub async fn parse_post(post: &Value) -> Post {
 
 	let poll = Poll::parse(&post["data"]["poll_data"]);
 
-	let body = if val(post, "removed_by_category") == "moderator" {
+	let gone = if val(post, "removed_by_category") == "moderator" {
+		Some("removed")
+	} else if val(post, "author") == "[deleted]" && val(post, "selftext") == "[deleted]" {
+		Some("deleted")
+	} else {
+		None
+	};
+	let body = if let Some(state) = gone {
 		format!(
-			"<div class=\"md\"><p>[removed] — <a href=\"https://{}{permalink}\">view removed post</a></p></div>",
+			"<div class=\"md\"><p>[{state}] — <a href=\"https://{}{permalink}\">view {state} post</a></p></div>",
 			get_setting("REDLIB_PUSHSHIFT_FRONTEND").unwrap_or_else(|| String::from(crate::config::DEFAULT_PUSHSHIFT_FRONTEND)),
 		)
 	} else {
-		let selftext = val(post, "selftext");
-		if selftext.contains("```") {
-			let mut html_output = String::new();
-			let parser = pulldown_cmark::Parser::new(&selftext);
-			pulldown_cmark::html::push_html(&mut html_output, parser);
-			rewrite_urls(&html_output)
-		} else {
-			rewrite_urls(&val(post, "selftext_html"))
-		}
+		rewrite_urls(&body_html(post, "selftext", "selftext_html"))
 	};
 
 	// Build a post using data parsed from Reddit post API
@@ -839,6 +1053,7 @@ pub async fn parse_post(post: &Value) -> Post {
 				foreground_color: val(post, "author_flair_text_color"),
 			},
 			distinguished: val(post, "distinguished"),
+			advertiser: post["data"]["is_created_from_ads_ui"] == true,
 		},
 		permalink,
 		link_title: val(post, "link_title"),
@@ -854,6 +1069,7 @@ pub async fn parse_post(post: &Value) -> Post {
 			height: post["data"]["thumbnail_height"].as_i64().unwrap_or_default(),
 			poster: String::new(),
 			download_name: String::new(),
+			needs_hls_for_audio: false,
 		},
 		flair: Flair {
 			flair_parts: FlairPart::parse(
@@ -1004,8 +1220,10 @@ static REGEX_URL_WWW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://w
 static REGEX_URL_OLD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://old\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_NP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://np\.reddit\.com/(.*)").unwrap());
 static REGEX_URL_PLAIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://reddit\.com/(.*)").unwrap());
-static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/DASH_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
-static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8.*)$").unwrap());
+static REGEX_URL_VIDEOS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.*)/(DASH|CMAF)_([0-9]{2,4}(\.mp4|$|\?source=fallback))").unwrap());
+static REGEX_URL_VIDEOS_HLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://v\.redd\.it/(.+)/(HLSPlaylist\.m3u8)").unwrap());
+static REGEX_URL_PACKAGED_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://packaged-media\.redd\.it/(.*)").unwrap());
+static REGEX_URL_EXTERNAL_PACKAGED_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://external-packaged-media\.redd\.it/(.*)").unwrap());
 static REGEX_URL_IMAGES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://i\.redd\.it/(.*)").unwrap());
 static REGEX_URL_THUMBS_A: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://a\.thumbs\.redditmedia\.com/(.*)").unwrap());
 static REGEX_URL_THUMBS_B: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://b\.thumbs\.redditmedia\.com/(.*)").unwrap());
@@ -1014,6 +1232,7 @@ static REGEX_URL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?
 static REGEX_URL_EXTERNAL_PREVIEW: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://external\-preview\.redd\.it/(.*)").unwrap());
 static REGEX_URL_STYLES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://styles\.redditmedia\.com/(.*)").unwrap());
 static REGEX_URL_STATIC_MEDIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://www\.redditstatic\.com/(.*)").unwrap());
+static REGEX_URL_REDGIFS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(?:www\.|v\d+\.)?redgifs\.com/watch/([^?#]*)").unwrap());
 
 /// Direct urls to proxy if proxy is enabled
 pub fn format_url(url: &str) -> String {
@@ -1027,6 +1246,7 @@ pub fn format_url(url: &str) -> String {
 				regex.captures(url).map_or(String::new(), |caps| match segments {
 					1 => [format, &caps[1]].join(""),
 					2 => [format, &caps[1], "/", &caps[2]].join(""),
+					3 => [format, &caps[1], "/", &caps[2], "/", &caps[3]].join(""),
 					_ => String::new(),
 				})
 			};
@@ -1057,7 +1277,9 @@ pub fn format_url(url: &str) -> String {
 				"old.reddit.com" => capture(&REGEX_URL_OLD, "/", 1),
 				"np.reddit.com" => capture(&REGEX_URL_NP, "/", 1),
 				"reddit.com" => capture(&REGEX_URL_PLAIN, "/", 1),
-				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 2), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"v.redd.it" => chain!(capture(&REGEX_URL_VIDEOS, "/vid/", 3), capture(&REGEX_URL_VIDEOS_HLS, "/hls/", 2)),
+				"packaged-media.redd.it" => capture(&REGEX_URL_PACKAGED_MEDIA, "/packaged/", 1),
+				"external-packaged-media.redd.it" => capture(&REGEX_URL_EXTERNAL_PACKAGED_MEDIA, "/packaged-external/", 1),
 				"i.redd.it" => capture(&REGEX_URL_IMAGES, "/img/", 1),
 				"a.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_A, "/thumb/a/", 1),
 				"b.thumbs.redditmedia.com" => capture(&REGEX_URL_THUMBS_B, "/thumb/b/", 1),
@@ -1066,10 +1288,31 @@ pub fn format_url(url: &str) -> String {
 				"external-preview.redd.it" => capture(&REGEX_URL_EXTERNAL_PREVIEW, "/preview/external-pre/", 1),
 				"styles.redditmedia.com" => capture(&REGEX_URL_STYLES, "/style/", 1),
 				"www.redditstatic.com" => capture(&REGEX_URL_STATIC_MEDIA, "/static/", 1),
+				"www.redgifs.com" if enable_redgifs() => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
+				"redgifs.com" if enable_redgifs() => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
+				d if enable_redgifs() && d.starts_with("v") && d.ends_with(".redgifs.com") => capture(&REGEX_URL_REDGIFS, "/redgifs/", 1),
 				_ => url.to_string(),
 			}
 		})
 	}
+}
+
+// Remove tracking query params
+static URL_CLEANER: LazyLock<Arc<UrlCleaner>> = LazyLock::new(|| Arc::new(UrlCleaner::from_embedded_rules().expect("Failed to initialize UrlCleaner")));
+
+pub fn clean_url(url: String) -> String {
+	let is_external_url = match Url::parse(url.as_str()) {
+		Ok(parsed_url) => parsed_url.domain().is_some(),
+		_ => false,
+	};
+	let mut cleaned_url = url.clone();
+	if is_external_url {
+		cleaned_url = match URL_CLEANER.clear_single_url_str(cleaned_url.as_str()) {
+			Ok(cleaned_result) => cleaned_result.as_ref().to_owned(),
+			_ => cleaned_url,
+		}
+	}
+	cleaned_url
 }
 
 static REGEX_BULLET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^- (.*)$").unwrap());
@@ -1091,6 +1334,73 @@ static REDLIB_PREVIEW_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(
 static REDLIB_PREVIEW_TEXT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r">(.*?)</a>").unwrap());
 
 /// Rewrite Reddit links to Redlib in body of text
+/// The HTML of a post or comment body. Reddit's `*_html` comes from its old
+/// renderer, which doesn't know fenced code blocks, so bodies with one are
+/// rendered from their markdown instead.
+pub fn body_html(item: &Value, markdown_key: &str, html_key: &str) -> String {
+	let markdown = val(item, markdown_key);
+	if markdown.contains("```") {
+		markdown_html(&markdown)
+	} else {
+		val(item, html_key)
+	}
+}
+
+/// Renders Reddit markdown, with syntax highlighting in code blocks.
+pub fn markdown_html(markdown: &str) -> String {
+	use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
+	let mut code: Option<(String, String)> = None;
+	let events = Parser::new_ext(markdown, Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH).filter_map(|event| match event {
+		Event::Start(Tag::CodeBlock(kind)) => {
+			let lang = match kind {
+				CodeBlockKind::Fenced(info) => info.split_whitespace().next().unwrap_or_default().to_string(),
+				CodeBlockKind::Indented => String::new(),
+			};
+			code = Some((lang, String::new()));
+			None
+		}
+		Event::Text(text) if code.is_some() => {
+			if let Some((_, buf)) = &mut code {
+				buf.push_str(&text);
+			}
+			None
+		}
+		Event::End(TagEnd::CodeBlock) => code.take().map(|(lang, text)| Event::Html(highlight(&lang, &text).into())),
+		// Reddit shows HTML in markdown as text
+		Event::Html(html) | Event::InlineHtml(html) => Some(Event::Text(html)),
+		event => Some(event),
+	});
+	let mut html = String::from("<div class=\"md\">");
+	pulldown_cmark::html::push_html(&mut html, events);
+	html.push_str("</div>");
+	html
+}
+
+/// Above this, a code block isn't highlighted: the regexes are too slow for it.
+const HIGHLIGHT_MAX_LEN: usize = 20_000;
+
+static SYNTAXES: LazyLock<syntect::parsing::SyntaxSet> = LazyLock::new(syntect::parsing::SyntaxSet::load_defaults_newlines);
+
+/// A code block, its tokens in `hl-<scope>` spans when `lang` is known.
+fn highlight(lang: &str, code: &str) -> String {
+	use syntect::html::{ClassStyle, ClassedHTMLGenerator};
+	use syntect::util::LinesWithEndings;
+	let plain = || format!("<pre><code>{}</code></pre>", htmlescape::encode_minimal(code));
+	let Some(syntax) = Some(lang)
+		.filter(|lang| !lang.is_empty() && code.len() <= HIGHLIGHT_MAX_LEN)
+		.and_then(|lang| SYNTAXES.find_syntax_by_token(lang))
+	else {
+		return plain();
+	};
+	let mut html = ClassedHTMLGenerator::new_with_class_style(syntax, &SYNTAXES, ClassStyle::SpacedPrefixed { prefix: "hl-" });
+	for line in LinesWithEndings::from(code) {
+		if html.parse_html_for_line_which_includes_newline(line).is_err() {
+			return plain();
+		}
+	}
+	format!("<pre><code>{}</code></pre>", html.finalize())
+}
+
 pub fn rewrite_urls(input_text: &str) -> String {
 	let mut text1 =
 		// Rewrite Reddit links to Redlib
@@ -1102,6 +1412,10 @@ pub fn rewrite_urls(input_text: &str) -> String {
 
 	// Remove (html-encoded) "\" from URLs.
 	text1 = text1.replace("%5C", "").replace("\\_", "_");
+
+	/* Remove paragraphs that only contain zero width spaces.
+	Reddit ignores these in their formatting so we want to remove them so they don't mess with ours. */
+	text1 = text1.replace("<p>&#8203;</p>", "").replace("<p>&#x200B;</p>", "");
 
 	// Rewrite external media previews to Redlib
 	loop {
@@ -1150,6 +1464,24 @@ pub fn rewrite_urls(input_text: &str) -> String {
 				.replace(&image_to_replace, &_image_replacement)
 		}
 	}
+}
+
+// Match Giphy URLs in comment anchor tags, capturing the GIF ID
+// Handles: giphy.com/gifs/ID, media.giphy.com/media/ID, i.giphy.com/ID
+static GIPHY_EMBED_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+	Regex::new(r#"(?i)<a\s+href="https?://(?:www\.)?(?:giphy\.com/(?:gifs|clips)|media\.giphy\.com/media|i\.giphy\.com)/([a-z0-9]+)[^"]*"[^>]*>[^<]*</a>"#).unwrap()
+});
+
+/// Rewrite Giphy URLs in comment body to embedded video elements
+fn rewrite_giphy_links(comment: &str) -> String {
+	GIPHY_EMBED_REGEX
+		.replace_all(comment, |caps: &regex::Captures| {
+			let id = &caps[1];
+			format!(
+				r#"<div class="giphy-embed-container"><a href="/giphy/{id}/gif"><video class="giphy-embed" src="/giphy/{id}/mp4" autoplay muted loop playsinline></video></a></div>"#
+			)
+		})
+		.to_string()
 }
 
 // These links all follow a pattern of "https://reddit-econ-prod-assets-permanent.s3.amazonaws.com/asset-manager/SUBREDDIT_ID/RANDOM_FILENAME.png"
@@ -1230,15 +1562,25 @@ pub fn rewrite_emotes(media_metadata: &Value, comment: String) -> String {
 	comment = render_bullet_lists(&comment);
 
 	// Call rewrite_urls() to transform any other Reddit links
-	rewrite_urls(&comment)
+	let comment = rewrite_urls(&comment);
+
+	if enable_giphy() {
+		rewrite_giphy_links(&comment)
+	} else {
+		comment
+	}
 }
 
 /// Format vote count to a string that will be displayed.
 /// Append `m` and `k` for millions and thousands respectively, and
 /// round to the nearest tenth.
 pub fn format_num(num: i64) -> (String, String) {
-	let truncated = if num >= 1_000_000 || num <= -1_000_000 {
+	let truncated = if num >= 10_000_000 || num <= -10_000_000 {
+		format!("{}m", num / 1_000_000)
+	} else if num >= 1_000_000 || num <= -1_000_000 {
 		format!("{:.1}m", num as f64 / 1_000_000.0)
+	} else if num >= 10000 || num <= -10000 {
+		format!("{}k", num / 1_000)
 	} else if num >= 1000 || num <= -1000 {
 		format!("{:.1}k", num as f64 / 1_000.0)
 	} else {
@@ -1250,6 +1592,9 @@ pub fn format_num(num: i64) -> (String, String) {
 
 /// Parse a relative and absolute time from a UNIX timestamp
 pub fn time(created: f64) -> (String, String) {
+	if created == 0.0 {
+		return (String::new(), String::new());
+	}
 	let time = OffsetDateTime::from_unix_timestamp(created.round() as i64).unwrap_or(OffsetDateTime::UNIX_EPOCH);
 	let now = OffsetDateTime::now_utc();
 	let min = time.min(now);
@@ -1314,8 +1659,29 @@ pub fn redirect(path: &str) -> Response<Body> {
 pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, String> {
 	error!("Error page rendered: {}", msg.split('|').next().unwrap_or_default());
 	let url = req.uri().to_string();
+	// "Title: detail | /reddit/path"
+	let (text, path) = msg.split_once(" | ").unwrap_or((msg, ""));
+	let (title, detail) = text.split_once(": ").unwrap_or((text, ""));
+	let blocked = crate::backends::is_blocked_error(msg);
+	let subreddits = if blocked { combined_feed_subreddits(path) } else { Vec::new() };
+	let (title, detail) = if subreddits.is_empty() {
+		(title, detail)
+	} else {
+		(
+			"Reddit blocked this combined feed (403)",
+			"Feeds that combine several subreddits, like your front page or r/a+b, can only be loaded through Reddit's JSON API, and Reddit refuses that API to this instance. Single subreddits still work, so you can open them one by one.",
+		)
+	};
 	let body = ErrorTemplate {
-		msg: msg.to_string(),
+		msg: title.to_string(),
+		detail: detail.to_string(),
+		reddit_url: if path.starts_with('/') {
+			format!("https://www.reddit.com{path}")
+		} else {
+			path.to_string()
+		},
+		blocked,
+		subreddits,
 		prefs: Preferences::new(&req),
 		url,
 	}
@@ -1323,6 +1689,18 @@ pub async fn error(req: Request<Body>, msg: &str) -> Result<Response<Body>, Stri
 	.unwrap_or_default();
 
 	Ok(Response::builder().status(404).header("content-type", "text/html").body(body.into()).unwrap_or_default())
+}
+
+/// The subreddits of a combined feed (`/r/a+b/...`), empty for a single one.
+/// r/all is fetched as `/r/all+`, which leaves a single name.
+fn combined_feed_subreddits(path: &str) -> Vec<String> {
+	let Some(rest) = path.strip_prefix("/r/") else { return Vec::new() };
+	let names = rest.split(['/', '?', '.']).next().unwrap_or_default().replace("%2B", "+").replace("%2b", "+");
+	let subs: Vec<String> = names.split('+').filter(|s| !s.is_empty()).map(str::to_string).collect();
+	if subs.len() < 2 {
+		return Vec::new();
+	}
+	subs
 }
 
 /// Renders a generic info landing page.
@@ -1363,6 +1741,32 @@ pub fn enable_rss() -> bool {
 	}
 }
 
+pub fn enable_redgifs() -> bool {
+	get_setting("REDLIB_ENABLE_REDGIFS").is_none_or(|val| val != "off")
+}
+
+pub fn enable_giphy() -> bool {
+	get_setting("REDLIB_ENABLE_GIPHY").is_none_or(|val| val != "off")
+}
+
+pub fn enable_scrape_fallback() -> bool {
+	get_setting("REDLIB_ENABLE_SCRAPE_FALLBACK").is_none_or(|val| val != "off")
+}
+
+pub fn enable_gql() -> bool {
+	get_setting("REDLIB_ENABLE_GQL").is_none_or(|val| val != "off")
+}
+
+/// Extra "more comments" requests a scraped post page makes up front.
+pub fn scrape_comment_prefetch() -> usize {
+	get_setting("REDLIB_SCRAPE_COMMENT_PREFETCH").and_then(|val| val.parse().ok()).unwrap_or(0)
+}
+
+/// Feed requests the gql backend makes to fill one r/all page, at least 1.
+pub fn gql_feed_requests() -> usize {
+	get_setting("REDLIB_GQL_FEED_REQUESTS").and_then(|val| val.parse().ok()).filter(|&n| n > 0).unwrap_or(2)
+}
+
 /// Returns true if the config/env variable `REDLIB_ROBOTS_DISABLE_INDEXING` carries the
 /// value `on`.
 ///
@@ -1373,6 +1777,47 @@ pub fn disable_indexing() -> bool {
 		Some(val) => val == "on",
 		None => false,
 	}
+}
+
+/// Returns the currently configured source code URL to display in the footer.
+/// Defaults to the upstream Github repository URL when not explicitly configured.
+pub fn get_source_url() -> String {
+	get_setting("REDLIB_SOURCE_URL").unwrap_or("https://github.com/Nachtalb/redlib".into())
+}
+
+/// Display name of a theme; its id stays the file name.
+pub fn theme_label(theme: &str) -> &str {
+	match theme {
+		"system" => "System",
+		"black" => "Black",
+		"catppuccinFrappe" => "Catppuccin Frappé",
+		"catppuccinLatte" => "Catppuccin Latte",
+		"catppuccinMacchiato" => "Catppuccin Macchiato",
+		"catppuccinMocha" => "Catppuccin Mocha",
+		"dark" => "Dark",
+		"doomone" => "Doom One",
+		"dracula" => "Dracula",
+		"gold" => "Gold",
+		"gruvboxdark" => "Gruvbox Dark",
+		"gruvboxlight" => "Gruvbox Light",
+		"icebergDark" => "Iceberg Dark",
+		"laserwave" => "LaserWave",
+		"libredditBlack" => "Libreddit Black",
+		"libredditDark" => "Libreddit Dark",
+		"libredditLight" => "Libreddit Light",
+		"light" => "Light",
+		"midnightPurple" => "Midnight Purple",
+		"nord" => "Nord",
+		"rosebox" => "Rosebox",
+		"tokyoNight" => "Tokyo Night",
+		"violet" => "Violet",
+		_ => theme,
+	}
+}
+
+pub fn short_git_hash() -> &'static str {
+	let hash = env!("GIT_HASH").trim();
+	hash.get(..7).unwrap_or(hash)
 }
 
 /// Determines if a request should redirect to a NSFW landing gate.
@@ -1443,9 +1888,307 @@ pub fn to_absolute_url(relative_path: &str) -> String {
 	format!("{}{}", config::get_setting("REDLIB_FULL_URL").unwrap_or_default(), relative_path)
 }
 
+// =====================================================
+// RSS Feed Helpers
+// =====================================================
+
+/// Sorts that can follow a subreddit or the front page in a feed URL, e.g. `/r/rust/top.rss`.
+pub const RSS_LISTING_SORTS: [&str; 6] = ["hot", "new", "top", "rising", "controversial", "best"];
+
+/// Listings that can follow a user in a feed URL, e.g. `/user/spez/comments.rss`.
+pub const RSS_USER_LISTINGS: [&str; 3] = ["overview", "submitted", "comments"];
+
+/// Path of the HTML page a feed mirrors: `/r/rust/top.rss` and `/r/rust/top/.rss` both become `/r/rust/top`.
+pub fn rss_page_path(req: &Request<Body>) -> String {
+	let path = req.uri().path();
+	let path = path.strip_suffix(".rss").unwrap_or(path).trim_end_matches('/');
+	if path.is_empty() {
+		"/".to_string()
+	} else {
+		path.to_string()
+	}
+}
+
+/// Absolute link to the HTML page a feed mirrors, including the feed's query string.
+pub fn rss_page_link(req: &Request<Body>) -> String {
+	let path = rss_page_path(req);
+	match req.uri().query() {
+		Some(query) => to_absolute_url(&format!("{path}?{query}")),
+		None => to_absolute_url(&path),
+	}
+}
+
+/// Builds the RSS feed URL matching a Redlib page, for the RSS buttons and feed autodiscovery.
+/// Keeps the query parameters that change what the feed contains (sort, timeframe, search query)
+/// and drops pagination. Returns `None` if RSS is disabled or the page has no feed.
+pub fn rss_feed_url(url: &str, prefs: &Preferences) -> Option<String> {
+	if !enable_rss() {
+		return None;
+	}
+	page_feed_url(url, &prefs.front_page, &prefs.subscriptions, &prefs.post_sort)
+}
+
+/// `post_sort` is the sort a listing page shows when its URL has none; the feed URL names it explicitly.
+fn page_feed_url(url: &str, front_page: &str, subscriptions: &[String], post_sort: &str) -> Option<String> {
+	let parsed = Url::parse(&format!("https://redlib.invalid{url}")).ok()?;
+	let segments: Vec<&str> = parsed.path().split('/').filter(|s| !s.is_empty()).collect();
+	let query: Vec<(String, String)> = parsed.query_pairs().into_owned().collect();
+	let keep_query = |keys: &[&str]| -> String {
+		let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+		for (k, v) in &query {
+			if keys.contains(&k.as_str()) && !v.is_empty() {
+				serializer.append_pair(k, v);
+			}
+		}
+		let query = serializer.finish();
+		if query.is_empty() {
+			query
+		} else {
+			format!("?{query}")
+		}
+	};
+	let listing_query = || keep_query(&["sort", "t"]);
+	let default_sort = Some(post_sort).filter(|s| RSS_LISTING_SORTS.contains(s));
+	let sorted = |base: &str, sort: Option<&str>| match sort {
+		Some(sort) => format!("{base}/{sort}.rss"),
+		None => format!("{base}.rss"),
+	};
+
+	// Search for subreddits and users has no posts to put in a feed
+	if segments.last() == Some(&"search") && query.iter().any(|(k, v)| k == "type" && v != "link") {
+		return None;
+	}
+
+	let path = match segments.as_slice() {
+		// Front page. Feed readers don't send cookies, so point at the user's front page or subscriptions directly.
+		[] | [_] if segments.first().is_none_or(|s| RSS_LISTING_SORTS.contains(s)) => {
+			let sort = segments.first().copied().or(default_sort);
+			let sub = if !front_page.is_empty() && front_page != "default" {
+				front_page.to_string()
+			} else {
+				subscriptions.join("+")
+			};
+			let feed = match (sub.is_empty(), sort) {
+				(true, Some(sort)) => format!("/{sort}.rss"),
+				(true, None) => "/.rss".to_string(),
+				(false, sort) => sorted(&format!("/r/{sub}"), sort),
+			};
+			feed + &listing_query()
+		}
+		["search"] => format!("/search.rss{}", keep_query(&["q", "sort", "t", "restrict_sr"])),
+		["r", sub, "search"] => format!("/r/{sub}/search.rss{}", keep_query(&["q", "sort", "t", "restrict_sr"])),
+		["r", sub] => sorted(&format!("/r/{sub}"), default_sort) + &listing_query(),
+		["r", sub, sort] if RSS_LISTING_SORTS.contains(sort) => sorted(&format!("/r/{sub}"), Some(sort)) + &listing_query(),
+		["r", sub, "comments", id, ..] => format!("/r/{sub}/comments/{id}.rss{}", keep_query(&["sort"])),
+		["comments", id, ..] => format!("/comments/{id}.rss{}", keep_query(&["sort"])),
+		["user" | "u", name] => format!("/user/{name}.rss{}", listing_query()),
+		["user" | "u", name, listing] if RSS_USER_LISTINGS.contains(listing) => format!("/user/{name}/{listing}.rss{}", listing_query()),
+		_ => return None,
+	};
+
+	Some(path)
+}
+
+/// Converts listing posts to feed items. NSFW items are dropped on SFW-only instances.
+pub fn build_rss_items(posts: &[Post]) -> Vec<Item> {
+	posts.iter().filter(|post| !(sfw_only() && post.nsfw)).map(build_rss_item).collect()
+}
+
+/// Serializes a feed into an HTTP response.
+pub fn rss_response(channel: &Channel) -> Response<Body> {
+	let mut res = Response::new(Body::from(channel.to_string().into_bytes()));
+	res
+		.headers_mut()
+		.insert(hyper::header::CONTENT_TYPE, hyper::header::HeaderValue::from_static("application/rss+xml"));
+	res
+}
+
+/// Build an RSS item from a Post, with proper enclosure, GUID, and media embed.
+/// Comments in a listing (e.g. `/r/rust/comments.json`) come through as Posts without a title.
+pub fn build_rss_item(post: &Post) -> Item {
+	if post.title.is_empty() && !post.link_title.is_empty() {
+		return build_rss_comment_item(&post.author.name, &post.link_title, &post.permalink, &post.body, post.created_ts);
+	}
+
+	let mut item = Item {
+		title: Some(post.title.to_string()),
+		link: Some(to_absolute_url(&post.permalink)),
+		author: Some(post.author.name.to_string()),
+		pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
+		guid: Some(Guid {
+			value: to_absolute_url(&post.permalink),
+			permalink: true,
+		}),
+		..Default::default()
+	};
+
+	// Build description
+	let description_str = match post.post_type.as_str() {
+		"gallery" => format!("<a href='{}'>Gallery with {} images</a>", to_absolute_url(&post.permalink), post.gallery.len()),
+		_ => format!("<a href='{}'>Comments</a>", to_absolute_url(&post.permalink)),
+	};
+	item.set_description(description_str.clone());
+
+	// Build content:encoded — embed media + body
+	let image_html = build_media_html(post);
+	let content = if !image_html.is_empty() || !post.body.is_empty() {
+		format!("{}{}", image_html, absolute_html_urls(&post.body))
+	} else {
+		description_str
+	};
+	item.set_content(content);
+
+	// Set enclosure for media posts
+	if let Some(enclosure) = get_rss_image(post) {
+		item.set_enclosure(enclosure);
+	}
+
+	item
+}
+
+/// Build an RSS item for a comment. `body` is the comment's HTML with URLs already rewritten.
+pub fn build_rss_comment_item(author: &str, link_title: &str, permalink: &str, body: &str, created_ts: u64) -> Item {
+	let link = to_absolute_url(permalink);
+	let body = absolute_html_urls(body);
+	Item {
+		title: Some(format!("u/{author} on {link_title}")),
+		link: Some(link.clone()),
+		author: Some(author.to_string()),
+		pub_date: Some(DateTime::from_timestamp(created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
+		guid: Some(Guid { value: link, permalink: true }),
+		description: Some(body.clone()),
+		content: Some(body),
+		..Default::default()
+	}
+}
+
+static RELATIVE_HTML_URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"(href|src)="/([^/])"#).unwrap());
+
+/// Feed readers don't know the instance's address, so point Redlib's relative links
+/// (`/r/...`, `/preview/...`) at `REDLIB_FULL_URL`. Protocol-relative `//host` links are left alone.
+fn absolute_html_urls(html: &str) -> String {
+	prefix_relative_urls(html, &config::get_setting("REDLIB_FULL_URL").unwrap_or_default())
+}
+
+fn prefix_relative_urls(html: &str, base: &str) -> String {
+	let base = base.trim_end_matches('/');
+	if base.is_empty() {
+		return html.to_string();
+	}
+	RELATIVE_HTML_URL.replace_all(html, format!("$1=\"{base}/$2").as_str()).into_owned()
+}
+
+/// Generate the HTML for embedding media (images/videos) in RSS content
+/// Uses proxied Redlib URLs and inline styles to fit the reader window
+fn build_media_html(post: &Post) -> String {
+	match post.post_type.as_str() {
+		"image" => {
+			let url = to_absolute_url(&post.media.url);
+			format!("<a href=\"{}\"><img src=\"{}\" width=\"100%\" /></a><br/>", url, url)
+		}
+		"gallery" => post
+			.gallery
+			.iter()
+			.map(|media| {
+				let url = to_absolute_url(&media.url);
+				format!("<a href=\"{}\"><img src=\"{}\" width=\"100%\" /></a><br/>", url, url)
+			})
+			.collect::<Vec<_>>()
+			.join("\n"),
+		"video" | "gif" => {
+			let poster = to_absolute_url(&post.media.poster);
+			let video_url = to_absolute_url(&post.media.url);
+			format!(
+				"<video controls preload=\"metadata\" poster=\"{}\" width=\"100%\"><source src=\"{}\" type=\"video/mp4\" /></video><br/>",
+				poster, video_url
+			)
+		}
+		_ => String::new(),
+	}
+}
+
+/// Create an RSS enclosure for the first image of a post
+/// Uses proxied Redlib URLs
+fn get_rss_image(post: &Post) -> Option<Enclosure> {
+	let image_url = match post.post_type.as_str() {
+		"image" => Some(to_absolute_url(&post.media.url)),
+		"gallery" => post.gallery.first().map(|media| to_absolute_url(&media.url)),
+		"gif" | "video" => Some(to_absolute_url(&post.media.poster)),
+		_ => None,
+	};
+
+	image_url.map(|url| {
+		let mut enclosure = Enclosure::default();
+		enclosure.set_mime_type(get_mime_type(&url));
+		enclosure.set_url(url);
+		enclosure.set_length("0");
+		enclosure
+	})
+}
+
+/// Determines the MIME type based on file extension in a URL
+fn get_mime_type(url: &str) -> &'static str {
+	let path = url.split('?').next().unwrap_or(url);
+	let extension = path.rsplit('.').next().unwrap_or("").to_lowercase();
+	match extension.as_str() {
+		"jpg" | "jpeg" => "image/jpeg",
+		"png" => "image/png",
+		"gif" => "image/gif",
+		"webp" => "image/webp",
+		"svg" => "image/svg+xml",
+		_ => "application/octet-stream",
+	}
+}
+
 #[cfg(test)]
 mod tests {
+	#[test]
+	fn test_time_unknown_is_empty() {
+		// A missing timestamp parses as 0; show nothing instead of Jan 01 1970
+		assert_eq!(super::time(0.0), (String::new(), String::new()));
+	}
+
+	#[test]
+	fn test_combined_feed_subreddits() {
+		assert_eq!(
+			super::combined_feed_subreddits("/r/news%2Bworldnews%2Bu_spez/new.json?&raw_json=1"),
+			["news", "worldnews", "u_spez"]
+		);
+		assert_eq!(super::combined_feed_subreddits("/r/rust+linux/hot.json"), ["rust", "linux"]);
+		assert!(super::combined_feed_subreddits("/r/news/hot.json").is_empty());
+		assert!(super::combined_feed_subreddits("/r/all+/hot.json").is_empty());
+		assert!(super::combined_feed_subreddits("/comments/abc.json").is_empty());
+	}
+
 	use super::{deflate_compress, deflate_decompress, format_num, format_url, render_bullet_lists, rewrite_emotes, rewrite_urls, url_path_basename, Post, Preferences};
+	use super::{page_feed_url, prefix_relative_urls, Media};
+	use serde_json::{json, Value};
+
+	#[test]
+	fn test_markdown_highlights_fenced_code() {
+		let html = crate::utils::markdown_html("text\n\n```rust\nlet x = 1;\n```\n\n```nope\n<b>\n```");
+		assert!(html.starts_with("<div class=\"md\"><p>text</p>"));
+		assert!(html.contains("<span class=\"hl-storage hl-type hl-rust\">let</span>"));
+		// Unknown languages stay plain, but escaped
+		assert!(html.contains("<pre><code>&lt;b&gt;\n</code></pre>"));
+	}
+
+	#[test]
+	fn test_markdown_shows_html_as_text() {
+		let html = crate::utils::markdown_html("<script>alert(1)</script>\n\n```\nx\n```\n\nhi <img src=x onerror=alert(1)>");
+		assert!(!html.contains("<script") && !html.contains("<img"), "{html}");
+	}
+
+	#[test]
+	fn test_body_html_renders_fenced_code_from_markdown() {
+		let post = serde_json::json!({ "data": { "selftext": "```\nx\n```", "selftext_html": "<p>```\nx\n```</p>" } });
+		assert_eq!(
+			crate::utils::body_html(&post, "selftext", "selftext_html"),
+			"<div class=\"md\"><pre><code>x\n</code></pre></div>"
+		);
+		let post = serde_json::json!({ "data": { "selftext": "plain", "selftext_html": "<div class=\"md\"><p>plain</p></div>" } });
+		assert_eq!(crate::utils::body_html(&post, "selftext", "selftext_html"), "<div class=\"md\"><p>plain</p></div>");
+	}
 
 	#[test]
 	fn format_num_works() {
@@ -1495,11 +2238,14 @@ mod tests {
 			format_url("https://preview.redd.it/qwerty.jpg?auto=webp&s=asdf"),
 			"/preview/pre/qwerty.jpg?auto=webp&s=asdf"
 		);
-		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/360.mp4");
+		assert_eq!(format_url("https://v.redd.it/foo/DASH_360.mp4?source=fallback"), "/vid/foo/DASH/360.mp4");
+		assert_eq!(format_url("https://packaged-media.redd.it/foo/muxed.mp4?e=1&s=2"), "/packaged/foo/muxed.mp4?e=1&s=2");
 		assert_eq!(
-			format_url("https://v.redd.it/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"),
-			"/hls/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"
+			format_url("https://external-packaged-media.redd.it/t3_x/3p/streamable/y/video.mp4?v=1"),
+			"/packaged-external/t3_x/3p/streamable/y/video.mp4?v=1"
 		);
+		assert_eq!(format_url("https://v.redd.it/foo/HLSPlaylist.m3u8?a=bar&v=1&f=sd"), "/hls/foo/HLSPlaylist.m3u8");
+		assert_eq!(format_url("https://v.redd.it/foo/HLSPlaylist.m3u8"), "/hls/foo/HLSPlaylist.m3u8");
 		assert_eq!(format_url("https://www.redditstatic.com/gold/awards/icon/icon.png"), "/static/gold/awards/icon/icon.png");
 		assert_eq!(
 			format_url("https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/shrug.gif"),
@@ -1537,10 +2283,17 @@ mod tests {
 			hide_awards: "off".to_owned(),
 			hide_score: "off".to_owned(),
 			remove_default_feeds: "off".to_owned(),
+			geo_filter: "GLOBAL".to_owned(),
+			clean_urls: "off".to_owned(),
+			posts_per_page: "25".to_owned(),
+			max_comment_thread_depth: "-1".to_owned(),
+			more_replies_new_page: "on".to_owned(),
+			light_theme: String::new(),
+			dark_theme: String::new(),
 		};
 		let urlencoded = serde_urlencoded::to_string(prefs).expect("Failed to serialize Prefs");
 
-		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off");
+		assert_eq!(urlencoded, "theme=laserwave&front_page=default&layout=compact&wide=on&blur_spoiler=on&show_nsfw=off&blur_nsfw=on&hide_hls_notification=off&video_quality=best&hide_sidebar_and_summary=off&use_hls=on&autoplay_videos=on&fixed_navbar=on&disable_visit_reddit_confirmation=on&comment_sort=confidence&post_sort=top&subscriptions=memes%2Bmildlyinteresting&filters=&hide_awards=off&hide_score=off&remove_default_feeds=off&geo_filter=GLOBAL&clean_urls=off&posts_per_page=25&max_comment_thread_depth=-1&more_replies_new_page=on&light_theme=&dark_theme=");
 	}
 
 	#[test]
@@ -1558,30 +2311,36 @@ mod tests {
 		assert_eq!(rewrite_urls(input), output);
 	}
 
-	#[tokio::test(flavor = "multi_thread")]
-	async fn test_fetching_subreddit_quarantined() {
-		let subreddit = Post::fetch("/r/drugs", true).await;
-		assert!(subreddit.is_ok());
-		assert!(!subreddit.unwrap().0.is_empty());
+	#[test]
+	fn test_fetching_subreddit_quarantined() {
+		crate::client::block_on_shared(async {
+			let subreddit = Post::fetch("/r/drugs", true).await;
+			assert!(subreddit.is_ok());
+			assert!(!subreddit.unwrap().0.is_empty());
+		});
 	}
 
-	#[tokio::test(flavor = "multi_thread")]
-	async fn test_fetching_nsfw_subreddit() {
-		// Gonwild is a place for closed, Euclidean Geometric shapes to exchange their nth terms for karma; showing off their edges in a comfortable environment without pressure.
-		// Find a good sub that is tagged NSFW but that actually isn't in case my future employers are watching (they probably are)
-		// switched from randnsfw as it is no longer functional.
-		let subreddit = Post::fetch("/r/gonwild", false).await;
-		assert!(subreddit.is_ok());
-		assert!(!subreddit.unwrap().0.is_empty());
+	#[test]
+	fn test_fetching_nsfw_subreddit() {
+		crate::client::block_on_shared(async {
+			// Gonwild is a place for closed, Euclidean Geometric shapes to exchange their nth terms for karma; showing off their edges in a comfortable environment without pressure.
+			// Find a good sub that is tagged NSFW but that actually isn't in case my future employers are watching (they probably are)
+			// switched from randnsfw as it is no longer functional.
+			let subreddit = Post::fetch("/r/gonwild", false).await;
+			assert!(subreddit.is_ok());
+			assert!(!subreddit.unwrap().0.is_empty());
+		});
 	}
 
-	#[tokio::test(flavor = "multi_thread")]
-	async fn test_fetching_ws() {
-		let subreddit = Post::fetch("/r/popular", false).await;
-		assert!(subreddit.is_ok());
-		for post in subreddit.unwrap().0 {
-			assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
-		}
+	#[test]
+	fn test_fetching_ws() {
+		crate::client::block_on_shared(async {
+			let subreddit = Post::fetch("/r/popular", false).await;
+			assert!(subreddit.is_ok());
+			for post in subreddit.unwrap().0 {
+				assert!(post.ws_url.starts_with("wss://k8s-lb.wss.redditmedia.com/link/"));
+			}
+		});
 	}
 
 	#[test]
@@ -1590,6 +2349,36 @@ mod tests {
 			r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
 		let output = r#"<figure><a href="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"><img loading="lazy" src="/preview/pre/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc"></a><figcaption>caption 1</figcaption></figure>"#;
 		assert_eq!(rewrite_urls(input), output);
+	}
+
+	#[tokio::test]
+	async fn test_deleted_post_links_pushshift() {
+		let post = serde_json::json!({ "kind": "t3", "data": {
+			"id": "abc", "title": "t", "author": "[deleted]", "subreddit": "rust", "permalink": "/r/rust/comments/abc/t/",
+			"is_self": true, "selftext": "[deleted]", "selftext_html": "<div class=\"md\"><p>[deleted]</p></div>",
+		}});
+		let body = super::parse_post(&post).await.body;
+		assert!(
+			body.contains("[deleted] — <a href=\"https://undelete.pullpush.io/r/rust/comments/abc/t/\">view deleted post</a>"),
+			"{body}"
+		);
+	}
+
+	#[tokio::test]
+	async fn test_needs_hls_for_audio() {
+		let video = |has_audio: Value| {
+			json!({
+				"permalink": "/r/test/comments/abc/test/",
+				"secure_media": { "reddit_video": {
+					"fallback_url": "https://v.redd.it/abc/CMAF_720.mp4?source=fallback",
+					"hls_url": "https://v.redd.it/abc/HLSPlaylist.m3u8",
+					"has_audio": has_audio,
+				} },
+			})
+		};
+		assert!(Media::parse(&video(json!(true))).await.1.needs_hls_for_audio);
+		assert!(Media::parse(&video(Value::Null)).await.1.needs_hls_for_audio);
+		assert!(!Media::parse(&video(json!(false))).await.1.needs_hls_for_audio);
 	}
 
 	#[test]
@@ -1657,9 +2446,9 @@ How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or t
 	}
 
 	static KNOWN_GOOD_CONFIGS: &[&str] = &[
-		"ఴӅβØØҞÉဏႢձĬ༧ȒʯऌԔӵ୮༏",
-		"ਧՊΥÀÃǎƱГ۸ඣമĖฤ႙ʟาúໜϾௐɥঀĜໃહཞઠѫҲɂఙ࿔ǲઉƲӟӻĻฅΜδ໖ԜǗဖငƦơ৶Ą௩ԹʛใЛʃශаΏ",
-		"ਧԩΥÀÃÎŠ౭൩ඔႠϼҭöҪƸռઇԾॐნɔາǒՍҰच௨ಖມŃЉŐདƦ๙ϩএఠȝഽйʮჯඒϰळՋ௮ສ৵ऎΦѧਹಧଟƙŃ३î༦ŌပղयƟแҜ།",
+		"ఴǐΪØÃҤÉఅഐႮვÆվƟ๑ഈ௲º",
+		"ਧճΥÀÃǙŨ౭ѰЉਠ༃ඍୟϊÓႼઞƶǲѾҠŶဿৠǡȈЧတĄঘशƕİԪӥОϥΪѼĔજɍႰůƅıęႵຈഛशખӺफƊўચபūগລનаΦǮʀԅཪ٦ಟซωॶԓԙµ",
+		"ਧՎΥºÃǖবб྾цҗҢจഘĦਝ೨ծമ۞তʦཤཎຟՐȸ൯ങஏ९ȹ૯нե࿑Ʋථఐ۳ԊຍखʟషၡŁलſԇચਆॹǕϻΪজԯǐĦЅթȣơϱǃඛϾຝϤ໐Քµ",
 	];
 
 	#[test]
@@ -1667,7 +2456,15 @@ How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or t
 		for config in KNOWN_GOOD_CONFIGS {
 			let bytes = base2048::decode(config).unwrap();
 			let decompressed = deflate_decompress(bytes).unwrap();
-			assert!(bincode::deserialize::<Preferences>(&decompressed).is_ok());
+			assert!(Preferences::from_bincode(&decompressed).is_ok());
+		}
+	}
+
+	#[test]
+	fn test_every_theme_has_a_label() {
+		for file in super::ThemeAssets::iter() {
+			let theme = file.trim_end_matches(".css");
+			assert_ne!(super::theme_label(theme), theme, "add {theme} to theme_label");
 		}
 	}
 
@@ -1676,17 +2473,176 @@ How`s your monitor by the way? Any IPS bleed whatsoever? I either got lucky or t
 		for config in KNOWN_GOOD_CONFIGS {
 			let bytes = base2048::decode(config).unwrap();
 			let decompressed = deflate_decompress(bytes).unwrap();
-			let prefs: Preferences = bincode::deserialize(&decompressed).unwrap();
+			let prefs = Preferences::from_bincode(&decompressed).unwrap();
 			test_round_trip(&prefs, false);
 			test_round_trip(&prefs, true);
 		}
 	}
 
 	fn test_round_trip(input: &Preferences, compression: bool) {
-		let serialized = bincode::serialize(input).unwrap();
+		let serialized = input.to_bincode().unwrap();
 		let compressed = if compression { deflate_compress(serialized).unwrap() } else { serialized };
 		let decompressed = if compression { deflate_decompress(compressed).unwrap() } else { compressed };
-		let deserialized: Preferences = bincode::deserialize(&decompressed).unwrap();
+		let deserialized = Preferences::from_bincode(&decompressed).unwrap();
 		assert_eq!(*input, deserialized);
+	}
+
+	/// A code as the old plain-bincode exporter wrote it: upstream fields, optionally + geo_filter.
+	fn legacy_code(prefs: &Preferences, with_geo: bool) -> Vec<u8> {
+		let mut bytes = bincode::serialize(prefs).unwrap();
+		let newer = (
+			&prefs.clean_urls,
+			&prefs.posts_per_page,
+			&prefs.max_comment_thread_depth,
+			&prefs.more_replies_new_page,
+			&prefs.light_theme,
+			&prefs.dark_theme,
+		);
+		let mut cut = bincode::serialized_size(&newer).unwrap() as usize;
+		if !with_geo {
+			cut += bincode::serialized_size(&prefs.geo_filter).unwrap() as usize;
+		}
+		bytes.truncate(bytes.len() - cut);
+		bytes
+	}
+
+	fn sample_prefs() -> Preferences {
+		Preferences {
+			theme: "dracula".to_owned(),
+			layout: "card".to_owned(),
+			subscriptions: vec!["rust".to_owned(), "pics".to_owned()],
+			filters: vec!["politics".to_owned()],
+			geo_filter: "CH".to_owned(),
+			clean_urls: "on".to_owned(),
+			posts_per_page: "50".to_owned(),
+			max_comment_thread_depth: "3".to_owned(),
+			more_replies_new_page: "on".to_owned(),
+			light_theme: "gruvboxlight".to_owned(),
+			dark_theme: "nord".to_owned(),
+			..Preferences::default()
+		}
+	}
+
+	#[test]
+	fn test_legacy_upstream_code_gets_defaults() {
+		let prefs = sample_prefs();
+		let decoded = Preferences::from_bincode(&legacy_code(&prefs, false)).unwrap();
+		assert_eq!(decoded.theme, "dracula");
+		assert_eq!(decoded.subscriptions, prefs.subscriptions);
+		assert_eq!(decoded.filters, prefs.filters);
+		assert_eq!(decoded.geo_filter, "GLOBAL");
+		assert_eq!(decoded.clean_urls, "off");
+		assert_eq!(decoded.posts_per_page, "");
+		assert_eq!(decoded.max_comment_thread_depth, "");
+		assert_eq!(decoded.more_replies_new_page, "off");
+	}
+
+	#[test]
+	fn test_legacy_code_with_geo_filter_keeps_it() {
+		let decoded = Preferences::from_bincode(&legacy_code(&sample_prefs(), true)).unwrap();
+		assert_eq!(decoded.geo_filter, "CH");
+		assert_eq!(decoded.clean_urls, "off");
+	}
+
+	#[test]
+	fn test_revision_2_code_gets_defaults_for_newer_fields() {
+		// sample_prefs() as exported before revision 3
+		let code = "ϿςഔºņÀγºಢȋĘ௦Ģઙėऑଓਨҕ۲۲ઑၔͰâȆҬÕΪ༃ՌПษϡઓචฆཇგႣၮഌౘ૪അ༎";
+		let bytes = deflate_decompress(base2048::decode(code).unwrap()).unwrap();
+		let decoded = Preferences::from_bincode(&bytes).unwrap();
+		assert_eq!(
+			decoded,
+			Preferences {
+				more_replies_new_page: "off".to_owned(),
+				light_theme: String::new(),
+				dark_theme: String::new(),
+				..sample_prefs()
+			}
+		);
+	}
+
+	#[test]
+	fn test_revision_3_code_gets_built_in_system_themes() {
+		// sample_prefs() as exported before revision 4
+		let code = "ϿΡഗऋÃÀσÃຖƅŔ૨åะόϖŁƔԹ໔۲ฦƚ༩ʅရԂ৬ġԳपႴѦϵǆȇՌസ४ඎწမÐ೪ణตଣ།";
+		let bytes = deflate_decompress(base2048::decode(code).unwrap()).unwrap();
+		let decoded = Preferences::from_bincode(&bytes).unwrap();
+		assert_eq!(
+			decoded,
+			Preferences {
+				light_theme: String::new(),
+				dark_theme: String::new(),
+				..sample_prefs()
+			}
+		);
+	}
+
+	#[test]
+	fn test_revisioned_code_round_trips_all_fields() {
+		let prefs = sample_prefs();
+		let bytes = prefs.to_bincode().unwrap();
+		assert_eq!(bytes[0], super::REVISIONED_PREFS_MARKER);
+		assert_eq!(Preferences::from_bincode(&bytes).unwrap(), prefs);
+	}
+
+	#[test]
+	fn test_code_string_round_trip() {
+		let prefs = sample_prefs();
+		let code = prefs.to_bincode_str().unwrap();
+		let bytes = deflate_decompress(base2048::decode(&code).unwrap()).unwrap();
+		assert_eq!(Preferences::from_bincode(&bytes).unwrap(), prefs);
+	}
+
+	#[test]
+	fn page_feed_url_maps_pages_to_feeds() {
+		let feed = |url: &str| page_feed_url(url, "", &[], "");
+		assert_eq!(feed("/"), Some("/.rss".to_string()));
+		assert_eq!(feed("/top?t=week&after=t3_x"), Some("/top.rss?t=week".to_string()));
+		assert_eq!(feed("/r/rust"), Some("/r/rust.rss".to_string()));
+		assert_eq!(feed("/r/SkincareAddiction/top?t=year"), Some("/r/SkincareAddiction/top.rss?t=year".to_string()));
+		assert_eq!(feed("/r/rust+linux/new"), Some("/r/rust+linux/new.rss".to_string()));
+		assert_eq!(feed("/r/rust/wiki"), None);
+		assert_eq!(
+			feed("/r/rust/comments/abc123/some_title/def456?sort=top"),
+			Some("/r/rust/comments/abc123.rss?sort=top".to_string())
+		);
+		assert_eq!(feed("/comments/abc123"), Some("/comments/abc123.rss".to_string()));
+		assert_eq!(feed("/u/spez"), Some("/user/spez.rss".to_string()));
+		assert_eq!(feed("/user/spez/comments?sort=top&t=all"), Some("/user/spez/comments.rss?sort=top&t=all".to_string()));
+		assert_eq!(feed("/user/spez/saved"), None);
+		assert_eq!(feed("/search?q=rust+lang&sort=new&after=t3_x"), Some("/search.rss?q=rust+lang&sort=new".to_string()));
+		assert_eq!(feed("/r/rust/search?q=async&restrict_sr=on"), Some("/r/rust/search.rss?q=async&restrict_sr=on".to_string()));
+		assert_eq!(feed("/search?q=rust&type=sr_user"), None);
+		assert_eq!(feed("/settings"), None);
+	}
+
+	#[test]
+	fn page_feed_url_front_page_uses_preferences() {
+		let subs = vec!["rust".to_string(), "linux".to_string()];
+		assert_eq!(page_feed_url("/", "", &subs, ""), Some("/r/rust+linux.rss".to_string()));
+		assert_eq!(page_feed_url("/top?t=day", "default", &subs, ""), Some("/r/rust+linux/top.rss?t=day".to_string()));
+		assert_eq!(page_feed_url("/new", "all", &subs, ""), Some("/r/all/new.rss".to_string()));
+	}
+
+	#[test]
+	fn page_feed_url_names_the_default_sort() {
+		let subs = vec!["rust".to_string()];
+		assert_eq!(page_feed_url("/r/rust", "", &[], "new"), Some("/r/rust/new.rss".to_string()));
+		assert_eq!(page_feed_url("/r/rust/top?t=day", "", &[], "new"), Some("/r/rust/top.rss?t=day".to_string()));
+		assert_eq!(page_feed_url("/", "", &[], "rising"), Some("/rising.rss".to_string()));
+		assert_eq!(page_feed_url("/", "", &subs, "new"), Some("/r/rust/new.rss".to_string()));
+		assert_eq!(page_feed_url("/top", "", &subs, "new"), Some("/r/rust/top.rss".to_string()));
+		assert_eq!(page_feed_url("/r/rust", "", &[], "bogus"), Some("/r/rust.rss".to_string()));
+		assert_eq!(page_feed_url("/user/spez", "", &[], "new"), Some("/user/spez.rss".to_string()));
+	}
+
+	#[test]
+	fn prefix_relative_urls_works() {
+		let html = r#"<a href="/r/rust">r/rust</a><img src="/preview/pre/x.png"><a href="//example.com">x</a><a href="https://a.b/c">y</a>"#;
+		assert_eq!(
+			prefix_relative_urls(html, "https://redlib.example/"),
+			r#"<a href="https://redlib.example/r/rust">r/rust</a><img src="https://redlib.example/preview/pre/x.png"><a href="//example.com">x</a><a href="https://a.b/c">y</a>"#
+		);
+		assert_eq!(prefix_relative_urls(html, ""), html);
 	}
 }

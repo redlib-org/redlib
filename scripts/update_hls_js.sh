@@ -14,5 +14,6 @@ LICENSE="// @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
 echo "$LICENSE" > ../static/hls.min.js
 
 curl -s https://cdn.jsdelivr.net/npm/hls.js@${LATEST_TAG}/dist/hls.min.js >> ../static/hls.min.js
+printf '\n// @license-end\n' >> ../static/hls.min.js
 
 echo "Update complete. The latest hls.js (${LATEST_TAG}) has been saved to static/hls.min.js."

@@ -1,0 +1,276 @@
+{
+  "data": {
+    "postInfoById": {
+      "commentForest": {
+        "trees": [
+          {
+            "depth": 0,
+            "parentId": null,
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rkz3g1shaxs",
+              "authorInfo": {
+                "name": "aubreynewmanoc"
+              },
+              "content": {
+                "markdown": "Red Bull Stratos in 2012.\n\n  \nThey spent somewhere around $30 million to put Felix Baumgartner in a capsule, float him 24 miles up into the stratosphere with a massive helium balloon, and have him jump out to break the speed of sound in free fall. \n\n  \nOver 8 million people watched the livestream on YouTube, completely blowing away the platform's concurrent viewership record at the time. It dominated international headlines for days, aired across every major television network, and had a giant Red Bull logo front and center in virtually every frame. \n\n  \nFor roughly the cost of a few Super Bowl commercial slots, they pulled off a legitimate aerospace milestone and cemented their reputation as a stunt and media company that just happens to sell energy drinks on the side.",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"Red Bull Stratos in 2012.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"They spent somewhere around $30 million to put Felix Baumgartner in a capsule, float him 24 miles up into the stratosphere with a massive helium balloon, and have him jump out to break the speed of sound in free fall.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Over 8 million people watched the livestream on YouTube, completely blowing away the platform's concurrent viewership record at the time. It dominated international headlines for days, aired across every major television network, and had a giant Red Bull logo front and center in virtually every frame.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"For roughly the cost of a few Super Bowl commercial slots, they pulled off a legitimate aerospace milestone and cemented their reputation as a stunt and media company that just happens to sell energy drinks on the side.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T12:17:41.003000+0000",
+              "editedAt": null,
+              "score": 3529,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 1,
+            "parentId": "t1_19rkz3g1shaxs",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rl3ut2avijn",
+              "authorInfo": {
+                "name": "jujubean14"
+              },
+              "content": {
+                "markdown": "I feel like this is kind of red bull's approach to advertising and marketing and honestly I'll take it over 12,000 liberty mutual ads invading every facet of my life",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"I feel like this is kind of red bull's approach to advertising and marketing and honestly I'll take it over 12,000 liberty mutual ads invading every facet of my life\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T14:04:24.258000+0000",
+              "editedAt": null,
+              "score": 1310,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 2,
+            "parentId": "t1_19rl3ut2avijn",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rl4pye9fw6a",
+              "authorInfo": {
+                "name": "Kloppite16"
+              },
+              "content": {
+                "markdown": "They pump millions into athletes who are willing to put their bodies and lives on the line while wearing a Red Bull helmet. \n\nIt's pretty genius really because people in extreme sports do it for free anyway but Red Bull came along and professionalised it, made competitions out of it, etc. And when someone does something extreme that goes viral they are covered in Red Bull clothing. \n\nHonestly I'm impressed with what Redbull have achieved. When they began Coca-Cola & Pepsi and all their sub brands dominated soft drinks. Red Bull came in an took on those giants and carved out a niche of energy drinks and now they dominate that segment. ",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"They pump millions into athletes who are willing to put their bodies and lives on the line while wearing a Red Bull helmet.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"It's pretty genius really because people in extreme sports do it for free anyway but Red Bull came along and professionalised it, made competitions out of it, etc. And when someone does something extreme that goes viral they are covered in Red Bull clothing.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Honestly I'm impressed with what Redbull have achieved. When they began Coca-Cola \\u0026 Pepsi and all their sub brands dominated soft drinks. Red Bull came in an took on those giants and carved out a niche of energy drinks and now they dominate that segment.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T14:23:48.169000+0000",
+              "editedAt": null,
+              "score": 614,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 3,
+            "parentId": "t1_19rl4pye9fw6a",
+            "more": {
+              "count": 15,
+              "cursor": "Y29tbWVudHRyZWU6YmNiZTFjZTMsOjozOmQxOnQxXzE5cmw0cHllOWZ3NmE=",
+              "isTooDeepForCount": false
+            },
+            "node": null
+          },
+          {
+            "depth": 2,
+            "parentId": "t1_19rl3ut2avijn",
+            "more": {
+              "count": 11,
+              "cursor": "Y29tbWVudHRyZWU6Zjc2Y2JlNmUsOjoyOmV4OixXT1InZjl3dUE=",
+              "isTooDeepForCount": false
+            },
+            "node": null
+          },
+          {
+            "depth": 1,
+            "parentId": "t1_19rkz3g1shaxs",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rlarwd0bkps",
+              "authorInfo": {
+                "name": "Emotional_Deodorant"
+              },
+              "content": {
+                "markdown": "And Felix's consultant/trainer for the stunt was none other than Col. Joe Kittinger, who did mostly the same stunt *50 years* earlier, but without the knowledge, science or equipment that Baumgartner had. Kittinger's jump also still holds the record for the longest free fall in terms of time, as well.\n\nThis was an exploratory mission for NASA and the fledgling space program. Scientists at the time had little understanding of what no air pressure would actually do to a human body, or effects on breathing, -60° temps or traveling at nearly Mach 1 with (what were not understood at the time to be) minimal protections. Kittinger's jump gave NASA a lot of data.\n\nKittinger floated up about 20 miles. He was the first person to see the curvature of the earth and what the southwestern US looked like from space. He remarked on how stark the contrast was between the bright blue atmosphere below and the black void of space above.\n\nHis suit was made with the best knowledge available at the time, but showed NASA the major upgrades they would need for America's future astronauts. The seal near his wrist developed a hairline split and his hand swelled to the size of a basketball before he even reached his jump altitude. Despite intense pain, he kept going up. It's even thought that the \"first\" man in space 4 years later, Yuri Gargarin, had his suit design modified after Soviets learned what NASA did.\n\nNASA engineers also insisted on a double-fault parachute system, which it turns out Kittinger needed. He was falling at 614mph (the fastest a human has ever traveled without a vehicle until Baumgartner) and immense G-forces caused him to spin at 120 rpm. This caused him to black out repeatedly, but his chutes fired automatically at the times NASA had calculated to slow his descent. Baumgartner's jump 50 years later had protections against spin.\n\nKittinger has a small park built in his honor in Orlando, FL.",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"f\":[[2,115,8]],\"t\":\"And Felix's consultant/trainer for the stunt was none other than Col. Joe Kittinger, who did mostly the same stunt 50 years earlier, but without the knowledge, science or equipment that Baumgartner had. Kittinger's jump also still holds the record for the longest free fall in terms of time, as well.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"This was an exploratory mission for NASA and the fledgling space program. Scientists at the time had little understanding of what no air pressure would actually do to a human body, or effects on breathing, -60\\u00b0 temps or traveling at nearly Mach 1 with (what were not understood at the time to be) minimal protections. Kittinger's jump gave NASA a lot of data.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Kittinger floated up about 20 miles. He was the first person to see the curvature of the earth and what the southwestern US looked like from space. He remarked on how stark the contrast was between the bright blue atmosphere below and the black void of space above.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"His suit was made with the best knowledge available at the time, but showed NASA the major upgrades they would need for America's future astronauts. The seal near his wrist developed a hairline split and his hand swelled to the size of a basketball before he even reached his jump altitude. Despite intense pain, he kept going up. It's even thought that the \\\"first\\\" man in space 4 years later, Yuri Gargarin, had his suit design modified after Soviets learned what NASA did.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"NASA engineers also insisted on a double-fault parachute system, which it turns out Kittinger needed. He was falling at 614mph (the fastest a human has ever traveled without a vehicle until Baumgartner) and immense G-forces caused him to spin at 120 rpm. This caused him to black out repeatedly, but his chutes fired automatically at the times NASA had calculated to slow his descent. Baumgartner's jump 50 years later had protections against spin.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Kittinger has a small park built in his honor in Orlando, FL.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T16:39:32.050000+0000",
+              "editedAt": "2026-10-24T17:30:04.921000+0000",
+              "score": 244,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 2,
+            "parentId": "t1_19rlarwd0bkps",
+            "more": {
+              "count": 1,
+              "cursor": "Y29tbWVudHRyZWU6ZDM0N2YzNTAsOjoyOmQxOnQxXzE5cmxhcndkMGJrcHM=",
+              "isTooDeepForCount": false
+            },
+            "node": null
+          },
+          {
+            "depth": 1,
+            "parentId": "t1_19rkz3g1shaxs",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rl1ingublwh",
+              "authorInfo": {
+                "name": "lnnrt01"
+              },
+              "content": {
+                "markdown": "Baumgartner dying in a parachuting accident feels tragically ironic. RIP",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"Baumgartner dying in a parachuting accident feels tragically ironic. RIP\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T13:11:59.627000+0000",
+              "editedAt": null,
+              "score": 134,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 2,
+            "parentId": "t1_19rl1ingublwh",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rl1uxukp869",
+              "authorInfo": {
+                "name": "zerbey"
+              },
+              "content": {
+                "markdown": "Paragliding, but yeah it was sadly ironic but unfortunately a common occurrence among extreme athletes.",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"Paragliding, but yeah it was sadly ironic but unfortunately a common occurrence among extreme athletes.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T13:19:38.806000+0000",
+              "editedAt": null,
+              "score": 117,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 2,
+            "parentId": "t1_19rl1ingublwh",
+            "more": {
+              "count": 12,
+              "cursor": "Y29tbWVudHRyZWU6Y2M2NWI3ZGQsOjoyOmV4OixXT0VZQX1RaUA=",
+              "isTooDeepForCount": false
+            },
+            "node": null
+          },
+          {
+            "depth": 1,
+            "parentId": "t1_19rkz3g1shaxs",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rlpor6pcqe8",
+              "authorInfo": {
+                "name": "C0rona"
+              },
+              "content": {
+                "markdown": "The most interesting thing about this—from a PR perspective—is that only two years later, the height record (but not the speed record) was broken by Google exec Alan Eustace in his own jump and the public did not give a single shit. He didn't have a big PR machine spun up for it, even though he probably could have as a high-ranking Google executive.\n\nNot only was he over a decade older than Baumgartner, he didn't even use a capsule for his ascent. He was just hanging from the balloon as it dragged him into the stratosphere. Dude has balls of steel even though he very much looks like you'd imagine a VP of engineering to look like.",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"The most interesting thing about this\\u2014from a PR perspective\\u2014is that only two years later, the height record (but not the speed record) was broken by Google exec Alan Eustace in his own jump and the public did not give a single shit. He didn't have a big PR machine spun up for it, even though he probably could have as a high-ranking Google executive.\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Not only was he over a decade older than Baumgartner, he didn't even use a capsule for his ascent. He was just hanging from the balloon as it dragged him into the stratosphere. Dude has balls of steel even though he very much looks like you'd imagine a VP of engineering to look like.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T22:13:52.730000+0000",
+              "editedAt": null,
+              "score": 39,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 1,
+            "parentId": "t1_19rkz3g1shaxs",
+            "more": null,
+            "node": {
+              "__typename": "Comment",
+              "id": "t1_19rl810d9xtpc",
+              "authorInfo": {
+                "name": "jonathanherrerabl"
+              },
+              "content": {
+                "markdown": "Having Joe Kittinger as his CapCom was the coolest part of the whole thing. The guy who held the original record for over 50 years, jumping from an open gondola back in 1960, was the only voice in Felix's ear talking him through the jump.",
+                "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"Having Joe Kittinger as his CapCom was the coolest part of the whole thing. The guy who held the original record for over 50 years, jumping from an open gondola back in 1960, was the only voice in Felix's ear talking him through the jump.\"}],\"e\":\"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-24T15:37:56.883000+0000",
+              "editedAt": null,
+              "score": 10,
+              "isScoreHidden": false,
+              "isStickied": false,
+              "distinguishedAs": null,
+              "authorFlair": null,
+              "awardings": [],
+              "isAdminTakedown": false,
+              "isRemoved": false
+            }
+          },
+          {
+            "depth": 0,
+            "parentId": null,
+            "more": {
+              "count": 478,
+              "cursor": "Y29tbWVudHRyZWU6ODUwMTIwZjEsOjowOmV4OixXTydwfXJIdmE6I1FORD5FeCxzS0hLLUsmd1c5XEEmeHMnbiotUHtHJyR3Jno2UUk2UnddKW1YalxuPGpFOjUjSDJVWztwJDRcRSNcZFlyZDhGLXppVClXU2lwbCI5bzZPRyV3KEtPXCZobzIsfUVjVXxINFZ2VkZIVzZyPngpYyJAdnl+KnpaMFZLRH5dOG02Pz8iaENoKk0+YGR1bVxFJE0pWD8qX0RqYydIK1FcYV10T24iTEZfKzNoNilrejkkbjs/KXZebTledi1QMEUuLitPQjZML2xway40eFpCeERIIkt9O0laWXgvcjRtWDJEU283PERLaTRKWSwhKCJ5b1pzYD9TYWQtYHQlLk8rWmknSCYkT1kuRCJzZGRIXj8iPXl8P0w4Kyo4RFxUIkp+JzRoakV5Zj1vM0lGK3A5fSMoSik8ZERGNjxDKVE+VmJST3kqTjtZZydDTidrLn0jSGo0QlRRMmhGT15vKixTQXJ1KjwoUFQoaDBtQ3hzIlooaWZEWSJEQm5aI0R3SmopKS8kdzQ+ODlPbmp6SjBueWM2XVJaUi5afk9nUycsKDRDIkBuVklXUiI3UTVjNjsiU0dUdUklJVVnSmEmSCR2djx5O2pUMnEwTylEMjNjJVtTJmVORiZedmVPeUUiOCZFdylYJENaSDwyPCcmSUA5Wk8qKyx9M3EidjVsIigoaGk0OztHejZZfilPIi1IQTVoKiVGNmkpTz0/ZjUubzQtRz12K3o2JEhaQWg0dHdLanosfWg3VCpUJyhwREFIYSYiIkUxR2Z5aVk+MX1WJFFVLVdPfit3J2d4PyhzODNzSUEnXjZ6fWJwI2svbHtwQDdtZUo4OU8pUT5PSntcXiNNQTM5Ly4icmhfOCghczwrQlppeS8hY3pwe0NjaCglYCkzX2pp",
+              "isTooDeepForCount": false
+            },
+            "node": null
+          }
+        ]
+      }
+    }
+  }
+}

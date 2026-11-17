@@ -7,11 +7,12 @@ use clap::{Arg, ArgAction, Command};
 use std::sync::LazyLock;
 
 use futures_lite::FutureExt;
-use hyper::{header::HeaderValue, Body, Request, Response};
+use hyper::{header::HeaderValue, Request, Response};
 use log::{info, warn};
-use redlib::client::{canonical_path, proxy, rate_limit_check, CLIENT};
+use redlib::body::Body;
+use redlib::client::{canonical_path, proxy, CLIENT};
 use redlib::server::{self, RequestExt};
-use redlib::utils::{error, redirect, ThemeAssets};
+use redlib::utils::{error, get_source_url, redirect, ThemeAssets};
 use redlib::{config, duplicates, headers, instance_info, post, search, settings, subreddit, user};
 
 use redlib::client::OAUTH_CLIENT;
@@ -89,12 +90,45 @@ async fn resource(body: &str, content_type: &str, cache: bool) -> Result<Respons
 	Ok(res)
 }
 
+/// 503 when most recent post requests were blocked by Reddit, for status checks.
+async fn reddit_health() -> Result<Response<Body>, String> {
+	let (healthy, summary) = redlib::reddit_health::status();
+	Ok(
+		Response::builder()
+			.status(if healthy { 200 } else { 503 })
+			.header("content-type", "text/plain")
+			.header("Cache-Control", "no-store")
+			.body(summary.into())
+			.unwrap_or_default(),
+	)
+}
+
+/// shields.io endpoint badge of the same status, always 200 so shields renders it.
+async fn reddit_badge() -> Result<Response<Body>, String> {
+	Ok(
+		Response::builder()
+			.header("content-type", "application/json")
+			.header("Cache-Control", "no-store")
+			.body(redlib::reddit_health::badge().into())
+			.unwrap_or_default(),
+	)
+}
+
 async fn style() -> Result<Response<Body>, String> {
 	let mut res = include_str!("../static/style.css").to_string();
 	for file in ThemeAssets::iter() {
 		res.push('\n');
 		let theme = ThemeAssets::get(file.as_ref()).unwrap();
-		res.push_str(std::str::from_utf8(theme.data.as_ref()).unwrap());
+		let css = std::str::from_utf8(theme.data.as_ref()).unwrap();
+		res.push_str(css);
+		// `light-<theme>` and `dark-<theme>`: the theme only while the browser is in that scheme
+		let name = file.trim_end_matches(".css");
+		for scheme in ["light", "dark"] {
+			let scoped = css
+				.replace(&format!(".{name} "), &format!(".{scheme}-{name} "))
+				.replace(&format!(".{name})"), &format!(".{scheme}-{name})"));
+			res.push_str(&format!("\n@media (prefers-color-scheme: {scheme}) {{\n{scoped}}}\n"));
+		}
 	}
 	Ok(
 		Response::builder()
@@ -114,6 +148,11 @@ async fn main() {
 	// Initialize logger
 	pretty_env_logger::init();
 
+	// The listener settings can also come from `REDLIB_*` settings (env or
+	// redlib.toml); the flags and the older env names take precedence.
+	let setting_or = |key: &str, default: &str| -> &'static str { config::get_setting(key).unwrap_or_else(|| default.to_string()).leak() };
+	let setting_on = |key: &str| config::get_setting(key).as_deref() == Some("on");
+
 	let matches = Command::new("Redlib")
 		.version(env!("CARGO_PKG_VERSION"))
 		.about("Private front-end for Reddit written in Rust ")
@@ -132,7 +171,7 @@ async fn main() {
 				.long("address")
 				.value_name("ADDRESS")
 				.help("Sets address to listen on")
-				.default_value("[::]")
+				.default_value(setting_or("REDLIB_LISTEN_ADDRESS", "[::]"))
 				.num_args(1),
 		)
 		.arg(
@@ -142,7 +181,8 @@ async fn main() {
 				.value_name("PORT")
 				.env("PORT")
 				.help("Port to listen on")
-				.default_value("8080")
+				.default_value(setting_or("REDLIB_LISTEN_PORT", "8080"))
+				.value_parser(clap::value_parser!(u16))
 				.action(ArgAction::Set)
 				.num_args(1),
 		)
@@ -152,38 +192,53 @@ async fn main() {
 				.long("hsts")
 				.value_name("EXPIRE_TIME")
 				.help("HSTS header to tell browsers that this site should only be accessed over HTTPS")
-				.default_value("604800")
+				.default_value(setting_or("REDLIB_HSTS", "604800"))
+				.num_args(1),
+		)
+		.arg(
+			Arg::new("cacert")
+				.long("cacert")
+				.value_name("FILE")
+				.help("Trust only the CA certificates in this PEM file for upstream TLS, to inspect traffic through a proxy (debugging only)")
 				.num_args(1),
 		)
 		.get_matches();
 
-	match rate_limit_check().await {
-		Ok(()) => {
-			info!("[✅] Rate limit check passed");
-		}
-		Err(e) => {
-			let mut message = format!("Rate limit check failed: {e}");
-			message += "\nThis may cause issues with the rate limit.";
-			message += "\nPlease report this error with the above information.";
-			message += "\nhttps://github.com/redlib-org/redlib/issues/new?assignees=sigaloid&labels=bug&title=%F0%9F%90%9B+Bug+Report%3A+Rate+limit+mismatch";
-			warn!("{}", message);
-			eprintln!("{message}");
+	if let Some(path) = &matches.get_one::<String>("cacert").cloned().or_else(|| config::get_setting("REDLIB_CACERT")) {
+		match std::fs::read(path).map_err(|e| e.to_string()).and_then(|pem| redlib::client::ca_store(&pem)) {
+			Ok(store) => {
+				_ = redlib::client::CA_STORE.set(store);
+				warn!("--cacert / REDLIB_CACERT: upstream TLS now trusts only the certificates in {path}. This is for debugging.");
+			}
+			Err(e) => {
+				eprintln!("--cacert / REDLIB_CACERT {path}: {e}");
+				std::process::exit(1);
+			}
 		}
 	}
 
+	redlib::backends::log_orders();
+
 	let address = matches.get_one::<String>("address").unwrap();
-	let port = matches.get_one::<String>("port").unwrap();
+	let port = matches.get_one::<u16>("port").unwrap();
 	let hsts = matches.get_one("hsts").map(|m: &String| m.as_str());
 
-	let ipv4_only = std::env::var("IPV4_ONLY").is_ok() || matches.get_flag("ipv4-only");
-	let ipv6_only = std::env::var("IPV6_ONLY").is_ok() || matches.get_flag("ipv6-only");
+	// `-4`/`-6` on the command line decide alone; otherwise the env names, then the settings.
+	let (ipv4_only, ipv6_only) = match (matches.get_flag("ipv4-only"), matches.get_flag("ipv6-only")) {
+		(false, false) => (
+			std::env::var("IPV4_ONLY").is_ok() || setting_on("REDLIB_IPV4_ONLY"),
+			std::env::var("IPV6_ONLY").is_ok() || setting_on("REDLIB_IPV6_ONLY"),
+		),
+		flags => flags,
+	};
+	redlib::client::IPV6_ONLY.store(ipv6_only, std::sync::atomic::Ordering::Relaxed);
 
 	let listener = if ipv4_only {
 		format!("0.0.0.0:{port}")
 	} else if ipv6_only {
 		format!("[::]:{port}")
 	} else {
-		[address, ":", port].concat()
+		format!("{address}:{port}")
 	};
 
 	println!("Starting Redlib...");
@@ -218,6 +273,10 @@ async fn main() {
 		}
 	}
 
+	app.at("/healthz").get(|_| resource("ok", "text/plain", false).boxed());
+	app.at("/healthz/reddit").get(|_| reddit_health().boxed());
+	app.at("/healthz/reddit.json").get(|_| reddit_badge().boxed());
+
 	// Read static files
 	app.at("/style.css").get(|_| style().boxed());
 	app
@@ -248,6 +307,9 @@ async fn main() {
 		.at("/playHLSVideo.js")
 		.get(|_| resource(include_str!("../static/playHLSVideo.js"), "text/javascript", false).boxed());
 	app
+		.at("/autoplayVisible.js")
+		.get(|_| resource(include_str!("../static/autoplayVisible.js"), "text/javascript", false).boxed());
+	app
 		.at("/hls.min.js")
 		.get(|_| resource(include_str!("../static/hls.min.js"), "text/javascript", false).boxed());
 	app
@@ -257,13 +319,32 @@ async fn main() {
 		.at("/check_update.js")
 		.get(|_| resource(include_str!("../static/check_update.js"), "text/javascript", false).boxed());
 	app.at("/copy.js").get(|_| resource(include_str!("../static/copy.js"), "text/javascript", false).boxed());
+	app
+		.at("/themePreview.js")
+		.get(|_| resource(include_str!("../static/themePreview.js"), "text/javascript", false).boxed());
+	app
+		.at("/static/keyboardcommands.js")
+		.get(|_| resource(include_str!("../static/keyboardcommands.js"), "text/javascript", false).boxed());
+	app
+		.at("/downloadGallery.js")
+		.get(|_| resource(include_str!("../static/downloadGallery.js"), "text/javascript", false).boxed());
+	app
+		.at("/loadMoreComments.js")
+		.get(|_| resource(include_str!("../static/loadMoreComments.js"), "text/javascript", false).boxed());
+	app
+		.at("/searchTabs.js")
+		.get(|_| resource(include_str!("../static/searchTabs.js"), "text/javascript", false).boxed());
 
 	app.at("/commits.atom").get(|_| async move { proxy_commit_info().await }.boxed());
 	app.at("/instances.json").get(|_| async move { proxy_instances().await }.boxed());
 
 	// Proxy media through Redlib
-	app.at("/vid/:id/:size").get(|r| proxy(r, "https://v.redd.it/{id}/DASH_{size}").boxed());
+	app.at("/vid/:id/:prefix/:size").get(|r| proxy(r, "https://v.redd.it/{id}/{prefix}_{size}").boxed());
 	app.at("/hls/:id/*path").get(|r| proxy(r, "https://v.redd.it/{id}/{path}").boxed());
+	app.at("/packaged/*path").get(|r| proxy(r, "https://packaged-media.redd.it/{path}").boxed());
+	app
+		.at("/packaged-external/*path")
+		.get(|r| proxy(r, "https://external-packaged-media.redd.it/{path}").boxed());
 	app.at("/img/*path").get(|r| proxy(r, "https://i.redd.it/{path}").boxed());
 	app.at("/thumb/:point/:id").get(|r| proxy(r, "https://{point}.thumbs.redditmedia.com/{id}").boxed());
 	app.at("/emoji/:id/:name").get(|r| proxy(r, "https://emoji.redditmedia.com/{id}/{name}").boxed());
@@ -276,6 +357,13 @@ async fn main() {
 	app.at("/preview/:loc/:id").get(|r| proxy(r, "https://{loc}view.redd.it/{id}").boxed());
 	app.at("/style/*path").get(|r| proxy(r, "https://styles.redditmedia.com/{path}").boxed());
 	app.at("/static/*path").get(|r| proxy(r, "https://www.redditstatic.com/{path}").boxed());
+	if redlib::utils::enable_giphy() {
+		app.at("/giphy/:id/:ext").get(|r| proxy(r, "https://media.giphy.com/media/{id}/giphy.{ext}").boxed());
+	}
+
+	if redlib::utils::enable_redgifs() {
+		app.at("/redgifs/*path").get(|req| redlib::redgifs::handler(req).boxed());
+	}
 
 	// Browse user profile
 	app
@@ -285,7 +373,10 @@ async fn main() {
 	app.at("/u/:name/comments/:id/:title/:comment_id").get(|r| post::item(r).boxed());
 
 	app.at("/user/[deleted]").get(|req| error(req, "User has deleted their account").boxed());
+	app.at("/u/:name.rss").get(|r| user::rss(r).boxed());
+	app.at("/u/:name/:listing.rss").get(|r| user::rss(r).boxed());
 	app.at("/user/:name.rss").get(|r| user::rss(r).boxed());
+	app.at("/user/:name/:listing.rss").get(|r| user::rss(r).boxed());
 	app.at("/user/:name").get(|r| user::profile(r).boxed());
 	app.at("/user/:name/:listing").get(|r| user::profile(r).boxed());
 	app.at("/user/:name/comments/:id").get(|r| post::item(r).boxed());
@@ -298,8 +389,20 @@ async fn main() {
 	app.at("/settings/encoded-restore").post(|r| settings::encoded_restore(r).boxed());
 	app.at("/settings/update").get(|r| settings::update(r).boxed());
 
-	// RSS Subscriptions
+	// RSS Subscriptions. Feeds are built from the JSON API, not Reddit's own feeds.
+	// A trailing slash before the extension (`/r/rust/top/.rss`) is normalized away by the server.
+	app.at("/.rss").get(|r| subreddit::rss(r).boxed());
+	for sort in ["/hot.rss", "/new.rss", "/top.rss", "/rising.rss", "/controversial.rss", "/best.rss"] {
+		app.at(sort).get(|r| subreddit::rss(r).boxed());
+	}
 	app.at("/r/:sub.rss").get(|r| subreddit::rss(r).boxed());
+	app.at("/r/:sub/:sort.rss").get(|r| subreddit::rss(r).boxed());
+	app.at("/r/:sub/search.rss").get(|r| search::rss(r).boxed());
+	app.at("/r/:sub/comments/:id.rss").get(|r| post::rss(r).boxed());
+	app.at("/r/:sub/comments/:id/:title.rss").get(|r| post::rss(r).boxed());
+	app.at("/comments/:id.rss").get(|r| post::rss(r).boxed());
+	app.at("/comments/:id/:title.rss").get(|r| post::rss(r).boxed());
+	app.at("/search.rss").get(|r| search::rss(r).boxed());
 
 	// Subreddit services
 	app
@@ -372,10 +475,26 @@ async fn main() {
 		Box::pin(async move {
 			let sub = req.param("sub").unwrap_or_default();
 			match req.param("id").as_deref() {
-				// Share link
+				// Subreddit post share link
 				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/r/{sub}/s/{id}"), 3).await {
 					Ok(Some(path)) => Ok(redirect(&path)),
 					Ok(None) => error(req, "Post ID is invalid. It may point to a post on a community that has been banned.").await,
+					Err(e) => error(req, &e).await,
+				},
+
+				// Error message for unknown pages
+				_ => error(req, "Nothing here").await,
+			}
+		})
+	});
+	app.at("/u/:name/s/:id").get(|req: Request<Body>| {
+		Box::pin(async move {
+			let name = req.param("name").unwrap_or_default();
+			match req.param("id").as_deref() {
+				// User post share link
+				Some(id) if (8..12).contains(&id.len()) => match canonical_path(format!("/u/{name}/s/{id}"), 3).await {
+					Ok(Some(path)) => Ok(redirect(&path)),
+					Ok(None) => error(req, "Post ID is invalid. It may point to a post on a user that has been banned.").await,
 					Err(e) => error(req, &e).await,
 				},
 
@@ -420,35 +539,38 @@ async fn main() {
 }
 
 pub async fn proxy_commit_info() -> Result<Response<Body>, String> {
-	Ok(
-		Response::builder()
-			.status(200)
-			.header("content-type", "application/atom+xml")
-			.body(Body::from(fetch_commit_info().await))
-			.unwrap_or_default(),
-	)
+	Ok(proxied_text(fetch_commit_info().await, "application/atom+xml"))
 }
 
-#[cached(time = 600)]
-async fn fetch_commit_info() -> String {
-	let url = "https://github.com/redlib-org/redlib/commits/main.atom";
-
-	CLIENT.get(url).send().await.expect("Failed to request GitHub").text().await.expect("Failed to read body")
+#[cached(ttl_secs = 600, result_fallback = true)]
+async fn fetch_commit_info() -> Result<String, String> {
+	fetch_text(&format!("{}/commits/main.atom", get_source_url().trim_end_matches('/'))).await
 }
 
 pub async fn proxy_instances() -> Result<Response<Body>, String> {
-	Ok(
-		Response::builder()
-			.status(200)
-			.header("content-type", "application/json")
-			.body(Body::from(fetch_instances().await))
-			.unwrap_or_default(),
-	)
+	Ok(proxied_text(fetch_instances().await, "application/json"))
 }
 
-#[cached(time = 600)]
-async fn fetch_instances() -> String {
-	let url = "https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json";
+#[cached(ttl_secs = 600, result_fallback = true)]
+async fn fetch_instances() -> Result<String, String> {
+	fetch_text("https://raw.githubusercontent.com/redlib-org/redlib-instances/refs/heads/main/instances.json").await
+}
 
-	CLIENT.get(url).send().await.expect("Failed to request GitHub").text().await.expect("Failed to read body")
+async fn fetch_text(url: &str) -> Result<String, String> {
+	let response = CLIENT.load_full().get(url).send().await.and_then(|r| r.error_for_status()).map_err(|e| e.to_string())?;
+	response.text().await.map_err(|e| e.to_string())
+}
+
+fn proxied_text(body: Result<String, String>, content_type: &str) -> Response<Body> {
+	match body {
+		Ok(body) => Response::builder().status(200).header("content-type", content_type).body(Body::from(body)),
+		Err(e) => {
+			warn!("Failed to fetch from GitHub: {e}");
+			Response::builder()
+				.status(502)
+				.header("content-type", "text/plain")
+				.body(Body::from("Failed to fetch from GitHub"))
+		}
+	}
+	.unwrap_or_default()
 }

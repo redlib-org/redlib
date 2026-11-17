@@ -1,0 +1,50 @@
+{
+  "data": {
+    "redditorInfoByName": {
+      "__typename": "Redditor",
+      "accountType": "USER",
+      "attributes": {},
+      "contributionStats": {
+        "commentCount": 3219,
+        "postCount": 849
+      },
+      "icon": {
+        "url": "https://styles.redditmedia.com/t5_3k30p/styles/profileIcon_uj015iwx9s7g1.png?frame=1&auto=webp&crop=256%3A256%2Csmart&s=54cdc94b6359f38240017e6737d3c56933e0206b"
+      },
+      "id": "t2_1w72",
+      "isAcceptingChats": false,
+      "isAcceptingFollowers": true,
+      "isBlocked": false,
+      "isEmployee": true,
+      "isGilded": true,
+      "isProfileContentFiltered": true,
+      "karma": {
+        "total": 941258
+      },
+      "name": "spez",
+      "prefixedName": "u/spez",
+      "profileExemptedExperiments": [],
+      "profileInfo": {
+        "__typename": "Profile",
+        "advertiserRedirectUrl": null,
+        "createdAt": "2005-06-06T04:00:00.000000+0000",
+        "entities": null,
+        "id": "t5_3k30p",
+        "isNsfw": false,
+        "isSubscribed": false,
+        "publicDescriptionText": "Reddit CEO",
+        "socialLinks": [],
+        "styles": {
+          "profileBanner": null
+        },
+        "subscribersCount": 0,
+        "title": "spez"
+      },
+      "snoovatarIcon": null,
+      "sublineText": "",
+      "trophyCase": {
+        "totalUnlocked": 54
+      }
+    }
+  }
+}

@@ -1,0 +1,513 @@
+{
+  "data": {
+    "search": {
+      "dynamic": {
+        "components": {
+          "__typename": "SearchResultsMainLayout",
+          "appliedState": {
+            "__typename": "SearchAppliedState",
+            "filters": [
+              {
+                "key": "component",
+                "value": "SearchAppliedState"
+              },
+              {
+                "key": "experience_selection",
+                "value": "posts_v2"
+              },
+              {
+                "key": "experience_version",
+                "value": "default"
+              },
+              {
+                "key": "safe_search",
+                "value": "unset"
+              },
+              {
+                "key": "structure_type",
+                "value": "search"
+              }
+            ],
+            "options": [
+              {
+                "key": "mode",
+                "value": "search"
+              }
+            ],
+            "pane": "posts",
+            "query": "aurora borealis"
+          },
+          "main": {
+            "edges": [
+              {
+                "cursor": "",
+                "node": {
+                  "__typename": "SearchListComponent",
+                  "id": "section_2_pipeline_8_dynamic_0_post_search",
+                  "children": [
+                    {
+                      "__typename": "SearchPost",
+                      "id": "t3_1ksx9z1",
+                      "post": {
+                        "__typename": "SubredditPost",
+                        "authorFlair": null,
+                        "authorInfo": {
+                          "__typename": "Redditor",
+                          "accountType": "USER",
+                          "attributes": {},
+                          "iconSmall": {
+                            "url": "https://preview.redd.it/snoovatar/avatars/nftv2_bmZ0X2VpcDE1NToxMzdfZTY0YmI3ZGQwYTEzYWY2MjJlMGRlNjQ1NmQxYmJhZGM4ZDFlYzA5ZF81NTgzNw_rare_12fd4637-ba72-4c0e-9221-ea0ef4d0b750-headshot.png?width=50&height=50&auto=webp&s=282a571640247b5d416b46e25b5b73e7e16fc3a0"
+                          },
+                          "id": "t2_sila1ql1",
+                          "isBlocked": false,
+                          "isCakeDayNow": false,
+                          "name": "Original_Act_3481",
+                          "profile": {
+                            "isNsfw": false
+                          },
+                          "profileExemptedExperiments": [],
+                          "snoovatarIcon": {
+                            "url": "https://i.redd.it/snoovatar/avatars/nftv2_bmZ0X2VpcDE1NToxMzdfZTY0YmI3ZGQwYTEzYWY2MjJlMGRlNjQ1NmQxYmJhZGM4ZDFlYzA5ZF81NTgzNw_rare_12fd4637-ba72-4c0e-9221-ea0ef4d0b750.png"
+                          }
+                        },
+                        "awardings": [],
+                        "commentCount": 37,
+                        "content": null,
+                        "createdAt": "2025-05-22T17:55:42.001000+0000",
+                        "crosspostCount": 1,
+                        "crosspostRoot": null,
+                        "crowdControlLevel": "OFF",
+                        "distinguishedAs": null,
+                        "domain": "v.redd.it",
+                        "editedAt": null,
+                        "flair": null,
+                        "gallery": null,
+                        "id": "t3_1ksx9z1",
+                        "isArchived": false,
+                        "isAuthorBlocked": false,
+                        "isCommercialCommunication": false,
+                        "isContestMode": false,
+                        "isCrosspostable": false,
+                        "isCrowdControlFilterEnabled": false,
+                        "isFollowed": false,
+                        "isGildable": true,
+                        "isHidden": false,
+                        "isLocked": false,
+                        "isNsfw": false,
+                        "isPollIncluded": false,
+                        "isSaved": false,
+                        "isScoreHidden": false,
+                        "isSelfPost": false,
+                        "isSpoiler": false,
+                        "isStickied": false,
+                        "isTranslatable": false,
+                        "isTranslated": false,
+                        "languageCode": "en",
+                        "media": {
+                          "__typename": "Media",
+                          "animated": null,
+                          "still": {
+                            "__typename": "StillMedia",
+                            "altText": null,
+                            "large": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 320,
+                                "width": 320
+                              },
+                              "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?width=320&format=pjpg&auto=webp&s=de125eabb4bf2a001771f4810cb146b22050adef"
+                            },
+                            "medium": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 216,
+                                "width": 216
+                              },
+                              "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?width=216&format=pjpg&auto=webp&s=ee4edf28b92c650234fb2f0d10721e5bf363b74e"
+                            },
+                            "small": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 108,
+                                "width": 108
+                              },
+                              "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?width=108&format=pjpg&auto=webp&s=09aff709cfb89bbf942bc4ec8efc29783900ac03"
+                            },
+                            "source": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 720,
+                                "width": 720
+                              },
+                              "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?format=pjpg&auto=webp&s=6eb7cccc2b6a10d7d78b5c45814374ef26f6ce94"
+                            },
+                            "xlarge": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 640,
+                                "width": 640
+                              },
+                              "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?width=640&format=pjpg&auto=webp&s=0b62d949f4726fb34227f206a3b17a34b1a1c54d"
+                            },
+                            "xxlarge": null,
+                            "xxxlarge": null
+                          },
+                          "streaming": {
+                            "__typename": "StreamingMedia",
+                            "dashUrl": "https://v.redd.it/75h1nj6qgd2f1/DASHPlaylist.mpd?f=sd%2CsubsAll%2ChlsSpecOrder%2Cvp9&v=1&a=1795857328%2CNDNiYmU4ZWQ4N2QxMDI2MzhkNmM4ZDIzN2FlNjZjNjgyMTBlM2M1ZDViY2ZjZDU3YTIyZTU0NWQ2ZjY5NGQxZA%3D%3D",
+                            "dimensions": {
+                              "height": 720,
+                              "width": 720
+                            },
+                            "duration": 25,
+                            "hlsUrl": "https://v.redd.it/75h1nj6qgd2f1/HLSPlaylist.m3u8?f=sd%2CsubsAll%2ChlsSpecOrder%2Cvp9&v=1&a=1795857328%2CZjM5NTVjNzA3OTJlNzRhZDdmMzAxYWFlNDEyNGViMTVlZDE1NzBmOTZmODA1N2FkNDY4NmY0NDQ1ZGJhZmFkYw%3D%3D",
+                            "isGif": false,
+                            "scrubberMediaUrl": "https://v.redd.it/75h1nj6qgd2f1/DASH_96.mp4"
+                          },
+                          "typeHint": "VIDEO",
+                          "video": null
+                        },
+                        "outboundLink": {
+                          "expiresAt": "2026-10-29T14:15:28.189610+0000",
+                          "url": "https://v.redd.it/75h1nj6qgd2f1"
+                        },
+                        "permalink": "/r/oddlysatisfying/comments/1ksx9z1/aurora_borealis_seen_really_close/",
+                        "poll": null,
+                        "postEventInfo": null,
+                        "postTitle": "Aurora Borealis seen really close",
+                        "removedByCategory": null,
+                        "score": 1359,
+                        "subreddit": {
+                          "__typename": "Subreddit",
+                          "id": "t5_2x93b",
+                          "isNsfw": false,
+                          "isQuarantined": false,
+                          "isSubscribed": false,
+                          "isThumbnailsEnabled": true,
+                          "isTitleSafe": true,
+                          "isUserBanned": false,
+                          "modPermissions": null,
+                          "name": "oddlysatisfying",
+                          "prefixedName": "r/oddlysatisfying",
+                          "styles": {
+                            "bannerBackgroundImage": null,
+                            "icon": "https://styles.redditmedia.com/t5_2x93b/styles/communityIcon_eefpey65pli21.png?width=64&frame=1&auto=webp&s=b719c017257d2444f0a1bbe39018a917ea5a6a94",
+                            "legacyIcon": {
+                              "url": "https://b.thumbs.redditmedia.com/65GJujMgAXbydbxxFPYm6eck1YffqR-anhX4-hxnVhQ.png"
+                            },
+                            "legacyPrimaryColor": "#FF66AC",
+                            "primaryColor": "#00A6A5"
+                          },
+                          "subscribersCount": 12753947.0,
+                          "tippingStatus": null,
+                          "title": "Oddly Satisfying",
+                          "type": "PUBLIC",
+                          "whitelistStatus": "ALL_ADS"
+                        },
+                        "suggestedCommentSort": null,
+                        "thumbnail": {
+                          "__typename": "MediaSource",
+                          "dimensions": {
+                            "height": 140,
+                            "width": 140
+                          },
+                          "url": "https://external-preview.redd.it/a214a3ZsNnFnZDJmMTZqHjEiDZ8XozSVCKVkpx-WWX4kCGqFxW9iioDPPr_u.png?width=140&height=140&crop=140%3A140%2Csmart&format=jpg&v=enabled&lthumb=true&s=c7b96e739aa361ec31bdf1341c85824d53366224"
+                        },
+                        "translatedLanguage": null,
+                        "upvoteRatio": 0.984989278055754,
+                        "url": "https://v.redd.it/75h1nj6qgd2f1",
+                        "voteState": "NONE"
+                      },
+                      "presentation": {
+                        "__typename": "SearchPostDefaultPresentation",
+                        "displayTags": []
+                      }
+                    },
+                    {
+                      "__typename": "SearchPost",
+                      "id": "t3_112niod",
+                      "post": {
+                        "__typename": "SubredditPost",
+                        "authorFlair": null,
+                        "authorInfo": {
+                          "__typename": "Redditor",
+                          "accountType": "USER",
+                          "attributes": {},
+                          "iconSmall": {
+                            "url": "https://styles.redditmedia.com/t5_6qdde5/styles/profileIcon_snoodaa25dc1-6bcd-4725-9722-5e4333f5e233-headshot.png?width=50&height=50&frame=1&auto=webp&crop=50%3A50%2Csmart&s=c8641fdd16b5bee87d5bd794ec64471edc8f5190"
+                          },
+                          "id": "t2_q8dkmax9",
+                          "isBlocked": false,
+                          "isCakeDayNow": false,
+                          "name": "LifeParty964",
+                          "profile": {
+                            "isNsfw": false
+                          },
+                          "profileExemptedExperiments": [],
+                          "snoovatarIcon": {
+                            "url": "https://i.redd.it/snoovatar/avatars/daa25dc1-6bcd-4725-9722-5e4333f5e233.png"
+                          }
+                        },
+                        "awardings": [],
+                        "commentCount": 106,
+                        "content": null,
+                        "createdAt": "2023-02-15T02:44:44.891000+0000",
+                        "crosspostCount": null,
+                        "crosspostRoot": null,
+                        "crowdControlLevel": "OFF",
+                        "distinguishedAs": null,
+                        "domain": "self.AskReddit",
+                        "editedAt": null,
+                        "flair": null,
+                        "gallery": null,
+                        "id": "t3_112niod",
+                        "isArchived": true,
+                        "isAuthorBlocked": false,
+                        "isCommercialCommunication": false,
+                        "isContestMode": false,
+                        "isCrosspostable": false,
+                        "isCrowdControlFilterEnabled": false,
+                        "isFollowed": false,
+                        "isGildable": true,
+                        "isHidden": false,
+                        "isLocked": false,
+                        "isNsfw": false,
+                        "isPollIncluded": false,
+                        "isSaved": false,
+                        "isScoreHidden": false,
+                        "isSelfPost": true,
+                        "isSpoiler": false,
+                        "isStickied": false,
+                        "isTranslatable": false,
+                        "isTranslated": false,
+                        "languageCode": "en",
+                        "media": null,
+                        "outboundLink": {
+                          "expiresAt": "2026-10-29T14:15:28.189274+0000",
+                          "url": "https://www.reddit.com/r/AskReddit/comments/112niod/to_people_whove_seen_the_northern_lightsaurora/"
+                        },
+                        "permalink": "/r/AskReddit/comments/112niod/to_people_whove_seen_the_northern_lightsaurora/",
+                        "poll": null,
+                        "postEventInfo": null,
+                        "postTitle": "To people who’ve seen the northern lights/aurora borealis is it worth it to travel to another country to see it or not and why?",
+                        "removedByCategory": null,
+                        "score": 143,
+                        "subreddit": {
+                          "__typename": "Subreddit",
+                          "id": "t5_2qh1i",
+                          "isNsfw": false,
+                          "isQuarantined": false,
+                          "isSubscribed": false,
+                          "isThumbnailsEnabled": false,
+                          "isTitleSafe": true,
+                          "isUserBanned": false,
+                          "modPermissions": null,
+                          "name": "AskReddit",
+                          "prefixedName": "r/AskReddit",
+                          "styles": {
+                            "bannerBackgroundImage": "https://styles.redditmedia.com/t5_2qh1i/styles/bannerBackgroundImage_fs33xogq946f1.png?frame=1&auto=webp&s=9170912bc2b0276e17131afc71ba890709183f10",
+                            "icon": "https://styles.redditmedia.com/t5_2qh1i/styles/communityIcon_p6kb2m6b185b1.png?width=64&frame=1&auto=webp&s=8e8d7fabcc18322bde1c5a388488f19477ed60ed",
+                            "legacyIcon": {
+                              "url": "https://b.thumbs.redditmedia.com/LSHrisQApf1H5F8nWShTx3_KjTOMc3R_ss3kx3XAyXQ.png"
+                            },
+                            "legacyPrimaryColor": "#222222",
+                            "primaryColor": "#D4EAFF"
+                          },
+                          "subscribersCount": 60007636.0,
+                          "tippingStatus": null,
+                          "title": "Ask Reddit...",
+                          "type": "PUBLIC",
+                          "whitelistStatus": "ALL_ADS"
+                        },
+                        "suggestedCommentSort": null,
+                        "thumbnail": null,
+                        "translatedLanguage": null,
+                        "upvoteRatio": 0.8864864864864865,
+                        "url": "https://www.reddit.com/r/AskReddit/comments/112niod/to_people_whove_seen_the_northern_lightsaurora/",
+                        "voteState": "NONE"
+                      },
+                      "presentation": {
+                        "__typename": "SearchPostDefaultPresentation",
+                        "displayTags": []
+                      }
+                    },
+                    {
+                      "__typename": "SearchPost",
+                      "id": "t3_rtsrzd",
+                      "post": {
+                        "__typename": "SubredditPost",
+                        "authorFlair": null,
+                        "authorInfo": {
+                          "__typename": "Redditor",
+                          "accountType": "USER",
+                          "attributes": {},
+                          "iconSmall": {
+                            "url": "https://styles.redditmedia.com/t5_1i72x4/styles/profileIcon_oawph0fr3huc1.PNG?width=50&height=50&frame=1&auto=webp&crop=50%3A50%2Csmart&s=067ef1958dff6f6ed523561d332f104c1f3d9e33"
+                          },
+                          "id": "t2_r412x",
+                          "isBlocked": false,
+                          "isCakeDayNow": false,
+                          "name": "GeneralPuncake",
+                          "profile": {
+                            "isNsfw": false
+                          },
+                          "profileExemptedExperiments": [],
+                          "snoovatarIcon": null
+                        },
+                        "awardings": [],
+                        "commentCount": 164,
+                        "content": null,
+                        "createdAt": "2022-01-01T21:16:53.414000+0000",
+                        "crosspostCount": 2,
+                        "crosspostRoot": null,
+                        "crowdControlLevel": "OFF",
+                        "distinguishedAs": null,
+                        "domain": "i.redd.it",
+                        "editedAt": null,
+                        "flair": null,
+                        "gallery": null,
+                        "id": "t3_rtsrzd",
+                        "isArchived": true,
+                        "isAuthorBlocked": false,
+                        "isCommercialCommunication": false,
+                        "isContestMode": false,
+                        "isCrosspostable": false,
+                        "isCrowdControlFilterEnabled": false,
+                        "isFollowed": false,
+                        "isGildable": true,
+                        "isHidden": false,
+                        "isLocked": false,
+                        "isNsfw": false,
+                        "isPollIncluded": false,
+                        "isSaved": false,
+                        "isScoreHidden": false,
+                        "isSelfPost": false,
+                        "isSpoiler": false,
+                        "isStickied": false,
+                        "isTranslatable": false,
+                        "isTranslated": false,
+                        "languageCode": null,
+                        "media": {
+                          "__typename": "Media",
+                          "animated": null,
+                          "still": {
+                            "__typename": "StillMedia",
+                            "altText": "a snowy forest with green lights in the sky",
+                            "large": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 426,
+                                "width": 320
+                              },
+                              "url": "https://preview.redd.it/1mj0c66j75981.jpg?width=320&auto=webp&s=ff7d74b83e0ab276890d220973f65ac02f938ac4"
+                            },
+                            "medium": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 288,
+                                "width": 216
+                              },
+                              "url": "https://preview.redd.it/1mj0c66j75981.jpg?width=216&auto=webp&s=1f47ab060315730644dc6d570d8559654c1d309d"
+                            },
+                            "small": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 144,
+                                "width": 108
+                              },
+                              "url": "https://preview.redd.it/1mj0c66j75981.jpg?width=108&auto=webp&s=a951bb439c26b9eb9d42a353e5df0007f8df1c8b"
+                            },
+                            "source": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 1104,
+                                "width": 828
+                              },
+                              "url": "https://preview.redd.it/1mj0c66j75981.jpg?auto=webp&s=a87c716df5a85c6cf095bde8981bb8b521a447a2"
+                            },
+                            "xlarge": {
+                              "__typename": "MediaSource",
+                              "dimensions": {
+                                "height": 853,
+                                "width": 640
+                              },
+                              "url": "https://preview.redd.it/1mj0c66j75981.jpg?width=640&auto=webp&s=eb1d68eb94998fb420f29a63d201c2e201e8355d"
+                            },
+                            "xxlarge": null,
+                            "xxxlarge": null
+                          },
+                          "streaming": null,
+                          "typeHint": "IMAGE",
+                          "video": null
+                        },
+                        "outboundLink": {
+                          "expiresAt": "2026-10-29T14:15:28.188972+0000",
+                          "url": "https://i.redd.it/1mj0c66j75981.jpg"
+                        },
+                        "permalink": "/r/pics/comments/rtsrzd/the_aurora_borealis_taken_10_minutes_ago_in/",
+                        "poll": null,
+                        "postEventInfo": null,
+                        "postTitle": "The aurora borealis taken 10 minutes ago in Finland",
+                        "removedByCategory": null,
+                        "score": 7563,
+                        "subreddit": {
+                          "__typename": "Subreddit",
+                          "id": "t5_2qh0u",
+                          "isNsfw": false,
+                          "isQuarantined": false,
+                          "isSubscribed": false,
+                          "isThumbnailsEnabled": true,
+                          "isTitleSafe": true,
+                          "isUserBanned": false,
+                          "modPermissions": null,
+                          "name": "pics",
+                          "prefixedName": "r/pics",
+                          "styles": {
+                            "bannerBackgroundImage": "https://styles.redditmedia.com/t5_2qh0u/styles/bannerBackgroundImage_if1cbgj4mc7b1.jpg?frame=1&auto=webp&format=pjpg&s=0e538062b7411be26edacd34e6c124e2e8b4527a",
+                            "icon": "https://b.thumbs.redditmedia.com/VZX_KQLnI1DPhlEZ07bIcLzwR1Win808RIt7zm49VIQ.png",
+                            "legacyIcon": {
+                              "url": "https://b.thumbs.redditmedia.com/VZX_KQLnI1DPhlEZ07bIcLzwR1Win808RIt7zm49VIQ.png"
+                            },
+                            "legacyPrimaryColor": "#24A0ED",
+                            "primaryColor": "#553200"
+                          },
+                          "subscribersCount": 33573787.0,
+                          "tippingStatus": null,
+                          "title": "Reddit Pics",
+                          "type": "PUBLIC",
+                          "whitelistStatus": "SOME_ADS"
+                        },
+                        "suggestedCommentSort": null,
+                        "thumbnail": {
+                          "__typename": "MediaSource",
+                          "dimensions": {
+                            "height": 140,
+                            "width": 140
+                          },
+                          "url": "https://b.thumbs.redditmedia.com/X7fz4Ni0Qr7GdUBergkTUsCdM38i0dy_ZmUoeADYSOw.jpg"
+                        },
+                        "translatedLanguage": null,
+                        "upvoteRatio": 0.9866379972354477,
+                        "url": "https://i.redd.it/1mj0c66j75981.jpg",
+                        "voteState": "NONE"
+                      },
+                      "presentation": {
+                        "__typename": "SearchPostDefaultPresentation",
+                        "displayTags": []
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjYW5kaWRhdGVzX3JldHVybmVkIjoie1wic2VjdGlvbl8xX3BpcGVsaW5lXzBfZ2xvYmFsX21vZGlmaWVyc1wiOlwiMVwiLFwic2VjdGlvbl8xX3BpcGVsaW5lXzFfbG9jYWxfbW9kaWZpZXJzXCI6XCIyXCIsXCJzZWN0aW9uXzJfcGlwZWxpbmVfOF9keW5hbWljXzBfcG9zdF9zZWFyY2hcIjpcIjdcIn0iLCJleHBlcmllbmNlX3NlbGVjdGlvbiI6InBvc3RzX3YyIiwiZXhwZXJpZW5jZV92ZXJzaW9uIjoiZGVmYXVsdCIsInNlY3Rpb25fMl9waXBlbGluZV84X2R5bmFtaWNfMF9wb3N0X3NlYXJjaCI6IjcifQ==",
+              "hasNextPage": true,
+              "hasPreviousPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

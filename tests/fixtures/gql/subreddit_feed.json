@@ -1,0 +1,397 @@
+{
+  "data": {
+    "postFeed": {
+      "elements": {
+        "edges": [
+          {
+            "node": {
+              "__typename": "SubredditPost",
+              "authorFlair": {
+                "__typename": "AuthorFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": null,
+                  "id": null,
+                  "isEditable": false,
+                  "isModOnly": false
+                },
+                "text": "twir",
+                "textColor": "DARK"
+              },
+              "authorInfo": {
+                "name": "seino_chan"
+              },
+              "awardings": [],
+              "commentCount": 2,
+              "content": null,
+              "createdAt": "2026-10-22T01:16:16.094000+0000",
+              "crosspostRoot": null,
+              "crowdControlLevel": "OFF",
+              "discussionType": "COMMENT",
+              "distinguishedAs": null,
+              "domain": "this-week-in-rust.org",
+              "editedAt": null,
+              "flair": {
+                "__typename": "PostFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": "#DFFFD2",
+                  "id": "4b5827aa-dfe6-11ea-aa7a-0e8a98ab18d1",
+                  "isEditable": false
+                },
+                "text": "📅 this week in rust",
+                "textColor": "DARK",
+                "type": "text"
+              },
+              "gallery": null,
+              "id": "t3_1xc54av",
+              "isArchived": false,
+              "isContestMode": false,
+              "isCrosspostable": false,
+              "isCrowdControlFilterEnabled": false,
+              "isGildable": true,
+              "isLocked": false,
+              "isNsfw": false,
+              "isPollIncluded": false,
+              "isReactAllowed": false,
+              "isScoreHidden": false,
+              "isSelfPost": false,
+              "isSpoiler": false,
+              "isStickied": true,
+              "isThumbnailEnabled": false,
+              "media": null,
+              "permalink": "/r/rust/comments/1xc54av/this_week_in_rust_674/",
+              "poll": null,
+              "postHint": null,
+              "score": 43,
+              "subreddit": {
+                "name": "rust",
+                "prefixedName": "r/rust"
+              },
+              "suggestedCommentSort": null,
+              "thumbnail": null,
+              "title": "This Week in Rust #674",
+              "upvoteRatio": 0.9777777777777777,
+              "url": "https://this-week-in-rust.org/blog/2026/10/21/this-week-in-rust-674/"
+            }
+          },
+          {
+            "node": {
+              "__typename": "SubredditPost",
+              "authorFlair": {
+                "__typename": "AuthorFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": null,
+                  "id": null,
+                  "isEditable": false,
+                  "isModOnly": false
+                },
+                "text": "[he/him]",
+                "textColor": "DARK"
+              },
+              "authorInfo": {
+                "name": "matthieum"
+              },
+              "awardings": [
+                {
+                  "__typename": "AwardingTotal",
+                  "award": {
+                    "__typename": "Award",
+                    "awardSubType": null,
+                    "awardType": "GLOBAL",
+                    "coinPrice": 0,
+                    "iconFormat": "PNG",
+                    "icon_16": {
+                      "__typename": "MediaSource",
+                      "dimensions": {
+                        "height": 16,
+                        "width": 16
+                      },
+                      "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png"
+                    },
+                    "icon_24": {
+                      "__typename": "MediaSource",
+                      "dimensions": {
+                        "height": 24,
+                        "width": 24
+                      },
+                      "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png"
+                    },
+                    "icon_32": {
+                      "__typename": "MediaSource",
+                      "dimensions": {
+                        "height": 32,
+                        "width": 32
+                      },
+                      "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png"
+                    },
+                    "icon_48": {
+                      "__typename": "MediaSource",
+                      "dimensions": {
+                        "height": 48,
+                        "width": 48
+                      },
+                      "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png"
+                    },
+                    "icon_64": {
+                      "__typename": "MediaSource",
+                      "dimensions": {
+                        "height": 64,
+                        "width": 64
+                      },
+                      "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_64.png"
+                    },
+                    "id": "award_free_bravo",
+                    "name": "Bravo",
+                    "tiers": []
+                  },
+                  "total": 1
+                }
+              ],
+              "commentCount": 226,
+              "content": {
+                "markdown": "### TL;DR\n\n**Code Dumps, ie links to code repositories, are no longer welcome on r/rust.**\n\nIf you are excited about a project you built, and just wish to share it, consider posting a casual top-level",
+                "richtext": "{\"document\": [{\"c\": [{\"e\": \"raw\", \"t\": \"TL;DR\"}], \"e\": \"h\", \"l\": 3}, {\"c\": [{\"e\": \"text\", \"f\": [[1, 0, 68]], \"t\": \"Code Dumps, ie links to code repositories, are no longer welcome on \"}, {\"e\": \"r/\", \"l\": false, \"t\": \"rust\"}, {\"e\": \"text\", \"f\": [[1, 0, 1]], \"t\": \".\"}], \"e\": \"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-09-19T13:59:48.202000+0000",
+              "crosspostRoot": null,
+              "crowdControlLevel": "OFF",
+              "discussionType": "COMMENT",
+              "distinguishedAs": "MODERATOR",
+              "domain": "self.rust",
+              "editedAt": "2026-10-04T12:49:41.156000+0000",
+              "flair": {
+                "__typename": "PostFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": "#F2F2F2",
+                  "id": "a7b927d4-9358-11e7-9a1f-0e84c5ae6800",
+                  "isEditable": false
+                },
+                "text": "📢 announcement",
+                "textColor": "DARK",
+                "type": "text"
+              },
+              "gallery": null,
+              "id": "t3_1wkmzun",
+              "isArchived": false,
+              "isContestMode": false,
+              "isCrosspostable": false,
+              "isCrowdControlFilterEnabled": false,
+              "isGildable": true,
+              "isLocked": false,
+              "isNsfw": false,
+              "isPollIncluded": false,
+              "isReactAllowed": false,
+              "isScoreHidden": false,
+              "isSelfPost": true,
+              "isSpoiler": false,
+              "isStickied": true,
+              "isThumbnailEnabled": false,
+              "media": null,
+              "permalink": "/r/rust/comments/1wkmzun/no_more_code_dumps/",
+              "poll": null,
+              "postHint": null,
+              "score": 1677,
+              "subreddit": {
+                "name": "rust",
+                "prefixedName": "r/rust"
+              },
+              "suggestedCommentSort": null,
+              "thumbnail": null,
+              "title": "No More Code Dumps",
+              "upvoteRatio": 0.9495708154506438,
+              "url": "https://www.reddit.com/r/rust/comments/1wkmzun/no_more_code_dumps/"
+            }
+          },
+          {
+            "node": {
+              "__typename": "SubredditPost",
+              "authorFlair": {
+                "__typename": "AuthorFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": null,
+                  "id": null,
+                  "isEditable": false,
+                  "isModOnly": false
+                },
+                "text": "rangemap",
+                "textColor": "DARK"
+              },
+              "authorInfo": {
+                "name": "slashgrin"
+              },
+              "awardings": [],
+              "commentCount": 2,
+              "content": {
+                "markdown": "I've been thinking about a potential new set of APIs for navigating and manipulating `std` collections, and I'd love some feedback on the idea.\n\n**TL;DR:** *selections* over a range of elements (with ",
+                "richtext": "{\"document\": [{\"c\": [{\"e\": \"text\", \"f\": [[64, 85, 3]], \"t\": \"I've been thinking about a potential new set of APIs for navigating and manipulating std collections, and I'd love some feedback on the idea.\"}], \"e\": \"par\"}, {\"c\": [{\"e\": \"text\", \"f\": [[1, 0, 6], [2, 7, 10], [2, 120, 7]], \"t\": \"TL;DR: selections over a range of elements (with movable start/end) as a companion to the existing (but still unstable) cursors.\"}], \"e\": \"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-25T02:27:46.374000+0000",
+              "crosspostRoot": null,
+              "crowdControlLevel": "OFF",
+              "discussionType": "COMMENT",
+              "distinguishedAs": null,
+              "domain": "self.rust",
+              "editedAt": null,
+              "flair": {
+                "__typename": "PostFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": "#F2F2F2",
+                  "id": "7b83b0ba-fab5-11ed-85ef-160375874a62",
+                  "isEditable": false
+                },
+                "text": "💡 ideas & proposals",
+                "textColor": "DARK",
+                "type": "text"
+              },
+              "gallery": null,
+              "id": "t3_1xeqmsa",
+              "isArchived": false,
+              "isContestMode": false,
+              "isCrosspostable": false,
+              "isCrowdControlFilterEnabled": false,
+              "isGildable": true,
+              "isLocked": false,
+              "isNsfw": false,
+              "isPollIncluded": false,
+              "isReactAllowed": false,
+              "isScoreHidden": false,
+              "isSelfPost": true,
+              "isSpoiler": false,
+              "isStickied": false,
+              "isThumbnailEnabled": false,
+              "media": {
+                "still": {
+                  "source": {
+                    "__typename": "MediaSource",
+                    "dimensions": {
+                      "height": 600,
+                      "width": 1200
+                    },
+                    "url": "https://external-preview.redd.it/E5EZ2d6cGC0wV-yFBUSPOWXI6bAP0B1Zx-RNsmgRP9M.png?auto=webp&s=d046c63af717d02556cae61ef732865d85683748"
+                  }
+                },
+                "streaming": null,
+                "typeHint": null
+              },
+              "permalink": "/r/rust/comments/1xeqmsa/proposal_collection_selection_apis/",
+              "poll": null,
+              "postHint": "SELF",
+              "score": 21,
+              "subreddit": {
+                "name": "rust",
+                "prefixedName": "r/rust"
+              },
+              "suggestedCommentSort": null,
+              "thumbnail": null,
+              "title": "Proposal: collection selection APIs",
+              "upvoteRatio": 0.92,
+              "url": "https://www.reddit.com/r/rust/comments/1xeqmsa/proposal_collection_selection_apis/"
+            }
+          },
+          {
+            "node": {
+              "__typename": "SubredditPost",
+              "authorFlair": null,
+              "authorInfo": {
+                "name": "roman_va"
+              },
+              "awardings": [],
+              "commentCount": 2,
+              "content": {
+                "markdown": "I’m working on a voxel game, and I was surprised to find that there are few, if any, decent editors that support MCP (Model Context Protocol). I decided to build my own, as it’s become much easier to ",
+                "richtext": "{\"document\": [{\"c\": [{\"e\": \"text\", \"t\": \"I’m working on a voxel game, and I was surprised to find that there are few, if any, decent editors that support MCP (Model Context Protocol). I decided to build my own, as it’s become much easier to do so these days.\"}], \"e\": \"par\"}, {\"c\": [{\"e\": \"text\", \"t\": \"Most of the code was written with Claude.\"}], \"e\": \"par\"}]}",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-10-25T07:15:33.661000+0000",
+              "crosspostRoot": null,
+              "crowdControlLevel": "OFF",
+              "discussionType": "COMMENT",
+              "distinguishedAs": null,
+              "domain": "i.redd.it",
+              "editedAt": null,
+              "flair": {
+                "__typename": "PostFlair",
+                "richtext": null,
+                "template": {
+                  "backgroundColor": "#F2F2F2",
+                  "id": "b3e2fc9a-fbc5-11f0-99d6-12d6c15044ce",
+                  "isEditable": false
+                },
+                "text": "📸 media",
+                "textColor": "DARK",
+                "type": "text"
+              },
+              "gallery": null,
+              "id": "t3_1xevr5z",
+              "isArchived": false,
+              "isContestMode": false,
+              "isCrosspostable": false,
+              "isCrowdControlFilterEnabled": false,
+              "isGildable": true,
+              "isLocked": false,
+              "isNsfw": false,
+              "isPollIncluded": false,
+              "isReactAllowed": false,
+              "isScoreHidden": false,
+              "isSelfPost": false,
+              "isSpoiler": false,
+              "isStickied": false,
+              "isThumbnailEnabled": false,
+              "media": {
+                "still": {
+                  "source": {
+                    "__typename": "MediaSource",
+                    "dimensions": {
+                      "height": 640,
+                      "width": 1280
+                    },
+                    "url": "https://preview.redd.it/lhwr9uf5bkxh1.png?auto=webp&s=a36e0d9af4428d3b12e810a11f88a9b03f27659f"
+                  }
+                },
+                "streaming": null,
+                "typeHint": "IMAGE"
+              },
+              "permalink": "/r/rust/comments/1xevr5z/froxel_a_voxel_editor_in_rust_egui_wgpu_with_a/",
+              "poll": null,
+              "postHint": "IMAGE",
+              "score": 3,
+              "subreddit": {
+                "name": "rust",
+                "prefixedName": "r/rust"
+              },
+              "suggestedCommentSort": null,
+              "thumbnail": {
+                "__typename": "MediaSource",
+                "dimensions": {
+                  "height": 70,
+                  "width": 140
+                },
+                "url": "https://preview.redd.it/lhwr9uf5bkxh1.png?width=140&height=70&auto=webp&s=04128ca27e1dbff6660f4992c107218b13ff4464"
+              },
+              "title": "Froxel: a voxel editor in Rust (egui + wgpu) with a path tracer and an MCP server",
+              "upvoteRatio": 0.6,
+              "url": "https://i.redd.it/lhwr9uf5bkxh1.png"
+            }
+          },
+          {
+            "node": {
+              "__typename": "CarouselCommunityRecommendationsFeedUnit"
+            }
+          }
+        ],
+        "pageInfo": {
+          "__typename": "PageInfo",
+          "endCursor": "dDNfMXhkdHBkZw==",
+          "hasNextPage": true
+        }
+      }
+    }
+  }
+}

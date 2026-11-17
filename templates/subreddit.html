@@ -2,147 +2,240 @@
 {% import "utils.html" as utils %}
 
 {% block title %}
-	{% if sub.title != "" %}{{ sub.title }}
-	{% else if sub.name != "" %}{{ sub.name }}
-	{% else %}Redlib{% endif %}
+    {% if sub.title != "" %}{{ sub.title }}
+    {% else if sub.name != "" %}{{ sub.name }}
+    {% else %}Redlib{% endif %}
 {% endblock %}
 
 {% block search %}
-	{% call utils::search(["/r/", sub.name.as_str()].concat(), "") %}
+    {{ utils::search(["/r/", sub.name.as_str()].concat(), "") }}
 {% endblock %}
 
 {% block subscriptions %}
-	{% call utils::sub_list(sub.name.as_str()) %}
+    {{ utils::sub_list(sub.name.as_str()) }}
 {% endblock %}
 
 {% block body %}
-	<main>
-		{% if !is_filtered %}
-		<div id="column_one">
-			<form id="sort">
-				<div id="sort_options">
-					{% if sub.name.is_empty() %}
-						{% call utils::sort("", ["hot", "new", "top", "rising", "controversial"], sort.0) %}
-					{% else %}
-						{% call utils::sort(["/r/", sub.name.as_str()].concat(), ["hot", "new", "top", "rising", "controversial"], sort.0) %}
-					{% endif %}
-				</div>
-				{% if sort.0 == "top" || sort.0 == "controversial" %}<select id="timeframe" name="t" title="Timeframe">
-					{% call utils::options(sort.1, ["hour", "day", "week", "month", "year", "all"], "day") %}
-				</select>
-				<button id="sort_submit" class="submit">
-					<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
-						<path d="M20 50 H100" />
-						<path d="M75 15 L100 50 L75 85" />
-						&rarr;
-					</svg>
-				</button>
-				{% endif %}
-			</form>
+    <main>
+        {% if !is_filtered %}
+            <div id="column_one">
+                <form id="sort">
+                    <div id="sort_options">
+                        {% if sub.name.is_empty() %}
+                            {{ utils::sort("", ["hot", "new", "top", "rising", "controversial"], sort.0) }}
+                        {% else %}
+                            {{ utils::sort(["/r/", sub.name.as_str()].concat(), ["hot", "new", "top", "rising", "controversial"], sort.0) }}
+                        {% endif %}
+                    </div>
+                    {% if sort.0 == "top" || sort.0 == "controversial" %}<select id="timeframe" name="t" title="Timeframe">
+                        {{ utils::options(sort.1, ["hour", "day", "week", "month", "year", "all"], "day") }}
+                    </select>
+                        <button id="sort_submit" class="submit">
+                            <svg width="15" viewBox="10 0 100 100" fill="none" stroke-width="10" stroke-linecap="round">
+                                <path d="M20 50 H100" />
+                                <path d="M75 15 L100 50 L75 85" />
+                                &rarr;
+                            </svg>
+                        </button>
+                    {% endif %}
+                </form>
 
-			{% if sub.name.contains("+") %}
-				<form action="/r/{{ sub.name }}/subscribe?redirect={{ redirect_url }}" method="POST">
-					<button id="multisub" class="subscribe" title="Subscribe to each sub in this multireddit">Subscribe to Multireddit</button>
-				</form>
-			{% endif %}
+                {% if sub.name.contains("+") %}
+                    <form action="/r/{{ sub.name }}/subscribe?redirect={{ redirect_url }}" method="POST">
+                        <button id="multisub" class="subscribe" title="Subscribe to each sub in this multireddit">Subscribe to Multireddit</button>
+                    </form>
+                {% endif %}
 
-			{% if all_posts_hidden_nsfw %}
-			<center>All posts are hidden because they are NSFW. Enable "Show NSFW posts" in settings to view.</center>
-			{% endif %}
+                {% if all_posts_hidden_nsfw %}
+                    <center>All posts are hidden because they are NSFW. Enable "Show NSFW posts" in settings to view.</center>
+                {% endif %}
 
-			{% if no_posts %}
-			<center>No posts were found.</center>
-			{% endif %}
+                {% if no_posts %}
+                    <center>No posts were found.</center>
+                {% endif %}
 
-			{% if all_posts_filtered %}
-				 <center>(All content on this page has been filtered)</center>
-			{% else %}
-			<div id="posts">
-			{% for post in posts %}
-			{% if !(post.flags.nsfw && prefs.show_nsfw != "on") %}
-			<hr class="sep" />
-			{% call utils::post_in_list(post) %}
-			{% endif %}
-			{% endfor %}
-			{% if prefs.use_hls == "on" %}
-			<script src="/hls.min.js"></script>
-			<script src="/playHLSVideo.js"></script>
-			{% endif %}
-			</div>
-			{% endif %}
+                {% if all_posts_filtered %}
+                    <center>(All content on this page has been filtered)</center>
+                {% else %}
+                    <div id="posts">
+                        {% for post in posts %}
+                            {% if !(post.flags.nsfw && prefs.show_nsfw != "on") %}
+                                <hr class="sep" />
+                                {{ utils::post_in_list(post) }}
+                            {% endif %}
+                        {% endfor %}
+                        {% if prefs.use_hls == "on" %}
+                            <script src="/hls.min.js?v={{ crate::utils::short_git_hash() }}"></script>
+                            <script src="/playHLSVideo.js?v={{ crate::utils::short_git_hash() }}"></script>
+                        {% endif %}
+                    </div>
+                {% endif %}
 
-			<footer>
-				{% if !ends.0.is_empty() %}
-				<a href="?sort={{ sort.0 }}&t={{ sort.1 }}&before={{ ends.0 }}" accesskey="P">PREV</a>
-				{% endif %}
+                <footer>
+                    {% if !ends.0.is_empty() %}
+                        <a href="?sort={{ sort.0 }}&t={{ sort.1 }}&before={{ ends.0 }}" accesskey="P">PREV</a>
+                    {% endif %}
 
-				{% if !ends.1.is_empty() %}
-				<a href="?sort={{ sort.0 }}&t={{ sort.1 }}&after={{ ends.1 }}" accesskey="N">NEXT</a>
-				{% endif %}
-			</footer>
-		</div>
-		{% endif %}
-		{% if is_filtered || (!sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+")) && prefs.hide_sidebar_and_summary != "on" %}
-		<aside>
-			{% if is_filtered %}
-				<center>(Content from r/{{ sub.name }} has been filtered)</center>
-			{% endif %}
-			{% if !sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+") %}
-			<details class="panel" id="subreddit" open>
-				<summary id="subreddit_label">Subreddit</summary>
-				{% if sub.wiki %}
-				<div id="top">
-					<div>Posts</div>
-					<a href="/r/{{ sub.name }}/wiki/index">Wiki</a>
-				</div>
-				{% endif %}
-				<div id="sub_meta">
-					<img loading="lazy" id="sub_icon" src="{{ sub.icon }}" alt="Icon for r/{{ sub.name }}">
-					<h1 id="sub_title">{{ sub.title }}</h1>
-					<p id="sub_name">r/{{ sub.name }}</p>
-					<p id="sub_description">{{ sub.description }}</p>
-					<div id="sub_details">
-						<label>Members</label>
-						<label>Active</label>
-						<div title="{{ sub.members.1 }}">{{ sub.members.0 }}</div>
-						<div title="{{ sub.active.1 }}">{{ sub.active.0 }}</div>
-					</div>
-					<div id="sub_actions">
-						<div id="sub_subscription">
-							{% if prefs.subscriptions.contains(sub.name) %}
-								<form action="/r/{{ sub.name }}/unsubscribe?redirect={{ redirect_url }}" method="POST">
-									<button class="unsubscribe">Unsubscribe</button>
-								</form>
-							{% else %}
-								<form action="/r/{{ sub.name }}/subscribe?redirect={{ redirect_url }}" method="POST">
-									<button class="subscribe">Subscribe</button>
-								</form>
-							{% endif %}
-						</div>
-						<div id="sub_filter">
-							{% if prefs.filters.contains(sub.name) %}
-								<form action="/r/{{ sub.name }}/unfilter?redirect={{ redirect_url }}" method="POST">
-									<button class="unfilter">Unfilter</button>
-								</form>
-							{% else %}
-							<form action="/r/{{ sub.name }}/filter?redirect={{ redirect_url }}" method="POST">
-								<button class="filter">Filter</button>
-							</form>
-							{% endif %}
-						</div>
-						{% if crate::utils::enable_rss() %}
-						<div id="sub_rss">
-                            <a href="/r/{{ sub.name }}.rss{% if sort.0 != "hot" %}?sort={{ sort.0 }}{% if !sort.1.is_empty() %}&t={{ sort.1 }}{% endif %}{% endif %}" title="RSS feed for r/{{ sub.name }}">
-                                <button class="subscribe">RSS feed</button >
-                            </a>
-						</div>
-						{% endif %}
-				</div>
-			</details>
-			<details class="panel" id="sidebar">
-				<summary id="sidebar_label">Sidebar</summary>
-				<div id="sidebar_contents">
-					{{ sub.info|safe }}
+                    {% if !ends.1.is_empty() %}
+                        <a href="?sort={{ sort.0 }}&t={{ sort.1 }}&after={{ ends.1 }}" accesskey="N">NEXT</a>
+                    {% endif %}
+                </footer>
+            </div>
+        {% endif %}
+        {% if is_filtered || (!sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+")) && prefs.hide_sidebar_and_summary != "on" %}
+            <aside>
+                {% if is_filtered %}
+                    <center>(Content from r/{{ sub.name }} has been filtered)</center>
+                {% endif %}
+                {% if !sub.name.is_empty() && sub.name != "all" && sub.name != "popular" && !sub.name.contains("+") %}
+                    <details class="panel" id="subreddit" open>
+                        <summary id="subreddit_label">Subreddit</summary>
+                        {% if sub.wiki %}
+                            <div id="top">
+                                <a href="/r/{{ sub.name }}" class="active">Posts</a>
+                                <a href="/r/{{ sub.name }}/wiki/index">Wiki</a>
+                            </div>
+                        {% endif %}
+                        <div id="sub_meta">
+                            {% if sub.icon.is_empty() %}
+                                <div id="sub_icon" class="default_sub_icon" role="img" aria-label="Icon for r/{{ sub.name }}">r/</div>
+                            {% else %}
+                                <img loading="lazy" id="sub_icon" src="{{ sub.icon }}" alt="Icon for r/{{ sub.name }}">
+                            {% endif %}
+                            <h1 id="sub_title">{{ sub.title }}</h1>
+                            <p id="sub_name">r/{{ sub.name }}</p>
+                            <p id="sub_description">{{ sub.description }}</p>
+                            <div id="sub_details">
+                                <label>Members</label>
+                                <div title="{{ sub.members.1 }}">{{ sub.members.0 }}</div>
+                                {% if let Some(visitors) = sub.weekly_visitors %}
+                                    <label title="Weekly visitors">Visitors</label>
+                                    <div title="{{ visitors.1 }} weekly visitors">{{ visitors.0 }}</div>
+                                {% endif %}
+                                {% if let Some(contributions) = sub.weekly_contributions %}
+                                    <label title="Weekly posts and comments">Contributions</label>
+                                    <div title="{{ contributions.1 }} weekly contributions">{{ contributions.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div id="sub_actions">
+                                <div id="sub_subscription">
+                                    {% if prefs.subscriptions.contains(sub.name) %}
+                                        <form action="/r/{{ sub.name }}/unsubscribe?redirect={{ redirect_url }}" method="POST">
+                                            <button class="unsubscribe">Unsubscribe</button>
+                                        </form>
+                                    {% else %}
+                                        <form action="/r/{{ sub.name }}/subscribe?redirect={{ redirect_url }}" method="POST">
+                                            <button class="subscribe">Subscribe</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                                <div id="sub_filter">
+                                    {% if prefs.filters.contains(sub.name) %}
+                                        <form action="/r/{{ sub.name }}/unfilter?redirect={{ redirect_url }}" method="POST">
+                                            <button class="unfilter">Unfilter</button>
+                                        </form>
+                                    {% else %}
+                                        <form action="/r/{{ sub.name }}/filter?redirect={{ redirect_url }}" method="POST">
+                                            <button class="filter">Filter</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                                {% if let Some(feed) = crate::utils::rss_feed_url(url.as_str(), prefs) %}
+                                    <div id="sub_rss">
+                                        <a href="{{ feed }}" title="RSS feed for r/{{ sub.name }}">
+                                            <button class="subscribe">RSS feed</button >
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </details>
+                        {% if !sub.widgets.is_empty() || !sub.info.is_empty() %}
+                            <details class="panel" id="sidebar">
+                                <summary id="sidebar_label">Sidebar</summary>
+                                <div id="sidebar_contents">
+                                    {% if sub.widgets.is_empty() %}
+                                        {{ sub.info|safe }}
+                                    {% endif %}
+                                    {% for widget in sub.widgets %}
+                                        {% if widget.title().is_empty() %}
+                                            <div class="widget">
+                                        {% else %}
+                                            <details class="widget"{% if widget.starts_open() %} open{% endif %}>
+                                                <summary class="widget_title">{{ widget.title() }}</summary>
+                                        {% endif %}
+                                        {% match widget %}
+                                        {% when Widget::Text with { html, .. } %}
+                                            {{ html|safe }}
+                                        {% when Widget::Rules with { rules, .. } %}
+                                            {% for (name, description) in rules %}
+                                                {% if description.is_empty() %}
+                                                    <div class="widget_rule widget_rule_plain">{{ loop.index }}. {{ name }}</div>
+                                                {% else %}
+                                                    <details class="widget_rule">
+                                                        <summary>{{ loop.index }}. {{ name }}</summary>
+                                                        {{ description|safe }}
+                                                    </details>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% when Widget::Communities with { communities, more, .. } %}
+                                            <ul class="widget_communities">
+                                                {% for community in communities %}
+                                                    <li>
+                                                        <a href="{{ community.url }}">
+                                                            {% if community.icon.is_empty() %}<span class="default_sub_icon" aria-hidden="true">r/</span>{% else %}<img loading="lazy" src="{{ community.icon }}" alt="">{% endif %}
+                                                            <span>r/{{ community.name }}</span>
+                                                        </a>
+                                                        <span class="widget_members" title="{{ community.subscribers.1 }} members">{{ community.subscribers.0 }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% if !more.is_empty() %}
+                                                <details class="widget_more">
+                                                    <summary>Show {{ more.len() }} more</summary>
+                                                    <ul class="widget_communities">
+                                                        {% for community in more %}
+                                                            <li>
+                                                                <a href="{{ community.url }}">
+                                                                    {% if community.icon.is_empty() %}<span class="default_sub_icon" aria-hidden="true">r/</span>{% else %}<img loading="lazy" src="{{ community.icon }}" alt="">{% endif %}
+                                                                    <span>r/{{ community.name }}</span>
+                                                                </a>
+                                                                <span class="widget_members" title="{{ community.subscribers.1 }} members">{{ community.subscribers.0 }}</span>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </details>
+                                            {% endif %}
+                                        {% when Widget::Image with { url, link, .. } %}
+                                            {% match link %}
+                                            {% when Some(link) %}<a href="{{ link }}"><img loading="lazy" class="widget_image" src="{{ url }}" alt=""></a>
+                                            {% when None %}<img loading="lazy" class="widget_image" src="{{ url }}" alt="">
+                                            {% endmatch %}
+                                        {% when Widget::Links with { links, .. } %}
+                                            <ul class="widget_links">
+                                                {% for link in links %}
+                                                    <li>
+                                                        {% if link.children.is_empty() %}
+                                                            <a href="{{ link.url }}">{{ link.text }}</a>
+                                                        {% else %}
+                                                            <details class="widget_submenu">
+                                                                <summary>{{ link.text }}</summary>
+                                                                <ul>
+                                                                    {% for (text, url) in link.children %}
+                                                                        <li><a href="{{ url }}">{{ text }}</a></li>
+                                                                    {% endfor %}
+                                                                </ul>
+                                                            </details>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endmatch %}
+                                        {% if widget.title().is_empty() %}
+                                            </div>
+                                        {% else %}
+                                            </details>
+                                        {% endif %}
+                                    {% endfor %}
 					{# <hr>
 					<h2>Moderators</h2>
 					<br>
@@ -151,10 +244,11 @@
 					<li><a style="color: var(--accent)" href="/u/{{ moderator }}">{{ moderator }}</a></li>
 					{% endfor %}
 					</ul> #}
-				</div>
-			</details>
-			{% endif %}
-		</aside>
-		{% endif %}
-	</main>
+                                </div>
+                            </details>
+                        {% endif %}
+                {% endif %}
+            </aside>
+        {% endif %}
+    </main>
 {% endblock %}

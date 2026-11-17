@@ -2,96 +2,113 @@
 {% import "utils.html" as utils %}
 
 {% block title %}
-	{% if single_thread %}
-		{{ comments[0].author.name }} comments on {{ post.title }} - r/{{ post.community }}
-	{% else %}
-		{{ post.title }} - r/{{ post.community }}
-	{% endif %}
+    {% if single_thread && comments.len() > 0 %}
+        {{ comments[0].author.name }} comments on {{ post.title }} - r/{{ post.community }}
+    {% else %}
+        {{ post.title }} - r/{{ post.community }}
+    {% endif %}
 {% endblock %}
 
 {% block search %}
-	{% call utils::search(["/r/", post.community.as_str()].concat(), "") %}
+    {{ utils::search(["/r/", post.community.as_str()].concat(), "") }}
 {% endblock %}
 
 {% block root %}/r/{{ post.community }}{% endblock %}{% block location %}r/{{ post.community }}{% endblock %}
 {% block head %}
-	{% call super() %}
+    {{ super() }}
 	<!-- Meta Tags -->
-	<meta name="author" content="u/{{ post.author.name }}">
-	<meta name="title" content="{{ post.title }} - r/{{ post.community }}">
-	<meta property="og:title" content="{{ post.title }} - r/{{ post.community }}">
-	<meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
-	<meta property="og:url" content="{{ post.permalink }}">
-	<meta property="twitter:url" content="{{ post.permalink }}">
-	<meta property="twitter:title" content="{{ post.title }} - r/{{ post.community }}">
-	<meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
-	{% if post.post_type == "image" %}
-	<meta property="og:type" content="image">
-	<meta property="og:image" content="{{ post.thumbnail.url }}">
-	<meta property="twitter:card" content="summary_large_image">
-	<meta property="twitter:image" content="{{ post.thumbnail.url }}">
-	{% else if post.post_type == "video" || post.post_type == "gif" %}
-	<meta property="twitter:card" content="video">
-	<meta property="og:type" content="video">
-	<meta property="og:video" content="{{ post.media.url }}">
-	<meta property="og:video:type" content="video/mp4">
-	{% else %}
-	<meta property="og:type" content="website">
-	{% if single_thread %}
-	<script src="/highlighted.js" defer></script>
-	{% endif %}
-	{% endif %}
+    <meta name="author" content="u/{{ post.author.name }}">
+    <meta name="title" content="{{ post.title }} - r/{{ post.community }}">
+    <meta property="og:title" content="{{ post.title }} - r/{{ post.community }}">
+    <meta property="og:description" content="View on Redlib, an alternative private front-end to Reddit.">
+    <meta property="og:url" content="{{ post.permalink }}">
+    <meta property="twitter:url" content="{{ post.permalink }}">
+    <meta property="twitter:title" content="{{ post.title }} - r/{{ post.community }}">
+    <meta property="twitter:description" content="View on Redlib, an alternative private front-end to Reddit.">
+    {% if post.post_type == "image" %}
+        <meta property="og:type" content="image">
+        <meta property="og:image" content="{{ post.thumbnail.url }}">
+        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:image" content="{{ post.thumbnail.url }}">
+    {% else if post.post_type == "video" || post.post_type == "gif" %}
+        <meta property="twitter:card" content="video">
+        <meta property="og:type" content="video">
+        <meta property="og:video" content="{{ post.media.url }}">
+        <meta property="og:video:type" content="video/mp4">
+    {% else %}
+        <meta property="og:type" content="website">
+        {% if single_thread %}
+            <script src="/highlighted.js?v={{ crate::utils::short_git_hash() }}" defer></script>
+        {% endif %}
+    {% endif %}
+    <script src="/downloadGallery.js?v={{ crate::utils::short_git_hash() }}" defer></script>
+    <script src="/loadMoreComments.js?v={{ crate::utils::short_git_hash() }}" defer></script>
 {% endblock %}
 
 {% block subscriptions %}
-	{% call utils::sub_list(post.community.as_str()) %}
+    {{ utils::sub_list(post.community.as_str()) }}
 {% endblock %}
 
 {% block content %}
-	<div id="column_one">
-		{% call utils::post(post) %}
+    <div id="column_one">
+        {{ utils::post(post) }}
 
 		<!-- SORT FORM -->
-       <div id="commentQueryForms">
-		<form id="sort">
-			<p id="comment_count">{{post.comments.0}} {% if post.comments.0 == "1" %}comment{% else %}comments{% endif %} <span id="sorted_by">sorted by </span></p>
-			<select name="sort" title="Sort comments by" id="commentSortSelect"> 
-				{% call utils::options(sort, ["confidence", "top", "new", "controversial", "old"], "confidence") %}
-      </select>
-        <button id="sort_submit" class="submit">
-          <svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
-              <path d="M20 50 H100" />
-              <path d="M75 15 L100 50 L75 85" />
-              &rarr;
-          </svg>
-      </button>
-      </form>
+        <div id="commentQueryForms">
+            <form id="sort">
+                <p id="comment_count">{{post.comments.0}} {% if post.comments.0 == "1" %}comment{% else %}comments{% endif %} <span id="sorted_by">sorted by </span></p>
+                <select name="sort" title="Sort comments by" id="commentSortSelect">
+                    {{ utils::options(sort, ["confidence", "top", "new", "controversial", "old"], "confidence") }}
+                </select>
+                <button id="sort_submit" class="submit">
+                    <svg width="15" viewBox="10 0 100 100" fill="none" stroke-width="10" stroke-linecap="round">
+                        <path d="M20 50 H100" />
+                        <path d="M75 15 L100 50 L75 85" />
+                        &rarr;
+                    </svg>
+                </button>
+            </form>
       <!-- SEARCH FORM -->
-      <form id="sort">
-        <input id="search" class="commentQuery" type="search" name="q" value="{{ comment_query }}" placeholder="Search comments">
-        <input type="hidden" name="type" value="comment">
-      </form>
-      </div>
-  
-      <div>
-      {% if comment_query != "" %}
-      Comments containing "{{ comment_query }}"&nbsp;|&nbsp;<a id="allCommentsLink" href="{{ url_without_query }}">All comments</a>
-      {% endif %}
-      </div>
+            <form id="sort">
+                <input id="search" class="commentQuery" type="search" name="q" value="{{ comment_query }}" placeholder="Search comments">
+                <input type="hidden" name="type" value="comment">
+                <button id="comment_search_submit" class="submit" title="Search comments">
+                    <svg width="15" viewBox="10 0 100 100" fill="none" stroke-width="10" stroke-linecap="round">
+                        <path d="M20 50 H100" />
+                        <path d="M75 15 L100 50 L75 85" />
+                        &rarr;
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <div id="comments">
+            <div>
+                {% if comment_query != "" %}
+                    Comments containing "{{ comment_query }}"&nbsp;|&nbsp;<a id="allCommentsLink" href="{{ url_without_query }}">All comments</a>
+                {% endif %}
+            </div>
 
 		<!-- COMMENTS -->
-		{% for c in comments -%}
-		<div class="thread">
-			{% if single_thread %}
-			<p class="thread_nav"><a href="{{ post.permalink }}">View all comments</a></p>
-			{% if c.parent_kind == "t1" %}
-			<p class="thread_nav"><a href="?context=9999">Show parent comments</a></p>
-			{% endif %}
-			{% endif %}
-			
-			{{ c.render().unwrap()|safe }}
-		</div>
-		{%- endfor %}
+            {% if more_page %}
+                <p class="thread_nav" id="thread_nav"><a href="{{ post.permalink }}">View all comments</a></p>
+                {% if !comments.is_empty() && comments[0].parent_kind == "t1" %}
+                    <p class="thread_nav"><a href="{{ post.permalink }}{{ comments[0].parent_id }}/#thread_nav">Show parent comment</a></p>
+                {% endif %}
+            {% endif %}
+            {% for c in comments -%}
+                <div class="thread">
+                    {% if single_thread %}
+                        <p class="thread_nav" id="thread_nav"><a href="{{ post.permalink }}">View all comments</a></p>
+                        {% if c.parent_kind == "t1" %}
+                            <p class="thread_nav"><a href="{{ post.permalink }}{{ c.parent_id }}/#thread_nav">Show parent comment</a></p>
+                        {% endif %}
+                    {% endif %}
 
-	</div>
+                    {{ c.render().unwrap()|safe }}
+                </div>
+            {%- endfor %}
+        </div>
+
+    </div>
 {% endblock %}

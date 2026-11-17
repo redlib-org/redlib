@@ -1,109 +1,201 @@
 name: Container build
 
 on:
-  workflow_run:
-    workflows: ["Release Build"]
-    types:
-      - completed
-env:
-  REGISTRY_IMAGE: quay.io/redlib/redlib
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "templates/**"
+      - "static/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Dockerfile.distroless"
+      - ".dockerignore"
+      - ".github/workflows/main-docker.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { platform: linux/amd64, target: x86_64-unknown-linux-musl }
-          - { platform: linux/arm64, target: aarch64-unknown-linux-musl }
-          - { platform: linux/arm/v7, target: armv7-unknown-linux-musleabihf }
+        platform:
+          - linux/amd64
+          - linux/386
+          - linux/arm64
+          - linux/arm/v7
+          - linux/arm/v6
     steps:
+      - name: Prepare
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          platform=${{ matrix.platform }}
+          pair=${platform//\//-}
+          echo "PLATFORM_PAIR=$pair" >> "$GITHUB_ENV"
+          arch=${platform#linux/}
+          echo "CACHE_ARCH=${arch//\//}" >> "$GITHUB_ENV"
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.description=Private front-end for Reddit
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Quay.io Container Registry
-        uses: docker/login-action@v3
+        id: buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Cargo cache
+        id: cargo-cache
+        uses: actions/cache@v6
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
-      - name: Build and push
+          path: cargo-cache
+          key: cargo-${{ env.PLATFORM_PAIR }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ env.PLATFORM_PAIR }}-
+
+      - name: Inject cargo cache into the build
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          # Copying the cache out takes minutes; only needed when deps changed
+          skip-extraction: ${{ steps.cargo-cache.outputs.cache-hit }}
+          cache-map: |
+            {
+              "cargo-cache/registry": { "target": "/root/.cargo/registry", "id": "cargo-registry" },
+              "cargo-cache/git": { "target": "/root/.cargo/git", "id": "cargo-git" },
+              "cargo-cache/target": { "target": "/redlib/target", "id": "redlib-target-${{ env.CACHE_ARCH }}" }
+            }
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
+          file: Dockerfile.distroless
           platforms: ${{ matrix.platform }}
+          build-args: |
+            GIT_HASH=${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          file: Dockerfile
-          build-args: TARGET=${{ matrix.target }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ env.PLATFORM_PAIR }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ env.PLATFORM_PAIR }},mode=max,ignore-error=true
+
       - name: Export digest
         run: |
-          mkdir -p /tmp/digests
+          mkdir -p ${{ runner.temp }}/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: digests-${{ matrix.target }}
-          path: /tmp/digests/*
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
+
   merge:
     runs-on: ubuntu-latest
-    needs:
-      - build
+    needs: build
+    permissions:
+      packages: write
     steps:
+      - name: Prepare
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Download digests
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v8
         with:
-          path: /tmp/digests
+          path: ${{ runner.temp }}/digests
           pattern: digests-*
           merge-multiple: true
 
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
+
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY_IMAGE }}
+          images: ${{ env.IMAGE }}
           tags: |
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-      - name: Login to Quay.io Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
       - name: Create manifest list and push
-        working-directory: /tmp/digests
+        working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-
-      # - name: Push README to Quay.io
-      #   uses: christian-korneck/update-container-description-action@v1
-      #   env:
-      #     DOCKER_APIKEY: ${{ secrets.APIKEY__QUAY_IO }}
-      #   with:
-      #     destination_container_repo: quay.io/redlib/redlib
-      #     provider: quay
-      #     readme_file: 'README.md'
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
+        run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
+
+  # Publishes the static binaries from the pushed image as the `latest` release.
+  release:
+    runs-on: ubuntu-latest
+    needs: merge
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Copy the binaries out of the image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+          image=ghcr.io/${GITHUB_REPOSITORY,,}:sha-${GITHUB_SHA::7}
+          mkdir dist
+          for pair in amd64=x86_64-unknown-linux-musl 386=i686-unknown-linux-musl arm64=aarch64-unknown-linux-musl \
+            arm/v7=armv7-unknown-linux-musleabihf arm/v6=arm-unknown-linux-musleabihf; do
+            id=$(docker create --platform "linux/${pair%%=*}" "$image")
+            docker cp "$id:/usr/local/bin/redlib" "dist/redlib-${pair#*=}"
+            docker rm "$id"
+          done
+          cd dist && sha256sum redlib-* > SHA256SUMS
+
+      - name: Update the latest release
+        run: |
+          short=${GITHUB_SHA::7}
+          subject=$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA" --jq '.commit.message | split("\n")[0]')
+          title="Latest build ($short)"
+          notes="Built from [\`$short\`]($GITHUB_SERVER_URL/$GH_REPO/commit/$GITHUB_SHA) ($subject) on $(date -u '+%Y-%m-%d %H:%M') UTC.
+
+          Static Linux binaries, the same ones as in the \`ghcr.io/${GITHUB_REPOSITORY,,}:sha-$short\` image. This release is replaced on every push to \`main\`."
+          if gh release view latest > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
+            gh release upload latest dist/* --clobber
+            gh release edit latest --title "$title" --notes "$notes" --latest
+          else
+            gh release create latest dist/* --target "$GITHUB_SHA" --title "$title" --notes "$notes" --latest
+          fi

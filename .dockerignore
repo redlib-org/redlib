@@ -1,3 +1,7 @@
-target
-.github
-Dockerfile*
+*
+!Cargo.toml
+!Cargo.lock
+!build.rs
+!src
+!static
+!templates

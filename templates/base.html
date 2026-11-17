@@ -2,84 +2,105 @@
 
 <!DOCTYPE html>
 <html lang="en" class="{% if prefs.fixed_navbar == "on" %}fixed_navbar{% endif %}">
-	<head>
-		{% block head %}
-		<title>{% block title %}Redlib{% endblock %}</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		{% if crate::utils::disable_indexing() %}
-		<meta name="robots" content="noindex, nofollow">
-		{% endif %}
+    <head>
+        {% block head %}
+            <title>{% block title %}Redlib{% endblock %}</title>
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+            <meta name="description" content="View on Redlib, an alternative private front-end to Reddit.">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            {% if crate::utils::disable_indexing() %}
+                <meta name="robots" content="noindex, nofollow">
+            {% endif %}
 		<!-- General PWA -->
-		<meta name="theme-color" content="#1F1F1F">
+            <meta name="theme-color" content="#1F1F1F">
 		<!-- iOS Application -->
-		<meta name="apple-mobile-web-app-title" content="Redlib">
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-status-bar-style" content="default">
+            <meta name="apple-mobile-web-app-title" content="Redlib">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="default">
 		<!-- Android -->
-		<meta name="mobile-web-app-capable" content="yes">
+            <meta name="mobile-web-app-capable" content="yes">
 		<!-- iOS Logo -->
-		<link href="/touch-icon-iphone.png" rel="apple-touch-icon">
+            <link href="/touch-icon-iphone.png" rel="apple-touch-icon">
 		<!-- OpenSearch description file -->
-		<link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
+            <link rel="search" type="application/opensearchdescription+xml" title="Search Redlib" href="/opensearch.xml">
 		<!-- PWA Manifest -->
-		<link rel="manifest" type="application/json" href="/manifest.json">
-		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"> 
-		<link rel="stylesheet" type="text/css" href="/style.css?v={{ env!("CARGO_PKG_VERSION") }}">
+            <link rel="manifest" type="application/json" href="/manifest.json">
+		<!-- RSS feed autodiscovery -->
+            {% if let Some(feed) = crate::utils::rss_feed_url(url.as_str(), prefs) %}
+                <link rel="alternate" type="application/rss+xml" title="RSS" href="{{ feed }}">
+            {% endif %}
+            <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+            <link rel="stylesheet" type="text/css" href="/style.css?v={{ crate::utils::short_git_hash() }}">
+            <script src="/static/keyboardcommands.js?v={{ crate::utils::short_git_hash() }}"></script>
+            <script src="/autoplayVisible.js?v={{ crate::utils::short_git_hash() }}" defer></script>
 		<!-- Video quality -->
-		<div id="video_quality" data-value="{{ prefs.video_quality }}"></div>
-		{% endblock %}
-		</head>
-	<body class="
-		{% if prefs.layout != "" %}{{ prefs.layout }}{% endif %}
-		{% if prefs.wide == "on" %} wide{% endif %}
-		{% if prefs.theme != "system" %} {{ prefs.theme }}{% endif %}
-		{% if prefs.fixed_navbar == "on" %} fixed_navbar{% endif %}">
+            <div id="video_quality" data-value="{{ prefs.video_quality }}"></div>
+        {% endblock %}
+    </head>
+    {#- With a notice bar, a fixed navbar becomes a sticky header: the bar can wrap, so its height isn't known -#}
+    {%- let stale_age = crate::backends::stale::served_age() -%}
+    {%- let region_ignored = crate::backends::stale::region_ignored() -%}
+    {%- let notice = stale_age.is_some() || region_ignored -%}
+    {%- let fixed_navbar = prefs.fixed_navbar == "on" && !notice -%}
+    <body class="
+                 {% if prefs.layout != "" %}{{ prefs.layout }}{% endif %}
+                 {% if prefs.wide == "on" %} wide{% endif %}
+                 {% if prefs.theme != "system" %} {{ prefs.theme }}{% endif %}
+                 {% if prefs.theme == "system" || prefs.theme == "" %}{% if prefs.light_theme != "" %} light-{{ prefs.light_theme }}{% endif %}{% if prefs.dark_theme != "" %} dark-{{ prefs.dark_theme }}{% endif %}{% endif %}
+                 {% if fixed_navbar %} fixed_navbar{% endif %}">
+        <div class="top_bars{% if prefs.fixed_navbar == "on" && notice %} sticky{% endif %}">
+            {% if let Some(age) = stale_age %}
+                <div class="stale_banner" role="alert">Reddit is refusing requests. Showing this page from {{ age }}.</div>
+            {% endif %}
+            {% if region_ignored %}
+                <div class="stale_banner" role="alert">Your r/popular region couldn't be applied. Showing the global feed.</div>
+            {% endif %}
 		<!-- NAVIGATION BAR -->
-		<nav class="
-			{% if prefs.fixed_navbar == "on" %} fixed_navbar{% endif %}">
-			<div id="logo">
-				<a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
-				{% block subscriptions %}{% endblock %}
-			</div>
-			{% block search %}{% endblock %}
-			<div id="links">
-				<a id="reddit_link" {% if prefs.disable_visit_reddit_confirmation != "on" %}href="#popup"{% else %}href="https://www.reddit.com{{ url }}" rel="nofollow"{% endif %}>
-					<span>reddit</span>
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M22 2L12 22"/>
-						<path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
-					</svg>
-				</a>
-				{% if prefs.disable_visit_reddit_confirmation != "on" %}
-					{% call utils::visit_reddit_confirmation(url) %}
-				{% endif %}
-				<a id="settings_link" href="/settings">
-					<span>settings</span>
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<title>settings</title>
-						<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-					</svg>
-				</a>
-			</div>
-		</nav>
-		
+            <nav class="
+                        {% if fixed_navbar %} fixed_navbar{% endif %}">
+                <div id="logo">
+                    <a id="redlib" href="/"><span id="red">red</span><span id="lib">lib.</span></a>
+                    {% block subscriptions %}{% endblock %}
+                </div>
+                {% block search %}{% endblock %}
+                <div id="links">
+                    <a id="reddit_link" {% if prefs.disable_visit_reddit_confirmation != "on" %}href="#popup"{% else %}href="https://www.reddit.com{{ url }}" rel="nofollow"{% endif %}>
+                        <span>reddit</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 2L12 22"/>
+                            <path d="M2 6.70587C3.33333 8.07884 3.33333 11.5971 3.33333 11.5971M3.33333 19.647V11.5971M3.33333 11.5971C3.33333 11.5971 5.125 7.47817 8 7.47817C10.875 7.47817 12 8.85114 12 8.85114"/>
+                        </svg>
+                    </a>
+                    {% if prefs.disable_visit_reddit_confirmation != "on" %}
+                        {{ utils::visit_reddit_confirmation(url) }}
+                    {% endif %}
+                    <a id="settings_link" href="/settings?return_to={{ self.url|urlencode }}">
+                        <span>settings</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <title>settings</title>
+                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </a>
+                </div>
+            </nav>
+        </div>
+
 		<!-- MAIN CONTENT -->
-		{% block body %}
-		<main>
-			{% block content %}
-			{% endblock %}
-		</main>
-		{% endblock %}
+        {% block body %}
+            <main>
+                {% block content %}
+                {% endblock %}
+            </main>
+        {% endblock %}
 
 		<!-- FOOTER -->
-		{% block footer %}
-			<footer>
-				<div class="footer-buttons">
-					<p><span id="version">v{{ env!("CARGO_PKG_VERSION") }}&emsp;</span><a href="/info" title="View instance information">ⓘ View instance info</a>&emsp;<a href="https://github.com/redlib-org/redlib" title="View code on GitHub">&lt;&gt; Code</a></p>
-				</div>
-			</footer>
-		{% endblock %}
-	</body>
+        {% block footer %}
+            <footer>
+                <div class="footer-buttons">
+                    <!-- id="version">v0.69.0 -->
+                    <p><a id="source" href="{{ crate::utils::get_source_url() }}" title="View source code"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>{{ crate::utils::short_git_hash() }}</a>&emsp;<a href="/info" title="View instance information">ⓘ View instance info</a></p>
+                </div>
+            </footer>
+        {% endblock %}
+    </body>
 </html>

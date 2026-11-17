@@ -1,0 +1,431 @@
+{
+  "data": {
+    "search": {
+      "dynamic": {
+        "components": {
+          "__typename": "SearchResultsMainLayout",
+          "appliedState": {
+            "__typename": "SearchAppliedState",
+            "filters": [
+              {
+                "key": "component",
+                "value": "SearchAppliedState"
+              },
+              {
+                "key": "experience_selection",
+                "value": "comment"
+              },
+              {
+                "key": "safe_search",
+                "value": "unset"
+              },
+              {
+                "key": "structure_type",
+                "value": "search"
+              }
+            ],
+            "options": [],
+            "pane": "comments",
+            "query": "aurora borealis"
+          },
+          "main": {
+            "edges": [
+              {
+                "cursor": "",
+                "node": {
+                  "__typename": "SearchListComponent",
+                  "id": "section_2_pipeline_1_comment_search",
+                  "children": [
+                    {
+                      "__typename": "SearchComment",
+                      "comment": {
+                        "authorInfo": {
+                          "__typename": "Redditor",
+                          "attributes": {},
+                          "id": "t2_65fm7fgx",
+                          "isAcceptingFollowers": true,
+                          "isFollowed": false,
+                          "karma": {
+                            "total": 109497
+                          },
+                          "name": "Venomspino",
+                          "prefixedName": "u/Venomspino",
+                          "profile": {
+                            "createdAt": "2020-07-09T19:03:56.531000+0000",
+                            "isNsfw": true,
+                            "styles": {
+                              "legacyIcon": {
+                                "url": "https://styles.redditmedia.com/t5_2ugpug/styles/profileIcon_uyosvkqs7rqc1.jpeg?width=256&height=256&frame=1&auto=webp&crop=256:256,smart&s=5aa19e579ea78e306f358d17eac0390e9ce274c3"
+                              }
+                            }
+                          }
+                        },
+                        "content": {
+                          "__typename": "Content",
+                          "markdown": "\"Aurora Borealis!? At this time of year, at this time of day, in this part of the country, localized entirely within your cape?\"",
+                          "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"\\\"Aurora Borealis!? At this time of year, at this time of day, in this part of the country, localized entirely within your cape?\\\"\"}],\"e\":\"par\"}]}",
+                          "richtextMedia": [],
+                          "translationInfo": {
+                            "isTranslated": false
+                          }
+                        },
+                        "createdAt": "2026-09-28T17:02:07.486000+0000",
+                        "editedAt": null,
+                        "id": "t1_pcm2c6z",
+                        "isOP": false,
+                        "isScoreHidden": false,
+                        "parent": null,
+                        "postInfo": {
+                          "__typename": "SubredditPost",
+                          "authorInfo": {
+                            "__typename": "Redditor",
+                            "accountType": "USER",
+                            "attributes": {},
+                            "iconSmall": {
+                              "url": "https://preview.redd.it/snoovatar/avatars/b5d71816-6604-4a60-af01-fc7b14c1d07e-headshot.png?width=50&height=50&auto=webp&s=99efe49c3ba1e94b5afd634350b3df46896beef5"
+                            },
+                            "id": "t2_t08bsev2",
+                            "isBlocked": false,
+                            "isCakeDayNow": false,
+                            "name": "Toekneeev",
+                            "profile": {
+                              "isNsfw": false
+                            },
+                            "snoovatarIcon": {
+                              "url": "https://i.redd.it/snoovatar/avatars/b5d71816-6604-4a60-af01-fc7b14c1d07e.png"
+                            }
+                          },
+                          "commentCount": 258,
+                          "content": {
+                            "richtextMedia": []
+                          },
+                          "createdAt": "2026-09-28T16:55:58.428000+0000",
+                          "crosspostRoot": null,
+                          "domain": "i.redd.it",
+                          "flair": {
+                            "__typename": "PostFlair",
+                            "richtext": "[{\"a\":\":red_parrot:\",\"e\":\"emoji\",\"u\":\"https://emoji.redditmedia.com/dhpv68y2js0b1_t5_2r05i/red_parrot\"},{\"e\":\"text\",\"t\":\" Discussion\"}]",
+                            "template": {
+                              "backgroundColor": "#24A0ED",
+                              "id": "499a4168-330d-11ef-8c71-b2ce7bb16ea4"
+                            },
+                            "text": ":red_parrot: Discussion",
+                            "textColor": "DARK",
+                            "type": "richtext"
+                          },
+                          "gallery": null,
+                          "id": "t3_1wsk2m5",
+                          "isNsfw": false,
+                          "isSelfPost": false,
+                          "isSpoiler": false,
+                          "isTranslatable": false,
+                          "languageCode": "en",
+                          "media": {
+                            "__typename": "Media",
+                            "animated": null,
+                            "still": {
+                              "__typename": "StillMedia",
+                              "altText": null,
+                              "large": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 515,
+                                  "width": 320
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=320&auto=webp&s=2adf3d3abd106e1f739f854363eba7efde51045d"
+                              },
+                              "medium": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 347,
+                                  "width": 216
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=216&auto=webp&s=21a04ddea97f2b6c1829f71e664ef8d4f7e57513"
+                              },
+                              "small": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 173,
+                                  "width": 108
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=108&auto=webp&s=d2cad828da19065405fa96755c7cff48bd42f886"
+                              },
+                              "source": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 2126,
+                                  "width": 1320
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?auto=webp&s=ad5875a77392b8d4f5dc5ddaab33a42a41f7c493"
+                              },
+                              "xlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 1030,
+                                  "width": 640
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=640&auto=webp&s=0bb345392853e068f73577fb7a7421d7955745c8"
+                              },
+                              "xxlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 1546,
+                                  "width": 960
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=960&auto=webp&s=14d750ec7a4df3cdab3c54700889b394c20058af"
+                              },
+                              "xxxlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 1739,
+                                  "width": 1080
+                                },
+                                "url": "https://preview.redd.it/x8wythqekash1.jpeg?width=1080&auto=webp&s=f4442d0a7e7fdd3d58c0f7d1392652b3cd83a086"
+                              }
+                            },
+                            "streaming": null,
+                            "typeHint": "IMAGE",
+                            "video": null
+                          },
+                          "poll": null,
+                          "score": 3021,
+                          "subreddit": {
+                            "__typename": "Subreddit",
+                            "id": "t5_2r05i",
+                            "isNsfw": false,
+                            "isQuarantined": false,
+                            "isSubscribed": false,
+                            "isThumbnailsEnabled": true,
+                            "isTitleSafe": true,
+                            "isUserBanned": false,
+                            "modPermissions": null,
+                            "name": "Minecraft",
+                            "prefixedName": "r/Minecraft",
+                            "styles": {
+                              "bannerBackgroundImage": "https://styles.redditmedia.com/t5_2r05i/styles/bannerBackgroundImage_qosbv5vlmmph1.png?frame=1&auto=webp&s=843d95327def5b90c82593af24e817edba1744a6",
+                              "icon": "https://styles.redditmedia.com/t5_2r05i/styles/communityIcon_oosuhosum5sh1.png?width=64&frame=1&auto=webp&s=8035cef30664ec2d3af1bb388709e11b7143914a",
+                              "legacyIcon": {
+                                "url": "https://b.thumbs.redditmedia.com/rwN0al9P6nYhGSQO-yIJb-FyF5xg-c2v61zjMom4c4E.png"
+                              },
+                              "legacyPrimaryColor": "#46D160",
+                              "primaryColor": "#46D160"
+                            },
+                            "subscribersCount": 8788488.0,
+                            "tippingStatus": null,
+                            "title": "Minecraft on reddit",
+                            "type": "PUBLIC",
+                            "whitelistStatus": "ALL_ADS"
+                          },
+                          "title": "New Aurora Cape!",
+                          "url": "https://i.redd.it/x8wythqekash1.jpeg"
+                        },
+                        "score": 843
+                      },
+                      "id": "t1_pcm2c6z",
+                      "presentation": {
+                        "__typename": "SearchCommentDefaultPresentation",
+                        "displayTags": []
+                      }
+                    },
+                    {
+                      "__typename": "SearchComment",
+                      "comment": {
+                        "authorInfo": {
+                          "__typename": "Redditor",
+                          "attributes": {},
+                          "id": "t2_apie5g6",
+                          "isAcceptingFollowers": true,
+                          "isFollowed": false,
+                          "karma": {
+                            "total": 76093
+                          },
+                          "name": "Nomad_00",
+                          "prefixedName": "u/Nomad_00",
+                          "profile": {
+                            "createdAt": "2017-09-07T14:04:37.874000+0000",
+                            "isNsfw": false,
+                            "styles": {
+                              "legacyIcon": {
+                                "url": "https://styles.redditmedia.com/t5_76dxz/styles/profileIcon_lxgwohceblma1.jpg?width=256&height=256&frame=1&auto=webp&crop=256:256,smart&s=6f620f7aebb8d9c86c66071a46e53de0367450d4"
+                              }
+                            }
+                          }
+                        },
+                        "content": {
+                          "__typename": "Content",
+                          "markdown": "Good lord, what is happening in there?\n\nAurora Borealis?\n\nMay I see it?",
+                          "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"Good lord, what is happening in there?\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"Aurora Borealis?\"}],\"e\":\"par\"},{\"c\":[{\"e\":\"text\",\"t\":\"May I see it?\"}],\"e\":\"par\"}]}",
+                          "richtextMedia": [],
+                          "translationInfo": {
+                            "isTranslated": false
+                          }
+                        },
+                        "createdAt": "2026-10-18T11:22:42.500000+0000",
+                        "editedAt": null,
+                        "id": "t1_phh73hj",
+                        "isOP": false,
+                        "isScoreHidden": false,
+                        "parent": null,
+                        "postInfo": {
+                          "__typename": "SubredditPost",
+                          "authorInfo": {
+                            "__typename": "Redditor",
+                            "accountType": "USER",
+                            "attributes": {},
+                            "iconSmall": {
+                              "url": "https://styles.redditmedia.com/t5_en8z8/styles/profileIcon_aihgp2cv9wec1.jpeg?width=50&height=50&frame=1&auto=webp&crop=50%3A50%2Csmart&s=8439fcf08b0028077ffb0fc85a5b49fa869d0ce3"
+                            },
+                            "id": "t2_12umzz",
+                            "isBlocked": false,
+                            "isCakeDayNow": false,
+                            "name": "LiewPlays",
+                            "profile": {
+                              "isNsfw": false
+                            },
+                            "snoovatarIcon": null
+                          },
+                          "commentCount": 358,
+                          "content": {
+                            "richtextMedia": []
+                          },
+                          "createdAt": "2026-10-18T10:20:30.107000+0000",
+                          "crosspostRoot": null,
+                          "domain": "i.redd.it",
+                          "flair": {
+                            "__typename": "PostFlair",
+                            "richtext": "[{\"e\":\"text\",\"t\":\"Screenshot\"}]",
+                            "template": {
+                              "backgroundColor": "#C9A736",
+                              "id": "eb13887c-61a4-11ef-9f7d-faa59192ed38"
+                            },
+                            "text": "Screenshot",
+                            "textColor": "DARK",
+                            "type": "richtext"
+                          },
+                          "gallery": null,
+                          "id": "t3_1x8zrra",
+                          "isNsfw": false,
+                          "isSelfPost": false,
+                          "isSpoiler": false,
+                          "isTranslatable": false,
+                          "languageCode": "en",
+                          "media": {
+                            "__typename": "Media",
+                            "animated": null,
+                            "still": {
+                              "__typename": "StillMedia",
+                              "altText": null,
+                              "large": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 180,
+                                  "width": 320
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=320&auto=webp&s=7ea5ee55bac3df7fa66268e5f7a1a8db0c4c9311"
+                              },
+                              "medium": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 121,
+                                  "width": 216
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=216&auto=webp&s=2101dfbd769ade4c670a809dbbedebc1901cfb57"
+                              },
+                              "small": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 60,
+                                  "width": 108
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=108&auto=webp&s=67c3df12dce31941a99987e80a0e509cc0283ef6"
+                              },
+                              "source": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 1080,
+                                  "width": 1920
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?auto=webp&s=65afa47887f5e35758017f4d610180a2f1eed518"
+                              },
+                              "xlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 360,
+                                  "width": 640
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=640&auto=webp&s=073320ffed238a5cb85228fb0272548b9fba9eea"
+                              },
+                              "xxlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 540,
+                                  "width": 960
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=960&auto=webp&s=b8154942a905aab68225a6ee94eb83a3759c9123"
+                              },
+                              "xxxlarge": {
+                                "__typename": "MediaSource",
+                                "dimensions": {
+                                  "height": 607,
+                                  "width": 1080
+                                },
+                                "url": "https://preview.redd.it/az3nqx9pb7wh1.jpeg?width=1080&auto=webp&s=a6b6a9fd0610a6f8a7a2f6ebb3dba70933228704"
+                              }
+                            },
+                            "streaming": null,
+                            "typeHint": "IMAGE",
+                            "video": null
+                          },
+                          "poll": null,
+                          "score": 4179,
+                          "subreddit": {
+                            "__typename": "Subreddit",
+                            "id": "t5_bjbudo",
+                            "isNsfw": false,
+                            "isQuarantined": false,
+                            "isSubscribed": false,
+                            "isThumbnailsEnabled": true,
+                            "isTitleSafe": true,
+                            "isUserBanned": false,
+                            "modPermissions": null,
+                            "name": "DeadlockTheGame",
+                            "prefixedName": "r/DeadlockTheGame",
+                            "styles": {
+                              "bannerBackgroundImage": "https://styles.redditmedia.com/t5_bjbudo/styles/bannerBackgroundImage_8i43yugy8psg1.png?frame=1&auto=webp&s=56f3a3109d73369c97d749e22fecf7ec50d16085",
+                              "icon": "https://styles.redditmedia.com/t5_bjbudo/styles/communityIcon_3d6opvgy8psg1.png?width=64&frame=1&auto=webp&s=528bea0ef3aaab7b93aaa014fadce5edb5cc1889",
+                              "legacyIcon": null,
+                              "legacyPrimaryColor": null,
+                              "primaryColor": null
+                            },
+                            "subscribersCount": 407415,
+                            "tippingStatus": null,
+                            "title": "Deadlock",
+                            "type": "PUBLIC",
+                            "whitelistStatus": "ALL_ADS"
+                          },
+                          "title": "Late game clutter be like:",
+                          "url": "https://i.redd.it/az3nqx9pb7wh1.jpeg"
+                        },
+                        "score": 934
+                      },
+                      "id": "t1_phh73hj",
+                      "presentation": {
+                        "__typename": "SearchCommentDefaultPresentation",
+                        "displayTags": []
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjYW5kaWRhdGVzX3JldHVybmVkIjoie1wic2VjdGlvbl8xX3BpcGVsaW5lXzBfZ2xvYmFsX21vZGlmaWVyc1wiOlwiMVwiLFwic2VjdGlvbl8xX3BpcGVsaW5lXzFfbG9jYWxfbW9kaWZpZXJzXCI6XCIxXCIsXCJzZWN0aW9uXzJfcGlwZWxpbmVfMV9jb21tZW50X3NlYXJjaFwiOlwiNlwifSIsImV4cGVyaWVuY2Vfc2VsZWN0aW9uIjoiY29tbWVudCIsImV4cGVyaWVuY2VfdmVyc2lvbiI6ImRlZmF1bHQiLCJzZWN0aW9uXzJfcGlwZWxpbmVfMV9jb21tZW50X3NlYXJjaCI6IjEwIn0=",
+              "hasNextPage": true,
+              "hasPreviousPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

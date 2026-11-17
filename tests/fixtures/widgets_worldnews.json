@@ -1,0 +1,374 @@
+{
+  "items": {
+    "widget_108cbb00k7l6n": {
+      "data": [
+        {
+          "children": [
+            {
+              "text": "All",
+              "url": "http://goo.gl/RV3yw6"
+            },
+            {
+              "text": "r/politics",
+              "url": "https://www.reddit.com/r/politics"
+            },
+            {
+              "text": "r/USANews",
+              "url": "https://www.reddit.com/r/USANews"
+            },
+            {
+              "text": "r/Canada",
+              "url": "https://www.reddit.com/r/Canada"
+            },
+            {
+              "text": "r/Cuba",
+              "url": "https://www.reddit.com/r/Cuba"
+            },
+            {
+              "text": "r/Mexico",
+              "url": "https://www.reddit.com/r/Mexico"
+            },
+            {
+              "text": "r/PuertoRico",
+              "url": "https://www.reddit.com/r/PuertoRico"
+            }
+          ],
+          "text": "N. America"
+        },
+        {
+          "children": [
+            {
+              "text": "All",
+              "url": "http://goo.gl/5hxkxn"
+            },
+            {
+              "text": "r/Argentina",
+              "url": "https://www.reddit.com/r/Argentina"
+            },
+            {
+              "text": "r/Brasil",
+              "url": "https://www.reddit.com/r/Brasil"
+            },
+            {
+              "text": "r/Chile",
+              "url": "https://www.reddit.com/r/Chile"
+            },
+            {
+              "text": "r/Colombia",
+              "url": "https://www.reddit.com/r/Colombia"
+            },
+            {
+              "text": "r/Ecuador",
+              "url": "https://www.reddit.com/r/Ecuador"
+            },
+            {
+              "text": "r/Guyana",
+              "url": "https://www.reddit.com/r/Guyana"
+            },
+            {
+              "text": "r/Venezuela",
+              "url": "https://www.reddit.com/r/vzla"
+            },
+            {
+              "text": "r/PanAmerica",
+              "url": "https://www.reddit.com/r/PanAmerica"
+            }
+          ],
+          "text": "S. America"
+        },
+        {
+          "children": [
+            {
+              "text": "All",
+              "url": "https://goo.gl/ZF5rou"
+            },
+            {
+              "text": "r/Europe",
+              "url": "https://www.reddit.com/r/europe"
+            }
+          ],
+          "text": "Europe"
+        },
+        {
+          "children": [
+            {
+              "text": "All",
+              "url": "https://goo.gl/az3Ygk"
+            },
+            {
+              "text": "r/Afghanistan",
+              "url": "https://www.reddit.com/r/Afghanistan"
+            },
+            {
+              "text": "r/Bangladesh",
+              "url": "https://www.reddit.com/r/Bangladesh"
+            },
+            {
+              "text": "r/China",
+              "url": "https://www.reddit.com/r/China"
+            },
+            {
+              "text": "r/India",
+              "url": "https://www.reddit.com/r/India"
+            },
+            {
+              "text": "r/Malaysia",
+              "url": "https://www.reddit.com/r/Malaysia"
+            },
+            {
+              "text": "r/Myanmar",
+              "url": "https://www.reddit.com/r/Myanmar"
+            },
+            {
+              "text": "r/NorthKoreaNews",
+              "url": "https://www.reddit.com/r/NorthKoreaNews"
+            },
+            {
+              "text": "r/Pakistan",
+              "url": "https://www.reddit.com/r/Pakistan"
+            },
+            {
+              "text": "r/Philippines",
+              "url": "https://www.reddit.com/r/Philippines"
+            }
+          ],
+          "text": "Asia"
+        },
+        {
+          "children": [
+            {
+              "text": "r/Africa",
+              "url": "https://www.reddit.com/r/Africa"
+            },
+            {
+              "text": "r/SouthAfrica",
+              "url": "https://www.reddit.com/r/SouthAfrica"
+            }
+          ],
+          "text": "Africa"
+        }
+      ],
+      "id": "widget_108cbb00k7l6n",
+      "kind": "menu",
+      "showWiki": false,
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      }
+    },
+    "widget_1aj7euko7coaa": {
+      "buttons": [
+        {
+          "color": "#000000",
+          "kind": "text",
+          "text": "Rules: Submissions",
+          "url": "https://www.reddit.com/r/worldnews/wiki/rules#wiki_disallowed_submissions"
+        },
+        {
+          "color": "#000000",
+          "kind": "text",
+          "text": "Rules: Comments",
+          "url": "https://www.reddit.com/r/worldnews/wiki/rules#wiki_disallowed_comments"
+        },
+        {
+          "color": "#000000",
+          "kind": "text",
+          "text": "Guidelines for Media",
+          "url": "https://www.reddit.com/r/worldnews/wiki/media"
+        },
+        {
+          "color": "#000000",
+          "kind": "text",
+          "text": "Recently stickied AMAs",
+          "url": "https://www.reddit.com/r/worldnews/search?q=author%3AWorldNewsMods+OR+title%3A%22worldnews+live+thread%22+OR+self%3Ayes&restrict_sr=on&sort=new&t=all"
+        },
+        {
+          "color": "#000000",
+          "kind": "text",
+          "text": "Daily Live Threads",
+          "url": "https://www.reddit.com/user/WorldNewsMods/submitted/?sort=new"
+        }
+      ],
+      "description": "",
+      "descriptionHtml": null,
+      "id": "widget_1aj7euko7coaa",
+      "kind": "button",
+      "shortName": "Info",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      }
+    },
+    "widget_1fqiajpw848kb": {
+      "id": "widget_1fqiajpw848kb",
+      "kind": "textarea",
+      "shortName": "Subscriber Info",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      },
+      "text": "**46,896,913** Subscribers",
+      "textHtml": "<!-- SC_OFF --><div class=\"md\"><p><strong>46,896,913</strong> Subscribers</p>\n</div><!-- SC_ON -->"
+    },
+    "widget_1fqw6t4mrlaz1": {
+      "id": "widget_1fqw6t4mrlaz1",
+      "kind": "textarea",
+      "shortName": "Subscriber Info",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      },
+      "text": "**47,691,320** Subscribers",
+      "textHtml": "<!-- SC_OFF --><div class=\"md\"><p><strong>47,691,320</strong> Subscribers</p>\n</div><!-- SC_ON -->"
+    },
+    "widget_id-card-2qh13": {
+      "currentlyViewingCount": 0,
+      "currentlyViewingText": "",
+      "description": "A place for major news from around the world, excluding US-internal news.",
+      "id": "widget_id-card-2qh13",
+      "kind": "id-card",
+      "shortName": "Community Details",
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      },
+      "subscribersCount": 47691382,
+      "subscribersText": ""
+    },
+    "widget_moderators-2qh13": {
+      "id": "widget_moderators-2qh13",
+      "kind": "moderators",
+      "mods": [],
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      },
+      "totalMods": 0
+    },
+    "widget_rules-2qh13": {
+      "data": [
+        {
+          "createdUtc": 1652979863,
+          "description": "Articles about events within the US or related to the US internal political process with no involvement of foreign officials or international organizations and no effect on people outside the US are not allowed here. The large subreddits for these topics are /r/news and /r/politics.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Articles about events within the US or related to the US internal political process with no involvement of foreign officials or international organizations and no effect on people outside the US are not allowed here. The large subreddits for these topics are <a href=\"/r/news\" rel=\"nofollow\">/r/news</a> and <a href=\"/r/politics\" rel=\"nofollow\">/r/politics</a>.</p>\n</div><!-- SC_ON -->",
+          "priority": 0,
+          "shortName": "No US Internal News or Politics",
+          "violationReason": "US Internal News or Politics"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "Do not add opinion/commentary to the submission title. Don't add something that isn't covered by the article, and don't misrepresent the article. Adding a sentence from within the article that is more representative of the content is generally OK.\n\nAn article's title must not be misleading.  It may be removed if the title states a source's opinion as fact, or misrepresents the facts in the article or multiple other sources. \n\nAll caps words are not allowed, except for acronyms of course.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Do not add opinion/commentary to the submission title. Don&#39;t add something that isn&#39;t covered by the article, and don&#39;t misrepresent the article. Adding a sentence from within the article that is more representative of the content is generally OK.</p>\n\n<p>An article&#39;s title must not be misleading.  It may be removed if the title states a source&#39;s opinion as fact, or misrepresents the facts in the article or multiple other sources. </p>\n\n<p>All caps words are not allowed, except for acronyms of course.</p>\n</div><!-- SC_ON -->",
+          "priority": 1,
+          "shortName": "No Editorialized or Misleading Titles",
+          "violationReason": "Editorialized or Misleading Title"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "Feature stories are journalistic reports providing more descriptive background information than a straight news report will contain. Dictionary.com: \"a newspaper or magazine article or report of a person, event, an aspect of a major event, or the like, often having a personal slant and written in an individual style.\"",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Feature stories are journalistic reports providing more descriptive background information than a straight news report will contain. Dictionary.com: &quot;a newspaper or magazine article or report of a person, event, an aspect of a major event, or the like, often having a personal slant and written in an individual style.&quot;</p>\n</div><!-- SC_ON -->",
+          "priority": 2,
+          "shortName": "No Feature stories",
+          "violationReason": "Feature story"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "/r/worldnews is for news, rather than analysis. There are several subreddits listed at the top of the page that are good for this. If the writer injects his/her opinion in the article or tries to draw any conclusion about a set of events, then it is no longer straight news and is not permitted in /r/worldnews.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p><a href=\"/r/worldnews\" rel=\"nofollow\">/r/worldnews</a> is for news, rather than analysis. There are several subreddits listed at the top of the page that are good for this. If the writer injects his/her opinion in the article or tries to draw any conclusion about a set of events, then it is no longer straight news and is not permitted in <a href=\"/r/worldnews\" rel=\"nofollow\">/r/worldnews</a>.</p>\n</div><!-- SC_ON -->",
+          "priority": 3,
+          "shortName": "No Editorials, Opinion or Analysis Pieces",
+          "violationReason": "Editorial, Opinion, or Analysis"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "This includes articles that are auto-translated.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>This includes articles that are auto-translated.</p>\n</div><!-- SC_ON -->",
+          "priority": 4,
+          "shortName": "No Articles In Languages Other Than English",
+          "violationReason": "Not in English"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "If images, videos or audio files are part of an article that's fine, but the accompanying article must have some value of its own. Merely providing image captions or video descriptions isn't sufficient.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>If images, videos or audio files are part of an article that&#39;s fine, but the accompanying article must have some value of its own. Merely providing image captions or video descriptions isn&#39;t sufficient.</p>\n</div><!-- SC_ON -->",
+          "priority": 5,
+          "shortName": "No Images, Videos or Audio Clips",
+          "violationReason": "Image, Video or Audio Clip"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "Old News is any news older than one week.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Old News is any news older than one week.</p>\n</div><!-- SC_ON -->",
+          "priority": 6,
+          "shortName": "No Old News Articles (≥ 1 Week old)",
+          "violationReason": "Out of Date"
+        },
+        {
+          "createdUtc": 1725448763,
+          "description": "Examples include but are not limited to:\n\nCelebrity gossip, local crimes, sports results, social media posts, goofy/zany/oddball stories, conspiracy/UFO/UAP/paranormal stories, commercial product and financial news, etc.\n\nPlease refer to our full rule in the [wiki](https://www.reddit.com/r/worldnews/wiki/rules/#wiki_inappropriate_content) .",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Examples include but are not limited to:</p>\n\n<p>Celebrity gossip, local crimes, sports results, social media posts, goofy/zany/oddball stories, conspiracy/UFO/UAP/paranormal stories, commercial product and financial news, etc.</p>\n\n<p>Please refer to our full rule in the <a href=\"https://www.reddit.com/r/worldnews/wiki/rules/#wiki_inappropriate_content\" rel=\"nofollow\">wiki</a> .</p>\n</div><!-- SC_ON -->",
+          "priority": 7,
+          "shortName": "Your content might be removed if /r/worldnews is not the appropriate subreddit for the story.",
+          "violationReason": "Inappropriate content for the subreddit"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "Hate speech directed towards an entire group of people who share a race, gender, sexual orientation, ethnicity, religion, nationality, social status or disability is not allowed.  This also applies to user names.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Hate speech directed towards an entire group of people who share a race, gender, sexual orientation, ethnicity, religion, nationality, social status or disability is not allowed.  This also applies to user names.</p>\n</div><!-- SC_ON -->",
+          "priority": 8,
+          "shortName": "No Bigotry or Other Offensive Content",
+          "violationReason": "Bigotry or Other Offensive Content"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "You may criticize a user's comment but not their person. Calling people names shuts down discussion. Accusing another user of being a \"shill\" is considered a personal attack. Stick to the issues and remain civil.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>You may criticize a user&#39;s comment but not their person. Calling people names shuts down discussion. Accusing another user of being a &quot;shill&quot; is considered a personal attack. Stick to the issues and remain civil.</p>\n</div><!-- SC_ON -->",
+          "priority": 9,
+          "shortName": "No Personal Attacks On Other Users",
+          "violationReason": "Personal Attack"
+        },
+        {
+          "createdUtc": 1652979863,
+          "description": "Memes may show up in image or in text form. Both are not allowed.\n\nBesides, porn or shock images unrelated to the story discussed will always be removed and posting them is an easy way to get banned.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Memes may show up in image or in text form. Both are not allowed.</p>\n\n<p>Besides, porn or shock images unrelated to the story discussed will always be removed and posting them is an easy way to get banned.</p>\n</div><!-- SC_ON -->",
+          "priority": 10,
+          "shortName": "No Memes, Gifs, unlabeled NSFW images",
+          "violationReason": "Memes, Gifs, unlabeled NSFW images"
+        },
+        {
+          "createdUtc": 1686659861,
+          "description": "",
+          "descriptionHtml": null,
+          "priority": 11,
+          "shortName": "No chatGPT bots or copy/paste bots",
+          "violationReason": "No chatGPT bots or copy/paste bots"
+        }
+      ],
+      "display": "compact",
+      "id": "widget_rules-2qh13",
+      "kind": "subreddit-rules",
+      "shortName": "Subreddit Rules",
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      }
+    }
+  },
+  "layout": {
+    "idCardWidget": "widget_id-card-2qh13",
+    "moderatorWidget": "widget_moderators-2qh13",
+    "sidebar": {
+      "order": [
+        "widget_rules-2qh13",
+        "widget_1aj7euko7coaa",
+        "widget_1fqiajpw848kb",
+        "widget_1fqw6t4mrlaz1"
+      ]
+    },
+    "topbar": {
+      "order": [
+        "widget_108cbb00k7l6n"
+      ]
+    }
+  }
+}

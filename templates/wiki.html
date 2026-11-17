@@ -2,28 +2,28 @@
 {% import "utils.html" as utils %}
 
 {% block title %}
-	{% if sub != "" %}{{ page }} - {{ sub }}
-	{% else %}Redlib{% endif %}
+    {% if sub != "" %}{{ page }} - {{ sub }}
+    {% else %}Redlib{% endif %}
 {% endblock %}
 
 {% block search %}
-	{% call utils::search(["/r/", sub.as_str()].concat(), "") %}
+    {{ utils::search(["/r/", sub.as_str()].concat(), "") }}
 {% endblock %}
 
 {% block subscriptions %}
-	{% call utils::sub_list(sub.as_str()) %}
+    {{ utils::sub_list(sub.as_str()) }}
 {% endblock %}
 
 {% block body %}
-	<main>
-		<div class="panel" id="column_one">
-			<div id="top">
-				<a href="/r/{{ sub }}">Posts</a>
-				<div>Wiki</div>
-			</div>
-			<div id="wiki">
-				{{ wiki|safe }}
-			</div>
-		</div>
-	</main>
+    <main>
+        <div class="panel" id="column_one">
+            <div id="top">
+                <a href="/r/{{ sub }}">Posts</a>
+                <a href="/r/{{ sub }}/wiki/index" class="active">Wiki</a>
+            </div>
+            <div id="wiki">
+                {{ wiki|safe }}
+            </div>
+        </div>
+    </main>
 {% endblock %}

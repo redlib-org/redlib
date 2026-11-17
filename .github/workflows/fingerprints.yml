@@ -1,0 +1,25 @@
+name: Fingerprints
+
+# Manual only: probes every fingerprint, a few hundred requests.
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: false
+      - name: Probe
+        run: >-
+          cargo test --locked --lib client::tests::test_probe_fingerprints --
+          --ignored --nocapture --exact
+        env:
+          # The throwaway account's session, for the session columns
+          REDLIB_REDDIT_COOKIE: ${{ secrets.REDLIB_REDDIT_COOKIE }}

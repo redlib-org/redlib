@@ -12,7 +12,7 @@ on:
   pull_request:
     branches:
       - 'main'
-    
+
 jobs:
   test:
     name: cargo test
@@ -20,12 +20,12 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
-      
+
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      
+
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
 
@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
-      
+
       - name: Install stable toolchain with rustfmt component
         uses: dtolnay/rust-toolchain@stable
         with:

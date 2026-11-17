@@ -1,0 +1,245 @@
+{
+  "data": {
+    "redditorInfoByName": {
+      "comments": {
+        "edges": [
+          {
+            "node": {
+              "__typename": "Comment",
+              "content": {
+                "preview": "That was the thinking. Otherwise it would be easier to just replicate the UI.",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-08-05T18:31:50.140000+0000",
+              "id": "t1_p1wosm9",
+              "postInfo": {
+                "__typename": "ProfilePost",
+                "id": "t3_1vgbkge",
+                "title": "Modernizing Reddit’s infrastructure with you"
+              },
+              "score": 20,
+              "voteState": "NONE"
+            }
+          },
+          {
+            "node": {
+              "__typename": "Comment",
+              "content": {
+                "preview": "If we replace every line of code but the output is the same, is it still old Reddit?",
+                "richtextMedia": []
+              },
+              "createdAt": "2026-08-05T17:30:18.963000+0000",
+              "id": "t1_p1w9sot",
+              "postInfo": {
+                "__typename": "ProfilePost",
+                "id": "t3_1vgbkge",
+                "title": "Modernizing Reddit’s infrastructure with you"
+              },
+              "score": 27,
+              "voteState": "NONE"
+            }
+          }
+        ],
+        "pageInfo": {
+          "__typename": "PageInfo",
+          "endCursor": "dDFfb3BtYjN2aw==",
+          "hasNextPage": true
+        }
+      }
+    },
+    "commentsByIds": [
+      {
+        "__typename": "Comment",
+        "id": "t1_p1wosm9",
+        "createdAt": "2026-08-05T18:31:50.140000+0000",
+        "editedAt": null,
+        "isAdminTakedown": false,
+        "isRemoved": false,
+        "content": {
+          "markdown": "That was the thinking. Otherwise it would be easier to just replicate the UI. ",
+          "richtext": "{\"document\":[{\"c\":[{\"e\":\"text\",\"t\":\"That was the thinking. Otherwise it would be easier to just replicate the UI.\"}],\"e\":\"par\"}]}",
+          "richtextMedia": []
+        },
+        "authorInfo": {
+          "name": "spez"
+        },
+        "score": 20,
+        "authorFlair": null,
+        "isStickied": false,
+        "isScoreHidden": false,
+        "awardings": [
+          {
+            "__typename": "AwardingTotal",
+            "award": {
+              "__typename": "Award",
+              "id": "award_free_bravo",
+              "name": "Bravo",
+              "tags": [
+                "award:quick_give",
+                "award:unlimited_free",
+                "award:legacy",
+                "award:sort:10"
+              ],
+              "static_icon_16": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png",
+                "dimensions": {
+                  "width": 16,
+                  "height": 16
+                }
+              },
+              "static_icon_24": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png",
+                "dimensions": {
+                  "width": 24,
+                  "height": 24
+                }
+              },
+              "static_icon_32": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png",
+                "dimensions": {
+                  "width": 32,
+                  "height": 32
+                }
+              },
+              "static_icon_48": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png",
+                "dimensions": {
+                  "width": 48,
+                  "height": 48
+                }
+              },
+              "static_icon_64": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_64.png",
+                "dimensions": {
+                  "width": 64,
+                  "height": 64
+                }
+              }
+            },
+            "total": 2,
+            "awardingByCurrentUser": []
+          },
+          {
+            "__typename": "AwardingTotal",
+            "award": {
+              "__typename": "Award",
+              "id": "award_free_regret_2",
+              "name": "Regret",
+              "tags": [
+                "award:quick_give",
+                "award:unlimited_free",
+                "award:legacy",
+                "award:sort:40"
+              ],
+              "static_icon_16": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/regret_16.png",
+                "dimensions": {
+                  "width": 16,
+                  "height": 16
+                }
+              },
+              "static_icon_24": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/regret_24.png",
+                "dimensions": {
+                  "width": 24,
+                  "height": 24
+                }
+              },
+              "static_icon_32": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/regret_32.png",
+                "dimensions": {
+                  "width": 32,
+                  "height": 32
+                }
+              },
+              "static_icon_48": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/regret_48.png",
+                "dimensions": {
+                  "width": 48,
+                  "height": 48
+                }
+              },
+              "static_icon_64": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/regret_64.png",
+                "dimensions": {
+                  "width": 64,
+                  "height": 64
+                }
+              }
+            },
+            "total": 1,
+            "awardingByCurrentUser": []
+          },
+          {
+            "__typename": "AwardingTotal",
+            "award": {
+              "__typename": "Award",
+              "id": "award_free_heartwarming",
+              "name": "Heartwarming",
+              "tags": [
+                "award:sort:20",
+                "award:unlimited_free",
+                "award:quick_give",
+                "award:legacy"
+              ],
+              "static_icon_16": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/Heartwarming_16.png",
+                "dimensions": {
+                  "width": 16,
+                  "height": 16
+                }
+              },
+              "static_icon_24": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/Heartwarming_24.png",
+                "dimensions": {
+                  "width": 24,
+                  "height": 24
+                }
+              },
+              "static_icon_32": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/Heartwarming_32.png",
+                "dimensions": {
+                  "width": 32,
+                  "height": 32
+                }
+              },
+              "static_icon_48": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/Heartwarming_48.png",
+                "dimensions": {
+                  "width": 48,
+                  "height": 48
+                }
+              },
+              "static_icon_64": {
+                "__typename": "MediaSource",
+                "url": "https://i.redd.it/snoovatar/snoo_assets/marketing/Heartwarming_64.png",
+                "dimensions": {
+                  "width": 64,
+                  "height": 64
+                }
+              }
+            },
+            "total": 1,
+            "awardingByCurrentUser": []
+          }
+        ],
+        "distinguishedAs": "ADMIN",
+        "permalink": "/user/spez/comments/1vgbkge/modernizing_reddits_infrastructure_with_you/p1wosm9/"
+      }
+    ]
+  }
+}

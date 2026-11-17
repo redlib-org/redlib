@@ -1,0 +1,576 @@
+{
+	"data": {
+		"postsInfoByIds": [
+			{
+				"__typename": "SubredditPost",
+				"id": "t3_1jo8k0v",
+				"createdAt": "2026-10-24T23:48:45.632000+0000",
+				"editedAt": null,
+				"postTitle": "Hosted clip",
+				"languageCode": "en",
+				"isTranslatable": false,
+				"isTranslated": false,
+				"translatedLanguage": null,
+				"url": "https://v.redd.it/hynwcs24l1se1",
+				"liveCommentsWebsocket": "wss://k8s-lb.wss.redditmedia.com/link/1xenfaa?m=AQAADwTfauF6MIQ-tR_JKPEaM8U7CyAlRepnwpYEYTCqXJrW2LOR",
+				"content": null,
+				"domain": "v.redd.it",
+				"isSpoiler": false,
+				"isNsfw": false,
+				"isCommercialCommunication": false,
+				"isLocked": false,
+				"isCrosspostable": false,
+				"isScoreHidden": false,
+				"removedByCategory": null,
+				"isArchived": false,
+				"isStickied": false,
+				"isOriginalContent": false,
+				"isCreatedFromAdsUi": false,
+				"awardings": [
+					{
+						"award": {
+							"id": "award_free_bravo",
+							"name": "Bravo",
+							"pennyPrice": null,
+							"goldPrice": 0,
+							"tags": [
+								"award:quick_give",
+								"award:unlimited_free",
+								"award:legacy",
+								"award:sort:10"
+							],
+							"icon_16": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png",
+								"dimensions": {
+									"width": 16,
+									"height": 16
+								}
+							},
+							"icon_24": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png",
+								"dimensions": {
+									"width": 24,
+									"height": 24
+								}
+							},
+							"icon_32": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png",
+								"dimensions": {
+									"width": 32,
+									"height": 32
+								}
+							},
+							"icon_48": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png",
+								"dimensions": {
+									"width": 48,
+									"height": 48
+								}
+							},
+							"icon_96": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_72.png",
+								"dimensions": {
+									"width": 72,
+									"height": 72
+								}
+							},
+							"icon_128": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"icon_256": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"static_icon_16": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png",
+								"dimensions": {
+									"width": 16,
+									"height": 16
+								}
+							},
+							"static_icon_24": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png",
+								"dimensions": {
+									"width": 24,
+									"height": 24
+								}
+							},
+							"static_icon_32": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png",
+								"dimensions": {
+									"width": 32,
+									"height": 32
+								}
+							},
+							"static_icon_48": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png",
+								"dimensions": {
+									"width": 48,
+									"height": 48
+								}
+							},
+							"static_icon_96": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_72.png",
+								"dimensions": {
+									"width": 72,
+									"height": 72
+								}
+							},
+							"static_icon_128": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"static_icon_256": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"additionalImages": [
+								{
+									"name": "award_animation_lottie_1x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/3pzWYuJO8RY_bravo.json",
+										"dimensions": {
+											"width": 1125,
+											"height": 1125
+										}
+									}
+								},
+								{
+									"name": "static_16x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/IHibp9kp7Rc_bravo_128.png",
+										"dimensions": {
+											"width": 128,
+											"height": 128
+										}
+									}
+								},
+								{
+									"name": "static_4x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/W2n18j_hEv8_bravo_48.png",
+										"dimensions": {
+											"width": 48,
+											"height": 48
+										}
+									}
+								},
+								{
+									"name": "static_8x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/OOtOpoOoHg8_bravo_64.png",
+										"dimensions": {
+											"width": 64,
+											"height": 64
+										}
+									}
+								},
+								{
+									"name": "success_animation_lottie",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/-BsesVV64xk_bravo_success.json",
+										"dimensions": {
+											"width": 1125,
+											"height": 1125
+										}
+									}
+								}
+							]
+						},
+						"total": 1,
+						"goldCount": 0
+					}
+				],
+				"isGildable": true,
+				"isContestMode": false,
+				"distinguishedAs": null,
+				"gallery": null,
+				"location": null,
+				"score": 7099,
+				"upvoteRatio": 0.9319457757086129,
+				"commentCount": 322,
+				"authorFlair": null,
+				"flair": {
+					"type": "text",
+					"text": "In the Weeds Mode",
+					"richtext": null,
+					"textColor": "LIGHT",
+					"template": {
+						"id": "be7991d6-328b-11f0-a1ed-d2f9210cc0ba",
+						"isModOnly": true,
+						"isEditable": false,
+						"backgroundRGBA": "#E81717FF",
+						"text": "In the Weeds Mode",
+						"type": "text",
+						"richtext": null,
+						"textColor": "LIGHT",
+						"allowableContent": "TEXT",
+						"maxEmojis": 10
+					}
+				},
+				"authorInfo": {
+					"name": null
+				},
+				"isThumbnailEnabled": true,
+				"thumbnail": {
+					"url": "https://external-preview.redd.it/and2aW9sMnE1aXhoMTaHJxKIwPcvmXio5VNituT5ft9C8aVNgkOI15nrybkM.jpeg?width=140&height=140&crop=1%3A1%2Csmart&format=jpg&auto=webp&s=92c44951e841350c9fba407ccdddecfaf6b46751",
+					"dimensions": {
+						"width": 140,
+						"height": 140
+					}
+				},
+				"media": {
+					"still": {
+						"source": {
+							"__typename": "MediaSource",
+							"dimensions": {
+								"height": 1080,
+								"width": 1920
+							},
+							"url": "https://external-preview.redd.it/NWZ5bHRxMjRsMXNlMS453lM0kZFlYiJspc001AaM_-F79tFjK4lnmhOcr0xr.png?format=pjpg&auto=webp&s=461abacb1644713aab33a9c726a95ed1b740d601"
+						}
+					},
+					"streaming": {
+						"hlsUrl": "https://v.redd.it/hynwcs24l1se1/HLSPlaylist.m3u8?f=hd%2CsubsAll%2ChlsSpecOrder%2Cvp9&v=1&a=1795858978%2CM2MxYTY3MmI5MzhhYmUzOGQ0M2ZhOTRjZDU3NjUyMzhhYWY0ZGQ2NjJkNDAzNzg2YmNkYWUxZjhkYjNkMTE0Nw%3D%3D",
+						"dashUrl": "https://v.redd.it/hynwcs24l1se1/DASHPlaylist.mpd?f=hd%2CsubsAll%2ChlsSpecOrder%2Cvp9&v=1&a=1795858978%2CMWI3MDAzYTIwOTJmZjA3MjFmYjFlMDJlMzAzNDc4NDlhODU5ZTkzZWYwNjY0MTJmMjNlMjBkZmQxMGYwZTYwMA%3D%3D",
+						"dimensions": {
+							"height": 1080,
+							"width": 1920
+						},
+						"isGif": false
+					},
+					"packagedMedia": {
+						"muxedMp4s": {
+							"recommended": {
+								"url": "https://packaged-media.redd.it/hynwcs24l1se1/muxed-high.mp4?m=DASHPlaylist.mpd&v=1&e=1793271600&s=c340e13bfc87a0f6987b86283f1665a1a95197aa"
+							}
+						}
+					},
+					"download": {
+						"url": "https://packaged-media.redd.it/hynwcs24l1se1/dl/m2-res_720p.mp4?m=DASHPlaylist.mpd&v=1&e=1793271600&s=4c079a05c6672459b3303fe78d5d4e6a4e3e074a"
+					},
+					"typeHint": "VIDEO"
+				},
+				"crowdControlLevel": "OFF",
+				"isCrowdControlFilterEnabled": false,
+				"suggestedCommentSort": null,
+				"discussionType": "COMMENT",
+				"permalink": "/r/test/comments/1jo8k0v/hosted_clip/",
+				"postHint": "HOSTED_VIDEO",
+				"isSelfPost": false,
+				"isOwnPost": false,
+				"poll": null,
+				"collections": {
+					"edges": []
+				},
+				"subreddit": {
+					"name": "KitchenConfidential",
+					"prefixedName": "r/KitchenConfidential"
+				},
+				"isPollIncluded": false,
+				"postStats": {
+					"shareAllTotal": 284
+				},
+				"authorOnlyInfo": null,
+				"crosspostRoot": null
+			},
+			{
+				"__typename": "SubredditPost",
+				"id": "t3_1xhfggw",
+				"createdAt": "2026-10-24T23:48:45.632000+0000",
+				"editedAt": null,
+				"postTitle": "Streamable clip",
+				"languageCode": "en",
+				"isTranslatable": false,
+				"isTranslated": false,
+				"translatedLanguage": null,
+				"url": "https://streamable.com/9gsuah",
+				"liveCommentsWebsocket": "wss://k8s-lb.wss.redditmedia.com/link/1xenfaa?m=AQAADwTfauF6MIQ-tR_JKPEaM8U7CyAlRepnwpYEYTCqXJrW2LOR",
+				"content": null,
+				"domain": "streamable.com",
+				"isSpoiler": false,
+				"isNsfw": false,
+				"isCommercialCommunication": false,
+				"isLocked": false,
+				"isCrosspostable": false,
+				"isScoreHidden": false,
+				"removedByCategory": null,
+				"isArchived": false,
+				"isStickied": false,
+				"isOriginalContent": false,
+				"isCreatedFromAdsUi": false,
+				"awardings": [
+					{
+						"award": {
+							"id": "award_free_bravo",
+							"name": "Bravo",
+							"pennyPrice": null,
+							"goldPrice": 0,
+							"tags": [
+								"award:quick_give",
+								"award:unlimited_free",
+								"award:legacy",
+								"award:sort:10"
+							],
+							"icon_16": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png",
+								"dimensions": {
+									"width": 16,
+									"height": 16
+								}
+							},
+							"icon_24": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png",
+								"dimensions": {
+									"width": 24,
+									"height": 24
+								}
+							},
+							"icon_32": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png",
+								"dimensions": {
+									"width": 32,
+									"height": 32
+								}
+							},
+							"icon_48": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png",
+								"dimensions": {
+									"width": 48,
+									"height": 48
+								}
+							},
+							"icon_96": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_72.png",
+								"dimensions": {
+									"width": 72,
+									"height": 72
+								}
+							},
+							"icon_128": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"icon_256": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"static_icon_16": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_16.png",
+								"dimensions": {
+									"width": 16,
+									"height": 16
+								}
+							},
+							"static_icon_24": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_24.png",
+								"dimensions": {
+									"width": 24,
+									"height": 24
+								}
+							},
+							"static_icon_32": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_32.png",
+								"dimensions": {
+									"width": 32,
+									"height": 32
+								}
+							},
+							"static_icon_48": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_48.png",
+								"dimensions": {
+									"width": 48,
+									"height": 48
+								}
+							},
+							"static_icon_96": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_72.png",
+								"dimensions": {
+									"width": 72,
+									"height": 72
+								}
+							},
+							"static_icon_128": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"static_icon_256": {
+								"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/bravo_128.png",
+								"dimensions": {
+									"width": 128,
+									"height": 128
+								}
+							},
+							"additionalImages": [
+								{
+									"name": "award_animation_lottie_1x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/3pzWYuJO8RY_bravo.json",
+										"dimensions": {
+											"width": 1125,
+											"height": 1125
+										}
+									}
+								},
+								{
+									"name": "static_16x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/IHibp9kp7Rc_bravo_128.png",
+										"dimensions": {
+											"width": 128,
+											"height": 128
+										}
+									}
+								},
+								{
+									"name": "static_4x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/W2n18j_hEv8_bravo_48.png",
+										"dimensions": {
+											"width": 48,
+											"height": 48
+										}
+									}
+								},
+								{
+									"name": "static_8x",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/OOtOpoOoHg8_bravo_64.png",
+										"dimensions": {
+											"width": 64,
+											"height": 64
+										}
+									}
+								},
+								{
+									"name": "success_animation_lottie",
+									"image": {
+										"url": "https://i.redd.it/snoovatar/snoo_assets/marketing/-BsesVV64xk_bravo_success.json",
+										"dimensions": {
+											"width": 1125,
+											"height": 1125
+										}
+									}
+								}
+							]
+						},
+						"total": 1,
+						"goldCount": 0
+					}
+				],
+				"isGildable": true,
+				"isContestMode": false,
+				"distinguishedAs": null,
+				"gallery": null,
+				"location": null,
+				"score": 7099,
+				"upvoteRatio": 0.9319457757086129,
+				"commentCount": 322,
+				"authorFlair": null,
+				"flair": {
+					"type": "text",
+					"text": "In the Weeds Mode",
+					"richtext": null,
+					"textColor": "LIGHT",
+					"template": {
+						"id": "be7991d6-328b-11f0-a1ed-d2f9210cc0ba",
+						"isModOnly": true,
+						"isEditable": false,
+						"backgroundRGBA": "#E81717FF",
+						"text": "In the Weeds Mode",
+						"type": "text",
+						"richtext": null,
+						"textColor": "LIGHT",
+						"allowableContent": "TEXT",
+						"maxEmojis": 10
+					}
+				},
+				"authorInfo": {
+					"name": null
+				},
+				"isThumbnailEnabled": true,
+				"thumbnail": {
+					"url": "https://external-preview.redd.it/and2aW9sMnE1aXhoMTaHJxKIwPcvmXio5VNituT5ft9C8aVNgkOI15nrybkM.jpeg?width=140&height=140&crop=1%3A1%2Csmart&format=jpg&auto=webp&s=92c44951e841350c9fba407ccdddecfaf6b46751",
+					"dimensions": {
+						"width": 140,
+						"height": 140
+					}
+				},
+				"media": {
+					"still": {
+						"source": {
+							"__typename": "MediaSource",
+							"dimensions": {
+								"height": 778,
+								"width": 1180
+							},
+							"url": "https://external-preview.redd.it/vERFgFbF0XmOVUb07Z6AiTKrYaZbtNU9SRDKbNQSrHM.jpeg?format=pjpg&auto=webp&s=6dfc4acdadadc47800533037e6e6beb46599c98e"
+						}
+					},
+					"streaming": {
+						"hlsUrl": "https://external-packaged-media.redd.it/t3_1xhfggw/3p/streamable/9gsuah/video.mp4?v=1&e=1793271600&s=ca9f59d1b8f0057989eedcdf6c0644943de620ad",
+						"dashUrl": "https://external-packaged-media.redd.it/t3_1xhfggw/3p/streamable/9gsuah/video.mp4?v=1&e=1793271600&s=ca9f59d1b8f0057989eedcdf6c0644943de620ad",
+						"dimensions": {
+							"height": 720,
+							"width": 1092
+						},
+						"isGif": false
+					},
+					"packagedMedia": {
+						"muxedMp4s": {
+							"recommended": {
+								"url": "https://external-packaged-media.redd.it/t3_1xhfggw/3p/streamable/9gsuah/video.mp4?v=1&e=1793271600&s=ca9f59d1b8f0057989eedcdf6c0644943de620ad"
+							}
+						}
+					},
+					"download": null,
+					"typeHint": "EMBED"
+				},
+				"crowdControlLevel": "OFF",
+				"isCrowdControlFilterEnabled": false,
+				"suggestedCommentSort": null,
+				"discussionType": "COMMENT",
+				"permalink": "/r/formula1/comments/1xhfggw/streamable_clip/",
+				"postHint": "RICH_VIDEO",
+				"isSelfPost": false,
+				"isOwnPost": false,
+				"poll": null,
+				"collections": {
+					"edges": []
+				},
+				"subreddit": {
+					"name": "KitchenConfidential",
+					"prefixedName": "r/KitchenConfidential"
+				},
+				"isPollIncluded": false,
+				"postStats": {
+					"shareAllTotal": 284
+				},
+				"authorOnlyInfo": null,
+				"crosspostRoot": null
+			}
+		]
+	}
+}

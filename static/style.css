@@ -140,6 +140,11 @@ input {
     word-wrap: anywhere;
 }
 
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--highlighted) var(--background);
+}
+
 html.fixed_navbar {
     scroll-padding-top: 50px;
 }
@@ -365,7 +370,9 @@ main {
     overflow: inherit;
 }
 @media screen and (max-width: 800px) {
-    #column_one { max-width: unset; }
+    #column_one {
+        max-width: unset;
+    }
 }
 
 /* Body footer. */
@@ -389,6 +396,11 @@ body > footer {
     opacity: 0.8;
 }
 
+#source svg {
+    vertical-align: -2px;
+    margin-right: 0.3em;
+}
+
 /* / Body footer. */
 
 /* Footer in content block. */
@@ -408,6 +420,10 @@ button {
     background: none;
     border: none;
     font-weight: bold;
+    cursor: pointer;
+}
+
+summary {
     cursor: pointer;
 }
 
@@ -463,7 +479,10 @@ aside {
     overflow: hidden;
 }
 @media screen and (min-width: 800px) {
-    #subreddit, #sidebar { min-width: 350px; }
+    #subreddit,
+    #sidebar {
+        min-width: 350px;
+    }
 }
 
 #user *,
@@ -481,6 +500,135 @@ aside {
 #sidebar_contents {
     margin-top: 10px;
 }
+
+/* New Reddit's sidebar widgets: one box per widget, titled ones fold */
+/* full width even with every box closed: the panel centres its children,
+   which shrinks the contents to their widest title */
+#sidebar {
+    align-items: stretch;
+}
+
+#sidebar > summary {
+    text-align: center;
+}
+
+.widget + .widget {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--highlighted);
+}
+
+.widget_title {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.widget[open] > .widget_title {
+    margin-bottom: 8px;
+}
+
+/* links red like everywhere else; the titles above are white */
+.widget a,
+.widget .md a,
+.widget .md a * {
+    color: var(--accent);
+}
+
+/* the marker hangs in the left padding, so long rules wrap under their text
+   and descriptions line up with it */
+.widget_rule {
+    padding: 8px 0 8px 1.2em;
+}
+
+.widget_rule > summary {
+    list-style-position: outside;
+}
+
+/* rules without a description get the same marker, unseen, so all rule
+   numbers line up */
+.widget_rule_plain {
+    display: list-item;
+    list-style: disclosure-closed outside;
+}
+
+.widget_rule_plain::marker {
+    color: transparent;
+}
+
+.widget_rule > .md {
+    margin-top: 6px;
+}
+
+.widget_links {
+    list-style: none;
+    padding: 0;
+}
+
+/* compact community rows: icon, name, members on the right */
+.widget_communities {
+    list-style: none;
+    padding: 0;
+}
+
+.widget_communities li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 0;
+}
+
+.widget_communities a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.widget_communities img,
+.widget_communities .default_sub_icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 100%;
+    flex-shrink: 0;
+}
+
+.widget_communities .default_sub_icon {
+    font-size: 10px;
+}
+
+.widget_members {
+    color: var(--visited);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.widget_more > summary {
+    padding: 4px 0;
+}
+
+/* link boxes: plain links, one per line */
+.widget_links > li {
+    padding: 3px 0;
+}
+
+.widget_submenu ul {
+    list-style: none;
+    padding: 4px 0 0 16px;
+}
+
+.widget_submenu li {
+    padding: 2px 0;
+}
+
+.widget_image {
+    max-width: 100%;
+    border-radius: 5px;
+}
 #sidebar_label,
 #subreddit_label {
     padding: 10px;
@@ -495,6 +643,24 @@ aside {
     border-radius: 100%;
     padding: 10px;
     margin: 10px;
+}
+
+/* Reddit's generic "r/" icon for subreddits without their own */
+.default_sub_icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 100%;
+    background: var(--highlighted);
+    background-clip: content-box;
+    color: var(--text);
+    font-weight: bold;
+}
+
+#sub_icon.default_sub_icon {
+    box-sizing: content-box;
+    font-size: 40px;
 }
 
 #user_title,
@@ -527,10 +693,41 @@ aside {
     grid-template-columns: repeat(2, 1fr);
 }
 @media screen and (max-width: 279px) {
-    #sub_actions { display: unset; }
+    #sub_actions {
+        display: unset;
+    }
+}
+
+#sub_actions,
+#user_actions {
+    column-gap: 10px;
+    align-self: stretch;
+    min-width: max-content;
+}
+
+#sub_actions button,
+#user_actions button {
+    width: 100%;
+    white-space: nowrap;
+}
+
+summary:not(.comment_data):hover {
+    text-decoration: underline;
+}
+
+#instance_info details[open] > summary {
+    margin-bottom: 10px;
 }
 
 #user_details > label,
+/* label above its number, one column per stat */
+#sub_details {
+    grid-template-columns: none;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+}
+
 #sub_details > label {
     color: var(--accent);
 }
@@ -579,6 +776,15 @@ aside {
     background-color: var(--highlighted);
 }
 
+.subscribe:hover,
+.unsubscribe:hover,
+.filter:hover,
+.unfilter:hover,
+.copy:hover,
+.import:hover {
+    text-decoration: underline;
+}
+
 /* Feeds */
 
 #feeds {
@@ -594,10 +800,13 @@ aside {
 
 #feeds > summary {
     padding: 8px 15px;
+    cursor: pointer;
 }
 
 #feed_list {
     position: absolute;
+    /* gap here, not on the summary: that would make the menubar taller */
+    margin-top: 10px;
     display: flex;
     min-width: 100%;
     max-height: 500px;
@@ -652,7 +861,7 @@ aside {
     line-height: 35px;
 }
 
-#top > div {
+#top > .active {
     border-bottom: 2px solid var(--text);
 }
 
@@ -664,7 +873,8 @@ select,
 #listing_options,
 #inside,
 #searchbox > *,
-#sort_submit {
+#sort_submit,
+#comment_search_submit {
     height: 38px;
 }
 
@@ -681,7 +891,9 @@ select {
     cursor: pointer;
 }
 
-#searchbox > * { font-size: 15px; }
+#searchbox > * {
+    font-size: 15px;
+}
 
 select,
 #search {
@@ -706,8 +918,13 @@ select,
     margin-bottom: 0;
 }
 
+#searchbox:focus-within {
+    outline: 2px solid var(--accent);
+}
+
 #searchbox > *,
-#sort_submit {
+#sort_submit,
+#comment_search_submit {
     background: var(--highlighted);
 }
 
@@ -716,8 +933,12 @@ select,
     flex-grow: 1;
 }
 @media screen and (max-width: 800px) {
-    #search { width: 0; }
-    #search.commentQuery { width: unset; }
+    #search {
+        width: 0;
+    }
+    #search.commentQuery {
+        width: unset;
+    }
 }
 
 #inside {
@@ -759,7 +980,60 @@ button.submit:hover > svg {
     border-radius: 0;
 }
 
-#sort_options + #timeframe:not(#search_sort > #timeframe) {
+button,
+input[type="submit"],
+input[type="checkbox"],
+input[type="radio"],
+summary,
+#inside label {
+    cursor: pointer;
+}
+
+#search_sort select,
+#sort select,
+#sort_submit,
+#inside {
+    transition: 0.2s background;
+}
+
+#search_sort select:hover,
+#search_sort select:focus-visible,
+#sort select:hover,
+#sort select:focus-visible,
+#sort_submit:hover,
+#sort_submit:focus-visible,
+#inside:hover,
+#inside:focus-within {
+    background: var(--foreground);
+    text-decoration: underline;
+    outline: none;
+}
+
+#search_sort:focus-within,
+#sort:has(.commentQuery):focus-within {
+    outline: 2px solid var(--accent);
+}
+
+#search_sort :focus-visible,
+#sort:has(.commentQuery) :focus-visible {
+    outline: none;
+}
+
+#sort:has(.commentQuery) {
+    border-radius: 5px;
+}
+
+#search_sort #inside {
+    max-width: none;
+}
+
+#sort_submit {
+    flex: 0 0 auto;
+    min-width: 45px;
+    justify-content: center;
+}
+
+#sort_options + #timeframe:not(#search_sort #timeframe) {
     border-radius: 5px 0px 0px 5px;
 }
 
@@ -820,6 +1094,11 @@ button.submit:hover > svg {
 .search_widget_divider_box > #sort_options {
     border-radius: 0;
     box-shadow: none;
+}
+
+/* Only the search field rounds its corners, so every focus outline matches */
+#search_sort select {
+    border-radius: 0;
 }
 
 /* When screen size is smaller than 480px we switch to a design better suited for mobile devices */
@@ -887,6 +1166,103 @@ main > * > footer > a {
     background: var(--foreground);
 }
 
+/* Search tabs: one row that scrolls sideways on narrow screens */
+#listing_options.search_tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: auto;
+    max-width: 100%;
+    margin: 10px 0 20px 0;
+    white-space: nowrap;
+    scrollbar-width: none;
+    /* Scroll shadows without JS: the `local` covers move with the tabs and
+       hide the `scroll` shadows once an edge is reached */
+    --scroll-shadow: color-mix(in srgb, var(--text) 40%, transparent);
+    background:
+        linear-gradient(to right, var(--outside) 40%, transparent) left / 50px 100% no-repeat local,
+        linear-gradient(to left, var(--outside) 40%, transparent) right / 50px 100% no-repeat local,
+        linear-gradient(to right, var(--scroll-shadow), transparent) left / 20px 100% no-repeat scroll,
+        linear-gradient(to left, var(--scroll-shadow), transparent) right / 20px 100% no-repeat scroll,
+        var(--outside);
+}
+
+#listing_options.search_tabs::-webkit-scrollbar {
+    display: none;
+}
+
+#listing_options.search_tabs > a {
+    flex: 1 0 auto;
+    text-align: center;
+}
+
+.media_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+}
+
+.media_tile {
+    position: relative;
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--post);
+}
+
+.media_tile img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media_tile:hover img {
+    filter: brightness(1.1);
+}
+
+.media_tile:hover .media_sub {
+    text-decoration: underline;
+}
+
+.media_tile.post_blurred img {
+    filter: blur(1.5rem);
+}
+
+.media_badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.media_sub {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 8px 6px;
+    font-size: 12px;
+    color: #fff;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+}
+
+/* Keeps the scroll position on the results, not the link, when more are added */
+.search_more {
+    overflow-anchor: none;
+}
+
+.search_results_comments .comment {
+    margin-bottom: 10px;
+}
+
 #search_subreddits {
     border-radius: 5px;
     background: var(--post);
@@ -910,10 +1286,15 @@ main > * > footer > a {
     margin-right: 10px;
 }
 
-.search_subreddit_left img {
+.search_subreddit_left img,
+.search_subreddit_left .default_sub_icon {
     width: 35px;
     height: 35px;
     border-radius: 100%;
+}
+
+.search_subreddit_left .default_sub_icon {
+    font-size: 14px;
 }
 
 .search_subreddit_right {
@@ -923,6 +1304,10 @@ main > * > footer > a {
 a.search_subreddit:hover {
     text-decoration: none;
     background: var(--foreground);
+}
+
+a.search_subreddit:hover .search_subreddit_name {
+    text-decoration: underline;
 }
 
 .search_subreddit:not(:last-child) {
@@ -1100,6 +1485,17 @@ a.search_subreddit:hover {
     font-weight: bold;
 }
 
+/* Not `.advertiser`: EasyList hides that class */
+.author_badge {
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 1px 4px;
+    font-size: 11px;
+    border-radius: 5px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
 .spoiler {
     color: var(--spoiler);
     margin-left: 5px;
@@ -1118,6 +1514,7 @@ a.search_subreddit:hover {
     width: auto;
     height: auto;
     overflow: hidden;
+    position: relative;
 }
 
 .post_media_video {
@@ -1129,6 +1526,12 @@ a.search_subreddit:hover {
     max-height: 512px;
     display: block;
     margin: auto;
+}
+
+/* Size from the attributes, not the poster: WebKit drops the poster's size when playback starts and the posts below jump under the finger */
+.post_media_video[style] {
+    aspect-ratio: var(--w) / var(--h);
+    width: min(var(--w) * 1px, 512px * var(--w) / var(--h));
 }
 
 .post_media_image.short svg,
@@ -1158,7 +1561,7 @@ a.search_subreddit:hover {
 .post_blurred .post_media_content:has(~ .post_body:hover) *,
 .post_blurred .post_body:hover,
 .post_blurred .post_thumbnail:hover * {
-	filter: none;
+    filter: none;
 }
 
 .post_media_image svg {
@@ -1210,7 +1613,6 @@ a.search_subreddit:hover {
 .post_body pre {
     background: var(--background);
     overflow-x: auto;
-    margin: 10px 0;
     padding: 10px;
 }
 
@@ -1308,6 +1710,14 @@ a.search_subreddit:hover {
     margin-right: 15px;
 }
 
+#post_links li.download_gallery {
+    display: none;
+}
+
+.js-enabled #post_links li.download_gallery {
+    display: list-item;
+}
+
 .desktop_item {
     display: auto;
 }
@@ -1385,12 +1795,20 @@ a.search_subreddit:hover {
     display: flex;
 }
 
+.giphy-embed-container,
 .comment img {
     max-width: 50%;
     height: auto;
+    position: relative;
+}
+
+.giphy-embed {
+    width: 100%;
+    display: flex;
 }
 
 @media screen and (max-width: 500px) {
+    .giphy-embed-container,
     .comment img {
         max-width: 80%;
         height: auto;
@@ -1412,6 +1830,7 @@ a.search_subreddit:hover {
     min-width: 50px;
     padding: 5px 0;
     align-items: center;
+    position: relative;
 }
 
 .comment_title {
@@ -1450,6 +1869,19 @@ a.search_subreddit:hover {
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
+    position: relative;
+}
+
+.comment_right[open] > .comment_data > .comment_collapse {
+    position: absolute; /* relative to .comment_right */
+    width: 20px;
+    left: -35px;
+    top: 45px;
+    height: calc(100% - 45px);
+}
+
+.comment:has(> .comment_right[open] > .comment_data > .comment_collapse:hover) > .comment_left * {
+    background: var(--highlighted);
 }
 
 .comment:has([id]) .comment_data > * {
@@ -1683,6 +2115,11 @@ summary.comment_data {
     margin-top: 7px;
 }
 
+/* Only the System theme follows the browser's light or dark scheme */
+fieldset:not(:has(#theme option[value="system"]:checked)) .system_theme {
+    display: none;
+}
+
 .prefs-group > *:not(:last-child) {
     margin-right: 1ch;
 }
@@ -1696,10 +2133,15 @@ summary.comment_data {
     box-shadow: var(--shadow);
     margin-left: 20px;
     background: var(--foreground);
+    max-width: 50%;
 }
 
 aside.prefs {
     margin-top: 20px;
+}
+
+#save:focus {
+    outline: 2px solid var(--accent);
 }
 
 #save {
@@ -1737,28 +2179,22 @@ input[type="submit"] {
     width: 250px;
     background: var(--highlighted) !important;
 }
-/* Info page */
-.unset {
-    color: lightslategrey;
-}
-
 /* Markdown */
 
 .md {
     width: 100%;
 }
 
-.md > p:not(:first-child) {
-    margin-top: 20px;
+.md > :first-child {
+    margin-top: 0;
 }
 
-.md > figure:first-of-type {
-    margin-top: 5px;
-    margin-bottom: 0px;
+.md > :last-child {
+    margin-bottom: 0;
 }
 
-.md > figure:not(:first-of-type) {
-    margin-top: 10px;
+.md > * {
+    margin-bottom: 1.25rem;
 }
 
 .md h1 {
@@ -1778,6 +2214,15 @@ input[type="submit"] {
 }
 .md h6 {
     font-size: 12px;
+}
+
+.md h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 1.25rem 0 0.75rem;
 }
 
 .md blockquote {
@@ -1818,7 +2263,6 @@ input[type="submit"] {
 .md pre {
     background: var(--outside);
     padding: 20px;
-    margin-top: 10px;
     border-radius: 5px;
     box-shadow: var(--shadow);
     overflow: auto;
@@ -1838,6 +2282,37 @@ input[type="submit"] {
 
 .md code:not(.md pre > code) {
     background: var(--highlighted);
+    border-radius: 3px;
+    padding: 0 3px;
+}
+
+/* Syntax highlighting: hues mixed with the theme's text colour, so they keep
+   their contrast in light and dark themes */
+.hl-comment {
+    color: color-mix(in srgb, var(--text) 55%, transparent);
+    font-style: italic;
+}
+.hl-keyword,
+.hl-storage {
+    color: color-mix(in srgb, #c678dd 75%, var(--text));
+}
+.hl-keyword.hl-operator {
+    color: inherit;
+}
+.hl-string {
+    color: color-mix(in srgb, #98c379 75%, var(--text));
+}
+.hl-constant {
+    color: color-mix(in srgb, #d19a66 75%, var(--text));
+}
+.hl-entity.hl-name.hl-function,
+.hl-support.hl-function {
+    color: color-mix(in srgb, #61afef 75%, var(--text));
+}
+.hl-entity.hl-name.hl-type,
+.hl-entity.hl-name.hl-class,
+.hl-support.hl-type {
+    color: color-mix(in srgb, #e5c07b 75%, var(--text));
 }
 
 /* Tables */
@@ -1871,14 +2346,94 @@ th {
 #error {
     text-align: center;
 }
+#error {
+    max-width: 700px;
+    margin: 40px auto;
+}
 #error h1 {
     margin-bottom: 10px;
 }
-#error h3 {
+#error .error_detail {
     opacity: 0.85;
+}
+#error .error_url {
+    margin: 20px 0;
+    padding: 10px;
+    border-radius: 5px;
+    background: var(--foreground);
+    font-size: 13px;
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+#error .error_subreddits {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+}
+#error .error_links {
+    opacity: 0.85;
+}
+#error #random-instance:not(:empty)::before {
+    content: " · ";
+    color: var(--text);
+}
+/* Red second footer row when the instance is behind its source repository */
+body > footer.has_update {
+    flex-direction: column;
+}
+.update_footer {
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+    background: var(--accent);
+    color: white;
+    text-align: center;
+}
+.update_footer[hidden] {
+    display: none;
+}
+body.update_footer_shown {
+    padding-bottom: calc(2 * var(--footer-height));
+}
+/* Same bar at the top while a page is served from the stale cache */
+.stale_banner {
+    width: 100%;
+    min-height: var(--footer-height);
+    padding: 6px 10px;
+    line-height: 18px;
+    box-sizing: border-box;
+    background: var(--accent);
+    color: white;
+    text-align: center;
+}
+/* Stands in for the fixed navbar while the bar shows */
+.top_bars.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 #error a {
     color: var(--accent);
+}
+
+/* Instance info: every table as wide as the widest one; the score explanation doesn't widen them */
+#instance_info {
+    display: inline-block;
+}
+
+#instance_info table {
+    width: 100%;
+}
+
+#instance_info details {
+    width: 0;
+    min-width: 100%;
+    margin: 15px 0;
+    text-align: left;
 }
 
 /* Messages */
@@ -1977,17 +2532,35 @@ th {
         margin: 0;
         max-width: 100%;
     }
-    #user { margin: 0 0 20px; }
-    
+    #user {
+        margin: 0 0 20px;
+    }
+
     body.fixed_navbar {
         min-height: calc(100vh - 75px);
         padding-top: 45px;
-        #subreddit { margin: 49px 0 0; }
-        #user { margin: 49px 0 20px 0; }
-        #settings { margin-top: 48px; }
-        div.post.highlighted { margin-top: 49px; }
-        main:not(:has(div + aside)) { #sort { margin-top: 49px; } }
-        #column_one:has(div.post.highlighted + #commentQueryForms) { #sort { margin-top: 0 } }
+        #subreddit {
+            margin: 49px 0 0;
+        }
+        #user {
+            margin: 49px 0 20px 0;
+        }
+        #settings {
+            margin-top: 48px;
+        }
+        div.post.highlighted {
+            margin-top: 49px;
+        }
+        main:not(:has(div + aside)) {
+            #sort {
+                margin-top: 49px;
+            }
+        }
+        #column_one:has(div.post.highlighted + #commentQueryForms) {
+            #sort {
+                margin-top: 0;
+            }
+        }
     }
 
     #sidebar {
@@ -2011,10 +2584,6 @@ th {
 }
 
 @media screen and (max-width: 507px) {
-    #version {
-        display: none;
-    }
-
     .post {
         grid-template:
             "post_header post_header post_thumbnail" auto
@@ -2063,6 +2632,14 @@ th {
         margin-top: -5px;
     }
 
+    .comment_right[open] > .comment_data > .comment_collapse {
+        /* relative to .comment_right */
+        width: 15px;
+        left: -29px;
+        top: 35px;
+        height: calc(100% - 35px);
+    }
+
     .line {
         margin-left: 5px;
     }
@@ -2075,7 +2652,8 @@ th {
         margin-left: 12px;
     }
     .comment_data {
-        margin-left: 12px;
+        margin-left: 8px;
+        padding-left: 8px;
     }
 
     .user-comment .comment_data {

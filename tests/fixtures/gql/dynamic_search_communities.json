@@ -1,0 +1,134 @@
+{
+  "data": {
+    "search": {
+      "dynamic": {
+        "components": {
+          "__typename": "SearchResultsMainLayout",
+          "appliedState": {
+            "__typename": "SearchAppliedState",
+            "filters": [
+              {
+                "key": "component",
+                "value": "SearchAppliedState"
+              },
+              {
+                "key": "experience_selection",
+                "value": "community"
+              },
+              {
+                "key": "safe_search",
+                "value": "unset"
+              },
+              {
+                "key": "structure_type",
+                "value": "search"
+              }
+            ],
+            "options": [],
+            "pane": "communities",
+            "query": "aurora borealis"
+          },
+          "main": {
+            "edges": [
+              {
+                "cursor": "",
+                "node": {
+                  "__typename": "SearchListComponent",
+                  "id": "section_2_pipeline_0_subreddit_search",
+                  "children": [
+                    {
+                      "__typename": "SearchCommunity",
+                      "community": {
+                        "__typename": "Subreddit",
+                        "communityStats": {
+                          "weeklyActiveUsersCount": 1557
+                        },
+                        "id": "t5_2zxdi",
+                        "isNsfw": false,
+                        "isQuarantined": false,
+                        "isSubscribed": false,
+                        "name": "AuroraBorealis",
+                        "prefixedName": "r/AuroraBorealis",
+                        "publicDescriptionText": "A subreddit dedicated to the beauty, science, and photography of the Aurora Borealis — the Northern Lights.",
+                        "styles": {
+                          "icon": "https://styles.redditmedia.com/t5_2zxdi/styles/communityIcon_oo7faza3onq91.jpg?width=64&frame=1&auto=webp&s=e712495062522108777862928f8acc520c51546e",
+                          "legacyIcon": null
+                        },
+                        "subscribersCount": 23815
+                      },
+                      "id": "t5_2zxdi",
+                      "presentation": {
+                        "__typename": "SearchCommunityDefaultPresentation",
+                        "description": "A subreddit dedicated to the beauty, science, and photography of the Aurora Borealis — the Northern Lights.",
+                        "name": "AuroraBorealis"
+                      }
+                    },
+                    {
+                      "__typename": "SearchCommunity",
+                      "community": {
+                        "__typename": "Subreddit",
+                        "communityStats": {
+                          "weeklyActiveUsersCount": 1937
+                        },
+                        "id": "t5_2tpry",
+                        "isNsfw": false,
+                        "isQuarantined": false,
+                        "isSubscribed": false,
+                        "name": "northernlights",
+                        "prefixedName": "r/northernlights",
+                        "publicDescriptionText": "The subreddit for photography, artwork and discussion of the northern lights/aurora borealis and the southern lights/aurora australis.",
+                        "styles": {
+                          "icon": "https://styles.redditmedia.com/t5_2tpry/styles/communityIcon_87vtaudrcrmh1.jpg?width=64&frame=1&auto=webp&s=f2410e2a7105a45994ac24ceb995b7df95c67ef0",
+                          "legacyIcon": null
+                        },
+                        "subscribersCount": 46746
+                      },
+                      "id": "t5_2tpry",
+                      "presentation": {
+                        "__typename": "SearchCommunityDefaultPresentation",
+                        "description": "The subreddit for photography, artwork and discussion of the northern lights/aurora borealis and the southern lights/aurora australis.",
+                        "name": "northernlights"
+                      }
+                    },
+                    {
+                      "__typename": "SearchCommunity",
+                      "community": {
+                        "__typename": "Subreddit",
+                        "communityStats": {
+                          "weeklyActiveUsersCount": 1743
+                        },
+                        "id": "t5_dl72xr",
+                        "isNsfw": false,
+                        "isQuarantined": false,
+                        "isSubscribed": false,
+                        "name": "BreastfeedingAurora",
+                        "prefixedName": "r/BreastfeedingAurora",
+                        "publicDescriptionText": "Dedicated to the study of Aurora Aksnes - musician, muse, and unintentional philosopher of body freedom.\nHere we honor her sound, her movement, her luminous fearlessness.\nNo shame, or noise -but admiration, good taste, and a healthy respect for transparency.\nA quiet corner of the internet where sensuality becomes scholarship;\nonce a rebellion, now a sanctuary for music, art, and bodies that remember they’re alive.",
+                        "styles": {
+                          "icon": "https://styles.redditmedia.com/t5_dl72xr/styles/communityIcon_pbz04i6ljazf1.jpg?width=64&frame=1&auto=webp&s=830577219cfc24a29c45a18a3e2fd8c450d9d8f3",
+                          "legacyIcon": null
+                        },
+                        "subscribersCount": 1846
+                      },
+                      "id": "t5_dl72xr",
+                      "presentation": {
+                        "__typename": "SearchCommunityDefaultPresentation",
+                        "description": "Dedicated to the study of Aurora Aksnes - musician, muse, and unintentional philosopher of body freedom.\nHere we honor her sound, her movement, her luminous fearlessness.\nNo shame, or noise -but admiration, good taste, and a healthy respect for transparency.\nA quiet corner of the internet where sensuality becomes scholarship;\nonce a rebellion, now a sanctuary for music, art, and bodies that remember they’re alive.",
+                        "name": "BreastfeedingAurora"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjYW5kaWRhdGVzX3JldHVybmVkIjoie1wic2VjdGlvbl8xX3BpcGVsaW5lXzBfZ2xvYmFsX21vZGlmaWVyc1wiOlwiMVwiLFwic2VjdGlvbl8xX3BpcGVsaW5lXzFfbG9jYWxfbW9kaWZpZXJzXCI6XCIwXCIsXCJzZWN0aW9uXzJfcGlwZWxpbmVfMF9zdWJyZWRkaXRfc2VhcmNoXCI6XCIxMFwifSIsImV4cGVyaWVuY2Vfc2VsZWN0aW9uIjoiY29tbXVuaXR5IiwiZXhwZXJpZW5jZV92ZXJzaW9uIjoiZGVmYXVsdCIsInNlY3Rpb25fMl9waXBlbGluZV8wX3N1YnJlZGRpdF9zZWFyY2giOiIxMCJ9",
+              "hasNextPage": true,
+              "hasPreviousPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

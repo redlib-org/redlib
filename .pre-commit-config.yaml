@@ -1,0 +1,37 @@
+exclude: ^static/hls\.min\.js$
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --
+        language: system
+        types: [rust]
+
+  - repo: https://github.com/rtts/djhtml
+    rev: 3.0.11
+    hooks:
+      - id: djhtml
+        name: djhtml (askama templates)
+        files: ^templates/.*\.html$
+        args: [--tabwidth=4, -b, "match,when,endmatch"]
+
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.9.10
+    hooks:
+      - id: prettier
+        types_or: [css, javascript]

@@ -74,11 +74,50 @@
     "REDLIB_ENABLE_RSS": {
       "required": false
     },
+    "REDLIB_ENABLE_REDGIFS": {
+      "required": false
+    },
+    "REDLIB_ENABLE_GIPHY": {
+      "required": false
+    },
+    "REDLIB_ENABLE_SCRAPE_FALLBACK": {
+      "required": false
+    },
+    "REDLIB_ENABLE_GQL": {
+      "required": false
+    },
+    "REDLIB_SCRAPE_COMMENT_PREFETCH": {
+      "required": false
+    },
+    "REDLIB_GQL_FEED_REQUESTS": {
+      "required": false
+    },
     "REDLIB_FULL_URL": {
       "required": false
     },
     "REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS": {
       "required": false
+    },
+    "REDLIB_DEFAULT_GEO_FILTER": {
+      "required": false
+    },
+    "REDLIB_DEFAULT_CLEAN_URLS": {
+      "required": false
+    },
+    "REDLIB_DEFAULT_POSTS_PER_PAGE": {
+        "required": false
+    },
+    "REDLIB_DEFAULT_MAX_COMMENT_THREAD_DEPTH": {
+        "required": false
+    },
+    "REDLIB_DEFAULT_MORE_REPLIES_NEW_PAGE": {
+        "required": false
+    },
+    "REDLIB_DEFAULT_LIGHT_THEME": {
+        "required": false
+    },
+    "REDLIB_DEFAULT_DARK_THEME": {
+        "required": false
     }
   }
 }

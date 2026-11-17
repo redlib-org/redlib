@@ -1,376 +1,376 @@
 {% macro options(current, values, default) -%}
-	{% for value in values %}
-		<option value="{{ value }}" {% if current == value.to_string() || (current == "" && value.to_string() == default.to_string()) %}selected{% endif %}>
-			{{ format!("{}{}", value.get(0..1).unwrap_or_default().to_uppercase(), value.get(1..).unwrap_or_default()) }}
-		</option>
-	{% endfor %}
+    {% for value in values %}
+        <option value="{{ value }}" {% if current == value.to_string() || (current == "" && value.to_string() == default.to_string()) %}selected{% endif %}>
+            {{ format!("{}{}", value.get(0..1).unwrap_or_default().to_uppercase(), value.get(1..).unwrap_or_default()) }}
+        </option>
+    {% endfor %}
 {%- endmacro %}
 
 {% macro sort(root, methods, selected) -%}
-	{% for method in methods %}
-		<a {% if method.to_string() == selected.to_string() %}class="selected"{% endif %} href="{{ root }}/{{ method }}">
-			{{ format!("{}{}", method.get(0..1).unwrap_or_default().to_uppercase(), method.get(1..).unwrap_or_default()) }}
-		</a>
-	{% endfor %}
+    {% for method in methods %}
+        <a {% if method.to_string() == selected.to_string() %}class="selected"{% endif %} href="{{ root }}/{{ method }}">
+            {{ format!("{}{}", method.get(0..1).unwrap_or_default().to_uppercase(), method.get(1..).unwrap_or_default()) }}
+        </a>
+    {% endfor %}
 {%- endmacro %}
 
 {% macro search(root, search) -%}
-<form action="{% if root != "/r/" && !root.is_empty() %}{{ root }}{% endif %}/search" id="searchbox">
-	<input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="{{ search }}">
-	{% if root != "/r/" && !root.is_empty() %}
-	<div id="inside">
-		<input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
-		<label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in {{ root }}</label>
-	</div>
-	{% endif %}
-	<button class="submit">
-		<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
-			<path d="M20 50 H100" />
-			<path d="M75 15 L100 50 L75 85" />
-			&rarr;
-		</svg>
-	</button>
-</form>
+    <form action="{% if root != "/r/" && !root.is_empty() %}{{ root }}{% endif %}/search" id="searchbox">
+        <input id="search" type="text" name="q" placeholder="Search" title="Search redlib" value="{{ search }}">
+        {% if root != "/r/" && !root.is_empty() %}
+            <div id="inside">
+                <input type="checkbox" name="restrict_sr" id="restrict_sr" checked>
+                <label for="restrict_sr" class="search_label" title="Restrict search to this subreddit">in {{ root }}</label>
+            </div>
+        {% endif %}
+        <button class="submit">
+            <svg width="15" viewBox="10 0 100 100" fill="none" stroke-width="10" stroke-linecap="round">
+                <path d="M20 50 H100" />
+                <path d="M75 15 L100 50 L75 85" />
+                &rarr;
+            </svg>
+        </button>
+    </form>
 {%- endmacro %}
 
 {% macro render_flair(flair_parts) -%}
-	{% for flair_part in flair_parts.clone() %}{% if flair_part.flair_part_type == "emoji" %}<span class="emoji" style="background-image:url('{{ flair_part.value }}');"></span>{% else if flair_part.flair_part_type == "text" && !flair_part.value.is_empty() %}<span>{{ flair_part.value }}</span>{% endif %}{% endfor %}
+    {% for flair_part in flair_parts.clone() %}{% if flair_part.flair_part_type == "emoji" %}<span class="emoji" style="background-image:url('{{ flair_part.value }}');"></span>{% else if flair_part.flair_part_type == "text" && !flair_part.value.is_empty() %}<span>{{ flair_part.value }}</span>{% endif %}{% endfor %}
 {%- endmacro %}
 
 {% macro sub_list(current) -%}
-	<details id="feeds">
-		<summary>Feeds</summary>
-		<div id="feed_list">
-			<p>MAIN FEEDS</p>
-			<a href="/">Home</a>
-			{% if prefs.remove_default_feeds != "on" %}
-				<a href="/r/popular">Popular</a>
-				<a href="/r/all">All</a>
-			{% endif %}
-			{% if prefs.subscriptions.len() > 0 %}
-				<p>REDDIT FEEDS</p>
-				{% for sub in prefs.subscriptions %}
-					<a href="/r/{{ sub }}" {% if sub == current %}class="selected"{% endif %}>{{ sub }}</a>
-				{% endfor %}
-			{% endif %}
-		</div>
-	</details>
+    <details id="feeds">
+        <summary>Feeds</summary>
+        <div id="feed_list">
+            <p>MAIN FEEDS</p>
+            <a href="/">Home</a>
+            {% if prefs.remove_default_feeds != "on" %}
+                <a href="/r/popular">Popular</a>
+                <a href="/r/all">All</a>
+            {% endif %}
+            {% if prefs.subscriptions.len() > 0 %}
+                <p>REDDIT FEEDS</p>
+                {% for sub in prefs.subscriptions %}
+                    <a href="/r/{{ sub }}" {% if sub == current %}class="selected"{% endif %}>{{ sub }}</a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </details>
 {%- endmacro %}
 
 {% macro render_hls_notification(redirect_url) -%}
-{% if post.post_type == "video" && !post.media.alt_url.is_empty() && prefs.hide_hls_notification != "on" %}
-<div class="post_notification"><p><a href="/settings/update/?use_hls=on&redirect={{ redirect_url }}">Enable HLS</a> to view with audio, or <a href="/settings/update/?hide_hls_notification=on&redirect={{ redirect_url }}">disable this notification</a></p></div>
-{% endif %}
+    {% if post.media.needs_hls_for_audio && prefs.hide_hls_notification != "on" %}
+        <div class="post_notification"><p><a href="/settings/update/?use_hls=on&redirect={{ redirect_url }}">Enable HLS</a> to view with audio, or <a href="/settings/update/?hide_hls_notification=on&redirect={{ redirect_url }}">disable this notification</a></p></div>
+    {% endif %}
 {%- endmacro %}
 
 {% macro post(post) -%}
-{% set post_should_be_blurred = post.flags.spoiler && prefs.blur_spoiler=="on" -%}
+    {% set post_should_be_blurred = post.flags.spoiler && prefs.blur_spoiler=="on" -%}
 <!-- POST CONTENT -->
-<div class="post highlighted{% if post_should_be_blurred %} post_blurred{% endif %}">
-	<p class="post_header">
-		<a class="post_subreddit" href="/r/{{ post.community }}">r/{{ post.community }}</a>
-		<span class="dot">&bull;</span>
-		<a class="post_author {{ post.author.distinguished }}" href="/user/{{ post.author.name }}">u/{{ post.author.name }}</a>
-		{% if post.author.flair.flair_parts.len() > 0 %}
-			<small class="author_flair">{% call render_flair(post.author.flair.flair_parts) %}</small>
-		{% endif %}
-		<span class="dot">&bull;</span>
-		<span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
-		{% if !post.awards.is_empty() && prefs.hide_awards != "on" %}
-		<span class="dot">&bull;</span>
-		<span class="awards">
-			{% for award in post.awards.clone() %}
-			<span class="award" title="{{ award.name }}">
-				<img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
-				{{ award.count }}
-			</span>
-			{% endfor %}
-		</span>
-		{% endif %}
-	</p>
-	<h1 class="post_title">
-		{% if post.flair.flair_parts.len() > 0 %}
-			<a href="/r/{{ post.community }}/search?q=flair_name%3A%22{{ post.flair.text }}%22&restrict_sr=on"
-				class="post_flair"
-				style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};">{% call render_flair(post.flair.flair_parts) %}</a>
-		{% endif %}
-		{{ post.title }}
-		{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}
-		{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
-	</h1>
+    <div class="post highlighted{% if post_should_be_blurred %} post_blurred{% endif %}">
+        <p class="post_header">
+            <a class="post_subreddit" href="/r/{{ post.community }}">r/{{ post.community }}</a>
+            <span class="dot">&bull;</span>
+            {% if post.author.name != "[deleted]" %}
+                <a class="post_author {{ post.author.distinguished }}" href="/user/{{ post.author.name }}">u/{{ post.author.name }}</a>
+            {% else %}
+                <span class="post_author {{ post.author.distinguished }}">u/[deleted]</span>
+            {% endif %}
+            {% if post.author.advertiser %}<small class="author_badge" title="Posted with Reddit's ad tools">Advertiser</small>{% endif %}
+            {% if post.author.flair.flair_parts.len() > 0 %}
+                <small class="author_flair">{{ render_flair(post.author.flair.flair_parts) }}</small>
+            {% endif %}
+            {% if !post.rel_time.is_empty() %}
+                <span class="dot">&bull;</span>
+                <span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
+            {% endif %}
+            {% if !post.awards.is_empty() && prefs.hide_awards != "on" %}
+                <span class="dot">&bull;</span>
+                <span class="awards">
+                    {% for award in post.awards.clone() %}
+                        <span class="award" title="{{ award.name }}">
+                            <img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
+                            {{ award.count }}
+                        </span>
+                    {% endfor %}
+                </span>
+            {% endif %}
+        </p>
+        <h1 class="post_title">
+            {% if post.flair.flair_parts.len() > 0 %}
+                <a href="/r/{{ post.community }}/search?q=flair_name%3A%22{{ post.flair.text }}%22&restrict_sr=on"
+                   class="post_flair"
+                   style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};">{{ render_flair(post.flair.flair_parts) }}</a>
+            {% endif %}
+            {{ post.title }}
+            {% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}
+            {% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
+        </h1>
 
 	<!-- POST MEDIA -->
 	<!-- post_type: {{ post.post_type }} -->
-	{% if post.post_type == "image" %}
-	<div class="post_media_content">
-		<a href="{{ post.media.url }}" class="post_media_image" >
-			{% if post.media.height == 0 || post.media.width == 0 %}
-			<!-- i.redd.it images special case -->
-			<img width="100%" height="100%" loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
-			{% else %}
-			<svg
-				width="{{ post.media.width }}px"
-				height="{{ post.media.height }}px"
-				xmlns="http://www.w3.org/2000/svg">
-					<image width="100%" height="100%" href="{{ post.media.url }}"/>
-					<desc>
-						<img loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
-					</desc>
-			</svg>
-			{% endif %}
-		</a>
-	</div>
-	{% else if post.post_type == "video" || post.post_type == "gif" %}
-	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-	<script src="/hls.min.js"></script>
-	<div class="post_media_content">
-		<video class="post_media_video short {% if prefs.autoplay_videos == "on" %}hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls>
-			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
-			<source src="{{ post.media.url }}" type="video/mp4" />
-		</video>
-	</div>
-	<script src="/playHLSVideo.js"></script>
-	{% else %}
-	<div class="post_media_content">
-		<video class="post_media_video" src="{{ post.media.url }}" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %} loop><a href={{ post.media.url }}>Video</a></video>
-	</div>
-	{% call render_hls_notification(post.permalink[1..]) %}
-	{% endif %}
-	{% else if post.post_type == "gallery" %}
-	<div class="gallery">
-	{% for image in post.gallery -%}
-		<figure>
-			<a href="{{ image.url }}" ><img loading="lazy" alt="Gallery image" src="{{ image.url }}"/></a>
-			<figcaption>
-				<p>{{ image.caption }}</p>
-				{% if image.outbound_url.len() > 0 %}
-				<p><a class="outbound_url" href="{{ image.outbound_url }}" rel="nofollow">{{ image.outbound_url }}</a>
-				{% endif %}
-			</figcaption>
-		</figure>
-	{%- endfor %}
-	</div>
-	{% else if post.post_type == "link" %}
-	<a id="post_url" href="{{ post.media.url }}" rel="nofollow">{{ post.media.url }}</a>
-	{% endif %}
+        {% if post.post_type == "image" %}
+            <div class="post_media_content">
+                <a href="{{ post.media.url }}" class="post_media_image" >
+                    <img width="100%" height="100%" loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
+                </a>
+            </div>
+        {% else if post.post_type == "gif" %}
+            <div class="post_media_content">
+                <video class="post_media_video post_media_gif" src="{{ post.media.url }}" poster="{{ post.media.poster }}" autoplay muted loop playsinline><a href={{ post.media.url }}>GIF</a></video>
+            </div>
+        {% else if post.post_type == "video" %}
+            {% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
+                <script src="/hls.min.js?v={{ crate::utils::short_git_hash() }}"></script>
+                <div class="post_media_content">
+                    <video class="post_media_video short {% if prefs.autoplay_videos == "on" %}hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}" style="--w: {{ post.media.width }}; --h: {{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls{% if prefs.autoplay_videos == "on" %} muted{% endif %}>
+                        <source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
+                        <source src="{{ post.media.url }}" type="video/mp4" />
+                    </video>
+                </div>
+                <script src="/playHLSVideo.js?v={{ crate::utils::short_git_hash() }}"></script>
+            {% else %}
+                <div class="post_media_content">
+                    <video class="post_media_video" src="{{ post.media.url }}" preload="metadata" controls {% if prefs.autoplay_videos == "on" %}autoplay muted{% endif %} loop><a href={{ post.media.url }}>Video</a></video>
+                </div>
+                {{ render_hls_notification(post.permalink[1..]) }}
+            {% endif %}
+        {% else if post.post_type == "gallery" %}
+            <div class="gallery">
+                {% for image in post.gallery -%}
+                    <figure>
+                        <a href="{{ image.url }}" ><img loading="lazy" alt="Gallery image" src="{{ image.url }}"/></a>
+                        <figcaption>
+                            <p>{{ image.caption }}</p>
+                            {% if image.outbound_url.len() > 0 %}
+                                <p><a class="outbound_url" href="{{ image.outbound_url }}" rel="nofollow">{{ image.outbound_url }}</a>
+                            {% endif %}
+                        </figcaption>
+                    </figure>
+                {%- endfor %}
+            </div>
+        {% else if post.post_type == "link" %}
+            <a id="post_url" href="{{ post.media.url }}" rel="nofollow">{{ post.media.url }}</a>
+        {% endif %}
 
 	<!-- POST BODY -->
-	<div class="post_body">
-		{{ post.body|safe }}
-		{% call poll(post) %}
-	</div>
-	<div class="post_score" title="{{ post.score.1 }}">
-    {% if prefs.hide_score != "on" %}
-    {{ post.score.0 }}
-    {% else %}
-    &#x2022;
-    {% endif %}
-    <span class="label"> Upvotes</span></div>
-	<div class="post_footer">
-		<ul id="post_links">
-			<li>
-				<a href="{{ post.permalink }}">
-					<span class="desktop_item">perma</span>link
-				</a>
-			</li>
-			{% if post.num_duplicates > 0 %}
-			<li>
-				<a href="/r/{{ post.community }}/duplicates/{{ post.id }}">
-					dup<span class="desktop_item">licat</span>es
-				</a>
-			</li>
-			{% endif %}
-			{% if post.post_type == "link" %}
-			<li class="desktop_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive.is</a></li>
-			<li class="mobile_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive</a></li>
-			{% endif %}
-			{% call external_reddit_link(post.permalink) %}
+        <div class="post_body">
+            {{ post.body|safe }}
+            {{ poll(post) }}
+        </div>
+        <div class="post_score" title="{{ post.score.1 }}">
+            {% if prefs.hide_score != "on" %}
+                {{ post.score.0 }}
+            {% else %}
+                &#x2022;
+            {% endif %}
+            <span class="label"> Upvotes</span></div>
+        <div class="post_footer">
+            <ul id="post_links">
+                <li>
+                    <a href="{{ post.permalink }}">
+                        <span class="desktop_item">perma</span>link
+                    </a>
+                </li>
+                {% if post.num_duplicates > 0 %}
+                    <li>
+                        <a href="/r/{{ post.community }}/duplicates/{{ post.id }}">
+                            dup<span class="desktop_item">licat</span>es
+                        </a>
+                    </li>
+                {% endif %}
+                {% if post.post_type == "link" %}
+                    <li class="desktop_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive.is</a></li>
+                    <li class="mobile_item"><a target="_blank" href="https://archive.is/latest/{{ post.media.url }}">archive</a></li>
+                {% endif %}
+                {{ external_reddit_link(post.permalink) }}
 
-			{% if post.media.download_name != "" %}
-			<li>
-				<a href="{{ post.media.url }}" download="{{ post.media.download_name }}">
-					<span class="mobile_item">dl</span>
-					<span class="desktop_item">download</span>
-				</a>
-			</li>
-			{% endif %}
-		</ul>
-		<p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>
-	</div>
-</div>
+                {% if post.media.download_name != "" && post.post_type != "gallery" %}
+                    <li>
+                        <a href="{{ post.media.url }}" download="{{ post.media.download_name }}">
+                            <span class="mobile_item">dl</span>
+                            <span class="desktop_item">download</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if post.post_type == "gallery" %}
+			<!-- Gallery download -->
+                    <li class="download_gallery">
+                        <a href="#" data-base-name="redlib_{{ post.id }}">
+                            <span class="mobile_item">dl</span>
+                            <span class="desktop_item">download all ({{ post.gallery.len() }})</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            <p>{{ post.upvote_ratio }}%<span id="upvoted"> Upvoted</span></p>
+        </div>
+    </div>
 {%- endmacro %}
 
 {% macro external_reddit_link(permalink) %}
-<li>
-	<a
-		{% if prefs.disable_visit_reddit_confirmation != "on" %}
-		href="#popup"
-		{% else %}
-		href="https://reddit.com{{ permalink }}"
-		rel="nofollow"
-		{% endif %}
-	>reddit</a>
+    <li>
+        <a
+            {% if prefs.disable_visit_reddit_confirmation != "on" %}
+                href="#popup"
+            {% else %}
+                href="https://reddit.com{{ permalink }}"
+                rel="nofollow"
+            {% endif %}
+        >reddit</a>
 
-	{% if prefs.disable_visit_reddit_confirmation != "on" %}
-		{% call visit_reddit_confirmation(permalink) %}
-	{% endif %}
-</li>
+        {% if prefs.disable_visit_reddit_confirmation != "on" %}
+            {{ visit_reddit_confirmation(permalink) }}
+        {% endif %}
+    </li>
 {% endmacro %}
 
 {% macro post_in_list(post) -%}
-{% set post_should_be_blurred = (post.flags.nsfw && prefs.blur_nsfw=="on") || (post.flags.spoiler && prefs.blur_spoiler=="on") -%}
-<div class="post{% if post.flags.stickied %} stickied{% endif %}{% if post_should_be_blurred %} post_blurred{% endif %}" id="{{ post.id }}">
-	<p class="post_header">
-		{% let community -%}
-		{% if post.community.starts_with("u_") -%}
-			{% let community = format!("u/{}", &post.community[2..]) -%}
-		{% else -%}
-			{% let community = format!("r/{}", post.community) -%}
-		{% endif -%}
-		<a class="post_subreddit" href="/{{ community }}">{{ community }}</a>
-		<span class="dot">&bull;</span>
-		<a class="post_author {{ post.author.distinguished }}" href="/u/{{ post.author.name }}">u/{{ post.author.name }}</a>
-		<span class="dot">&bull;</span>
-		<span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
-		{% if !post.awards.is_empty() && prefs.hide_awards != "on" %}
-			{% for award in post.awards.clone() %}
-			<span class="award" title="{{ award.name }}">
-				<img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
-			</span>
-			{% endfor %}
-		{% endif %}
-	</p>
-	<h2 class="post_title">
-		{% if post.flair.flair_parts.len() > 0 %}
-			<a href="/r/{{ post.community }}/search?q=flair_name%3A%22{{ post.flair.text }}%22&restrict_sr=on"
-				class="post_flair"
-				style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};"
-				dir="ltr">{% call render_flair(post.flair.flair_parts) %}</a>
-		{% endif %}
-		<a href="{{ post.permalink }}">{{ post.title }}</a>{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
-	</h2>
+    {% set post_should_be_blurred = (post.flags.nsfw && prefs.blur_nsfw=="on") || (post.flags.spoiler && prefs.blur_spoiler=="on") -%}
+    <div class="post{% if post.flags.stickied %} stickied{% endif %}{% if post_should_be_blurred %} post_blurred{% endif %}" id="{{ post.id }}">
+        <p class="post_header">
+            {% decl community -%}
+            {% if post.community.starts_with("u_") -%}
+                {% let community = format!("u/{}", &post.community[2..]) -%}
+            {% else -%}
+                {% let community = format!("r/{}", post.community) -%}
+            {% endif -%}
+            <a class="post_subreddit" href="/{{ community }}">{{ community }}</a>
+            <span class="dot">&bull;</span>
+            {% if post.author.name != "[deleted]" %}
+                <a class="post_author {{ post.author.distinguished }}" href="/u/{{ post.author.name }}">u/{{ post.author.name }}</a>
+            {% else %}
+                <span class="post_author {{ post.author.distinguished }}">u/[deleted]</span>
+            {% endif %}
+            {% if post.author.advertiser %}<small class="author_badge" title="Posted with Reddit's ad tools">Advertiser</small>{% endif %}
+            {% if !post.rel_time.is_empty() %}
+                <span class="dot">&bull;</span>
+                <span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
+            {% endif %}
+            {% if !post.awards.is_empty() && prefs.hide_awards != "on" %}
+                {% for award in post.awards.clone() %}
+                    <span class="award" title="{{ award.name }}">
+                        <img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </p>
+        <h2 class="post_title">
+            {% if post.flair.flair_parts.len() > 0 %}
+                <a href="/r/{{ post.community }}/search?q=flair_name%3A%22{{ post.flair.text }}%22&restrict_sr=on"
+                   class="post_flair"
+                   style="color:{{ post.flair.foreground_color }}; background:{{ post.flair.background_color }};"
+                   dir="ltr">{{ render_flair(post.flair.flair_parts) }}</a>
+            {% endif %}
+            <a href="{{ post.permalink }}">{{ post.title }}</a>{% if post.flags.nsfw %} <small class="nsfw">NSFW</small>{% endif %}{% if post.flags.spoiler %} <small class="spoiler">Spoiler</small>{% endif %}
+        </h2>
 	<!-- POST MEDIA/THUMBNAIL -->
-	{% if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "image" %}
-	<div class="post_media_content">
-		<a href="{{ post.media.url }}" class="post_media_image {% if post.media.height < post.media.width*2 %}short{% endif %}" >
-			{% if post.media.height == 0 || post.media.width == 0 %}
-			<!-- i.redd.it images speical case -->
-			<img width="100%" height="100%" loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
-			{% else %}
-			<svg
-				width="{{ post.media.width }}px"
-				height="{{ post.media.height }}px"
-				xmlns="http://www.w3.org/2000/svg">
-					<image width="100%" height="100%" href="{{ post.media.url }}"/>
-					<desc>
-						<img loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
-					</desc>
-			</svg>
-			{% endif %}
-		</a>
-	</div>
-	{% else if (prefs.layout.is_empty() || prefs.layout == "card") && (post.post_type == "gif" || post.post_type == "video") %}
-	{% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
-	<div class="post_media_content">
-        <video class="post_media_video short{% if prefs.autoplay_videos == "on" %} hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" controls preload="none">
-			<source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
-			<source src="{{ post.media.url }}" type="video/mp4" />
-		</video>
-	</div>
-	{% else %}
-	<div class="post_media_content">
-		<video class="post_media_video short" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls {% if prefs.autoplay_videos == "on" %}autoplay{% endif %}><a href={{ post.media.url }}>Video</a></video>
-	</div>
-	{% call render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) %}
-	{% endif %}
-	{% else if post.post_type != "self" %}
-	<a class="post_thumbnail{% if post.thumbnail.url.is_empty() %} no_thumbnail{% endif %}" href="{% if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow">
-		{% if post.thumbnail.url.is_empty() %}
-		<svg viewBox="0 0 100 106" width="140" height="53" xmlns="http://www.w3.org/2000/svg">
-			<title>Thumbnail</title>
-			<path d="M35,15h-15a10,10 0,0,0 0,20h25a10,10 0,0,0 10,-10m-12.5,0a10, 10 0,0,1 10, -10h25a10,10 0,0,1 0,20h-15" fill="none" stroke-width="5" stroke-linecap="round"/>
-		</svg>
-		{% else %}
-		<div style="max-width:{{ post.thumbnail.width }}px;max-height:{{ post.thumbnail.height }}px;">
-			<svg width="{{ post.thumbnail.width }}px" height="{{ post.thumbnail.height }}px" xmlns="http://www.w3.org/2000/svg">
-				<image width="100%" height="100%" href="{{ post.thumbnail.url }}"/>
-				<desc>
-					<img loading="lazy" alt="Thumbnail" src="{{ post.thumbnail.url }}"/>
-				</desc>
-			</svg>
-		</div>
-		{% endif %}
-		<span>{% if post.post_type == "link" %}{{ post.domain }}{% else %}{{ post.post_type }}{% endif %}</span>
-	</a>
-	{% endif %}
-	<div class="post_score" title="{{ post.score.1 }}">
-    {% if prefs.hide_score != "on" %}
-    {{ post.score.0 }}
-    {% else %}
-    &#x2022;
-    {% endif %}
-    <span class="label"> Upvotes</span></div>
-	<div class="post_body post_preview">
-		{{ post.body|safe }}
-	</div>
+        {% if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "image" %}
+            <div class="post_media_content">
+                <a href="{{ post.media.url }}" class="post_media_image {% if post.media.height < post.media.width*2 %}short{% endif %}" >
+                    <img width="100%" height="100%" loading="lazy" alt="Post image" src="{{ post.media.url }}"/>
+                </a>
+            </div>
+        {% else if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "gif" %}
+            <div class="post_media_content">
+                <video class="post_media_video short post_media_gif" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}" style="--w: {{ post.media.width }}; --h: {{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" autoplay muted loop playsinline><a href={{ post.media.url }}>GIF</a></video>
+            </div>
+        {% else if (prefs.layout.is_empty() || prefs.layout == "card") && post.post_type == "video" %}
+            {% if prefs.use_hls == "on" && !post.media.alt_url.is_empty() %}
+                <div class="post_media_content">
+                    <video class="post_media_video short{% if prefs.autoplay_videos == "on" %} hls_autoplay{% endif %}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}" style="--w: {{ post.media.width }}; --h: {{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" controls preload="none"{% if prefs.autoplay_videos == "on" %} muted{% endif %}>
+                        <source src="{{ post.media.alt_url }}" type="application/vnd.apple.mpegurl" />
+                        <source src="{{ post.media.url }}" type="video/mp4" />
+                    </video>
+                </div>
+            {% else %}
+                <div class="post_media_content">
+                    <video class="post_media_video short" src="{{ post.media.url }}" {% if post.media.width > 0 && post.media.height > 0 %}width="{{ post.media.width }}" height="{{ post.media.height }}" style="--w: {{ post.media.width }}; --h: {{ post.media.height }}"{% endif %} poster="{{ post.media.poster }}" preload="none" controls {% if prefs.autoplay_videos == "on" %}autoplay muted{% endif %}><a href={{ post.media.url }}>Video</a></video>
+                </div>
+                {{ render_hls_notification(format!("{}%23{}", &self.url[1..].replace("&", "%26").replace("+", "%2B"), post.id)) }}
+            {% endif %}
+        {% else if post.post_type != "self" %}
+            <a class="post_thumbnail{% if post.thumbnail.url.is_empty() %} no_thumbnail{% endif %}" href="{% if post.post_type == "link" %}{{ post.media.url }}{% else %}{{ post.permalink }}{% endif %}" rel="nofollow">
+                {% if post.thumbnail.url.is_empty() %}
+                    <svg viewBox="0 0 100 106" width="140" height="53" xmlns="http://www.w3.org/2000/svg">
+                        <title>Thumbnail</title>
+                        <path d="M35,15h-15a10,10 0,0,0 0,20h25a10,10 0,0,0 10,-10m-12.5,0a10, 10 0,0,1 10, -10h25a10,10 0,0,1 0,20h-15" fill="none" stroke-width="5" stroke-linecap="round"/>
+                    </svg>
+                {% else %}
+                    <div style="max-width:{{ post.thumbnail.width }}px;max-height:{{ post.thumbnail.height }}px;">
+                        <img width="100%" height="100%" loading="lazy" alt="Thumbnail" src="{{ post.thumbnail.url }}"/>
+                    </div>
+                {% endif %}
+                <span>{% if post.post_type == "link" %}{{ post.domain }}{% else %}{{ post.post_type }}{% endif %}</span>
+            </a>
+        {% endif %}
+        <div class="post_score" title="{{ post.score.1 }}">
+            {% if prefs.hide_score != "on" %}
+                {{ post.score.0 }}
+            {% else %}
+                &#x2022;
+            {% endif %}
+            <span class="label"> Upvotes</span></div>
+        <div class="post_body post_preview">
+            {{ post.body|safe }}
+        </div>
 
-	{% call poll(post) %}
+        {{ poll(post) }}
 
-	<div class="post_footer">
-		<a href="{{ post.permalink }}" class="post_comments" title="{{ post.comments.1 }} {% if post.comments.1 == "1" %}comment{% else %}comments{% endif %}">{{ post.comments.0 }} {% if post.comments.1 == "1" %}comment{% else %}comments{% endif %}</a>
-	</div>
-</div>
+        <div class="post_footer">
+            <a href="{{ post.permalink }}" class="post_comments" title="{{ post.comments.1 }} {% if post.comments.1 == "1" %}comment{% else %}comments{% endif %}">{{ post.comments.0 }} {% if post.comments.1 == "1" %}comment{% else %}comments{% endif %}</a>
+        </div>
+    </div>
 {%- endmacro %}
 
 {% macro visit_reddit_confirmation(url) -%}
-<div class="popup" id="popup">
-	<div class="popup-inner">
-		<h1>You are about to leave Redlib</h1>
-		<p>Do you want to continue?</p>
-		<p id="reddit_url">https://www.reddit.com{{ url }}</p>
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
-			<defs>
-				<style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
-			</defs>
-			<path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
-			<path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
-			<path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
-			<path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
-			<path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
-		</svg>
-		<a id="goback" href="#">No, go back!</a>
-		<a id="toreddit" href="https://www.reddit.com{{ url }}" rel="nofollow">Yes, take me to Reddit</a>
-	</div>
-</div>
+    <div class="popup" id="popup">
+        <div class="popup-inner">
+            <h1>You are about to leave Redlib</h1>
+            <p>Do you want to continue?</p>
+            <p id="reddit_url">https://www.reddit.com{{ url }}</p>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639.24 563">
+                <defs>
+                    <style>.cls-1{fill:#000000;}.cls-2{fill:#f8aa00;}</style>
+                </defs>
+                <path class="cls-2" d="M322.03,0c1.95,2.5,4.88,.9,7.33,1.65,10.5,3.21,17.65,10.39,22.83,19.35,93.64,162.06,186.98,324.29,280.25,486.56,15.73,20.19,2.49,51.27-22.92,54.37-1.21,.19-2.72-.54-3.49,1.08H239.03c-70.33-2.43-141.6,.79-212.08-1.74-17.49-4.92-23.16-15.88-26.91-32.26l-.04-1.97C88.74,354.76,194.49,188.2,289.92,18.43c6.2-10.66,15.03-16.94,27.61-17.36,.95-.03,2.05,.18,2.51-1.07h2Zm-2.43,545c94.95-.02,189.9,.04,284.85-.02,11.84-.73,20.75-13.19,16.68-23.55C523.83,355.97,430.74,187.62,332.05,23.07c-7.93-9.02-22.2-6.58-27.23,3.22C230.28,156.11,155.21,285.64,80.41,415.31c-19.88,34.41-39.31,69.07-59.78,103.14-2.43,4.05-4.24,8.8-1.68,14.18,3.92,8.24,9.59,12.37,18.82,12.37,93.95,0,187.9,0,281.85,0Z"/>
+                <path class="cls-1" d="M319.61,545c-93.95,0-187.9,0-281.85,0-9.22,0-14.89-4.13-18.82-12.37-2.56-5.38-.75-10.13,1.68-14.18,20.47-34.07,39.9-68.73,59.78-103.14C155.21,285.64,230.28,156.11,304.82,26.29c5.03-9.8,19.3-12.24,27.23-3.22,98.7,164.55,191.79,332.9,289.1,498.35,4.06,10.36-4.85,22.82-16.68,23.55-94.94,.06-189.9,0-284.85,.02Zm.44-462.31C238.88,223.22,158.17,362.95,77.28,503h485.54c-80.94-140.13-161.61-279.79-242.77-420.31Z"/>
+                <path class="cls-2" d="M320.05,82.69c81.16,140.52,161.83,280.18,242.77,420.31H77.28C158.17,362.95,238.88,223.22,320.05,82.69Zm36.05,118.99c-.14-46.75-68.32-52.32-74.66-4.76,.73,51.49,9.2,102.97,12.63,154.49,1.18,13.14,10.53,21.81,23.32,22.76,13.12,.97,23.89-9.13,24.96-21.58,4.44-49.99,9.4-101.22,13.76-150.91Zm-36.56,271.4c48.8,.76,49.24-74.7-.31-75.47-53.45,3-46.02,78.12,.31,75.47Z"/>
+                <path class="cls-1" d="M356.1,201.67c-4.36,49.69-9.31,100.91-13.76,150.91-1.07,12.45-11.84,22.56-24.96,21.58-12.79-.95-22.14-9.63-23.31-22.76-3.43-51.52-11.9-103-12.63-154.49,6.33-47.53,74.51-42.03,74.66,4.76Z"/>
+                <path class="cls-1" d="M319.54,473.08c-46.34,2.64-53.75-72.47-.31-75.47,49.56,.78,49.1,76.24,.31,75.47Z"/>
+            </svg>
+            <a id="goback" href="#">No, go back!</a>
+            <a id="toreddit" href="https://www.reddit.com{{ url }}" rel="nofollow">Yes, take me to Reddit</a>
+        </div>
+    </div>
 {%- endmacro %}
 
 {% macro poll(post) -%}
-	{% match post.poll %}
-		{% when Some with (poll) %}
-			{% let widest = poll.most_votes() %}
-			<div class="post_poll">
-				<span>{{ poll.total_vote_count }} votes,</span>
-				<span title="{{ poll.voting_end_timestamp.1 }}">{{ poll.voting_end_timestamp.0 }}</span>
-				{% for option in poll.poll_options %}
-				<div class="poll_option">
+    {% match post.poll %}
+    {% when Some with (poll) %}
+        {% let widest = poll.most_votes() %}
+        <div class="post_poll">
+            <span>{{ poll.total_vote_count }} votes,</span>
+            <span title="{{ poll.voting_end_timestamp.1 }}">{{ poll.voting_end_timestamp.0 }}</span>
+            {% for option in poll.poll_options %}
+                <div class="poll_option">
 					{# Posts without vote_count (all open polls) will show up without votes.
 						This is an issue with Reddit API, it doesn't work on Old Reddit either. #}
-					{% match option.vote_count %}
-						{% when Some with (vote_count) %}
-							{% if vote_count.eq(widest) || widest == 0 %}
-								<div class="poll_chart most_voted"></div>
-							{% else %}
-								<div class="poll_chart" style="width: {{ (vote_count * 100) / widest }}%"></div>
-							{% endif %}
-							<span>{{ vote_count }}</span>
-						{% when None %}
-							<div class="poll_chart most_voted"></div>
-							<span></span>
-					{% endmatch %}
-					<span>{{ option.text }}</span>
-				</div>
-				{% endfor %}
-			</div>
-		{% when None %}
-	{% endmatch %}
+                    {% match option.vote_count %}
+                    {% when Some with (vote_count) %}
+                        {% if vote_count.eq(widest) || widest == 0 %}
+                            <div class="poll_chart most_voted"></div>
+                        {% else %}
+                            <div class="poll_chart" style="width: {{ (vote_count * 100) / widest }}%"></div>
+                        {% endif %}
+                        <span>{{ vote_count }}</span>
+                    {% when None %}
+                        <div class="poll_chart most_voted"></div>
+                        <span></span>
+                    {% endmatch %}
+                    <span>{{ option.text }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% when None %}
+    {% endmatch %}
 {%- endmacro %}

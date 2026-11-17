@@ -1,0 +1,33 @@
+{
+  "data": {
+    "subredditInfoByName": {
+      "__typename": "Subreddit",
+      "id": "t5_2s7lj",
+      "name": "rust",
+      "prefixedName": "r/rust",
+      "path": "/r/rust/",
+      "title": "The Rust Programming Language",
+      "publicDescriptionText": "A place for all things related to the Rust programming language—an open-source systems language that emphasizes performance, reliability, and productivity.",
+      "description": {
+        "markdown": "### **Please read [The Rust Community Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct)**\n\n***\n\n### The Rust Programming Language\n\nA place for all things related to [the Rust programming language](https://www.rust-lang.org/)—an open-source systems language that emphasizes performa",
+        "richtext": "{\"document\": [{\"c\": [{\"e\": \"raw\", \"t\": \"Please read \"}, {\"e\": \"link\", \"f\": [[1, 0, 34]], \"t\": \"The Rust Community Code of Conduct\", \"u\": \"https://www.rust-lang.org/policies/code-of-conduct\"}], \"e\": \"h\", \"l\": 3}, {\"e\": \"hr\"}, {\"c\": [{\"e\": \"raw\", \"t\": \"The Rust Programming Language\"}], \"e\": \"h\", \"l\": 3}, {\"c\": [{\"e\": \"text\", \"t\": \"A place for all things related to \"}, {\"e\": \"link\", \"t\": \"the Rust programming language\", \"u\": \"https://www.rust-lang.org/\"}, {\"e\": \"text\", \"t\": \"—an open-source systems language that emphasizes performance, reliability, and productivity.\"}], \"e\": \"par\"}]}"
+      },
+      "styles": {
+        "bannerBackgroundImage": null,
+        "icon": "https://styles.redditmedia.com/t5_2s7lj/styles/communityIcon_pjg3ktzyju771.png?width=64&frame=1&auto=webp&s=5671c7524b4e747cb1cb2d48f9fda80f3ceaefce",
+        "legacyBannerBackgroundImage": null,
+        "legacyIcon": {
+          "url": "https://b.thumbs.redditmedia.com/RGBpWy1J00g1sxC71l84oSYnZpvh5DOGUhcbtKz9QcE.png"
+        },
+        "legacyPrimaryColor": "#FF8717",
+        "mobileBannerImage": null,
+        "primaryColor": "#FF8D3A"
+      },
+      "subscribersCount": 427823,
+      "activeCount": 0,
+      "wikiEditMode": "MODONLY",
+      "isNsfw": false,
+      "type": "PUBLIC"
+    }
+  }
+}

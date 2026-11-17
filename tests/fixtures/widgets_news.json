@@ -1,0 +1,319 @@
+{
+  "items": {
+    "widget_17tq0hf0vvy1t": {
+      "data": [
+        {
+          "text": "Rules",
+          "url": "https://www.reddit.com/r/news/wiki/rules"
+        }
+      ],
+      "id": "widget_17tq0hf0vvy1t",
+      "kind": "menu",
+      "showWiki": true,
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      }
+    },
+    "widget_18z23h341ogd9": {
+      "data": [
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2qh13/styles/communityIcon_pldiwqvsyns91.png?width=256&s=1e3f0453042ba59e08945b2beab03f408a4135e4",
+          "iconUrl": "",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "worldnews",
+          "prefixedName": "r/worldnews",
+          "primaryColor": "#0079d3",
+          "subscribers": 47691337,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2qh0f/styles/communityIcon_0wn0ynky4gc51.png?width=256&s=f8686cf1fb64425fd430eb402b6cc94e0bc1458c",
+          "iconUrl": "https://b.thumbs.redditmedia.com/CvR23UWAhPPDpGQE8AMj0bgmOfRmyhSZxYQdemPcs3A.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "entertainment",
+          "prefixedName": "r/entertainment",
+          "primaryColor": "#ea0027",
+          "subscribers": 6553711,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2cneq/styles/communityIcon_fy84mdgh75201.jpg?width=256&s=0842d327b6d42f0e432135c7f46030bd8db64e4b",
+          "iconUrl": "https://a.thumbs.redditmedia.com/ZaSYxoONdAREm1_u_sid_fjcgvBTNeFQV--8tz6fZC0.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "politics",
+          "prefixedName": "r/politics",
+          "primaryColor": "#205493",
+          "subscribers": 9304142,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2sfmf/styles/communityIcon_eujnw8nnk3061.png?width=256&s=9b64aeeee86e6d226ac9de2e36726fd65662a1b6",
+          "iconUrl": "https://a.thumbs.redditmedia.com/ZaSYxoONdAREm1_u_sid_fjcgvBTNeFQV--8tz6fZC0.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "PoliticalDiscussion",
+          "prefixedName": "r/PoliticalDiscussion",
+          "primaryColor": "#373c3f",
+          "subscribers": 2216542,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2qhnn/styles/communityIcon_rtvtnyr1zah91.png?width=256&s=f9beb970b0243a32ec87626a6a23f962e93dba8b",
+          "iconUrl": "https://b.thumbs.redditmedia.com/n9BEHOv4cazdGACFjuzy9zfQH_qbHNumSm0ovBQKvoc.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "geopolitics",
+          "prefixedName": "r/geopolitics",
+          "primaryColor": "#373c3f",
+          "subscribers": 795573,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2u3ta/styles/communityIcon_oxu25b0kn1z41.png?width=256&s=8f3bf4200037d3e35eeca6005791f17d4d5b5f28",
+          "iconUrl": "https://b.thumbs.redditmedia.com/YDsk0xhD-y4vmQy-AgvQAzzWjwAZtzgLca0PHT52hNU.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "UpliftingNews",
+          "prefixedName": "r/UpliftingNews",
+          "primaryColor": "",
+          "subscribers": 20500376,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_323r3/styles/communityIcon_f8aq15b6x9t21.png?width=256&s=f8c02ffc923df30c43697cb0c7f97adc194cfcd7",
+          "iconUrl": "https://b.thumbs.redditmedia.com/gpGD_Cl68_EufITdSYiJDmjQEf-vJ7phy8TE4OAqwLE.png",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "savedyouaclick",
+          "prefixedName": "r/savedyouaclick",
+          "primaryColor": "#0079d3",
+          "subscribers": 1914087,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2rete/styles/communityIcon_xxmsvx76jgp11.png?width=256&s=853a0d9c720f3b3627a245b4752afc64f9fa61c9",
+          "iconUrl": "",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "Foodforthought",
+          "prefixedName": "r/Foodforthought",
+          "primaryColor": "#646d73",
+          "subscribers": 468544,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "",
+          "iconUrl": "",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "AnythingGoesNews",
+          "prefixedName": "r/AnythingGoesNews",
+          "primaryColor": "",
+          "subscribers": 181081,
+          "type": "subreddit"
+        },
+        {
+          "communityIcon": "https://styles.redditmedia.com/t5_2qyt6/styles/communityIcon_y6h3vhkf5ym41.jpg?width=256&s=1a829cc4634a3de471c89f9c13fe892946293d6a",
+          "iconUrl": "",
+          "isNSFW": false,
+          "isSubscribed": false,
+          "name": "TrueReddit",
+          "prefixedName": "r/TrueReddit",
+          "primaryColor": "#373c3f",
+          "subscribers": 631829,
+          "type": "subreddit"
+        }
+      ],
+      "id": "widget_18z23h341ogd9",
+      "kind": "community-list",
+      "shortName": "Related Communities",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      }
+    },
+    "widget_18z23lknu2vt6": {
+      "id": "widget_18z23lknu2vt6",
+      "kind": "textarea",
+      "shortName": "Important Information",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      },
+      "text": "See a post that violates the rules below? Did your post get stuck in the spam filter? Have a question about the rules? Just want to give feedback? [Send the mod team a message.](http://www.reddit.com/message/compose?to=%2Fr%2Fnews)\n\nYour account must be email-verified to participate in /r/news.",
+      "textHtml": "<!-- SC_OFF --><div class=\"md\"><p>See a post that violates the rules below? Did your post get stuck in the spam filter? Have a question about the rules? Just want to give feedback? <a href=\"http://www.reddit.com/message/compose?to=%2Fr%2Fnews\" rel=\"nofollow\">Send the mod team a message.</a></p>\n\n<p>Your account must be email-verified to participate in <a href=\"/r/news\" rel=\"nofollow\">/r/news</a>.</p>\n</div><!-- SC_ON -->"
+    },
+    "widget_18z23qikuzzcr": {
+      "id": "widget_18z23qikuzzcr",
+      "kind": "textarea",
+      "shortName": "Rules Information",
+      "styles": {
+        "backgroundColor": "",
+        "headerColor": ""
+      },
+      "text": "**Your post will be removed if it:**\n\n- is not news.\n- is not in English.\n- is an opinion/analysis or advocacy piece.\n- primarily concerns politics.\n- has a title that does not match the actual title or the lede.\n- has a pay wall or steals content.\n- covers an already-submitted story.\n- violates reddit's site-wide rules, especially regarding personal info.\n\n**Your comment will likely be removed if it:**\n\n- is racist, sexist, vitriolic, or overly crude.\n- is unnecessarily rude or provocative.\n- is a cheap and distracting joke or meme.\n- is responding to spam.\nviolates reddit's site-wide rules.\nadvocates or celebrates the death of another person.\nincites violence.\n**Extreme or repeat offenders will be banned.**\n\n##[Expanded Rules](https://www.reddit.com/r/news/wiki/rules/)",
+      "textHtml": "<!-- SC_OFF --><div class=\"md\"><p><strong>Your post will be removed if it:</strong></p>\n\n<ul>\n<li>is not news.</li>\n<li>is not in English.</li>\n<li>is an opinion/analysis or advocacy piece.</li>\n<li>primarily concerns politics.</li>\n<li>has a title that does not match the actual title or the lede.</li>\n<li>has a pay wall or steals content.</li>\n<li>covers an already-submitted story.</li>\n<li>violates reddit&#39;s site-wide rules, especially regarding personal info.</li>\n</ul>\n\n<p><strong>Your comment will likely be removed if it:</strong></p>\n\n<ul>\n<li>is racist, sexist, vitriolic, or overly crude.</li>\n<li>is unnecessarily rude or provocative.</li>\n<li>is a cheap and distracting joke or meme.</li>\n<li>is responding to spam.\nviolates reddit&#39;s site-wide rules.\nadvocates or celebrates the death of another person.\nincites violence.\n<strong>Extreme or repeat offenders will be banned.</strong></li>\n</ul>\n\n<h2><a href=\"https://www.reddit.com/r/news/wiki/rules/\" rel=\"nofollow\">Expanded Rules</a></h2>\n</div><!-- SC_ON -->"
+    },
+    "widget_id-card-2qh3l": {
+      "currentlyViewingCount": 0,
+      "currentlyViewingText": "",
+      "description": "The place for news articles about current events in the United States and the rest of the world. Discuss it all here.",
+      "id": "widget_id-card-2qh3l",
+      "kind": "id-card",
+      "shortName": "Community Details",
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      },
+      "subscribersCount": 31604062,
+      "subscribersText": ""
+    },
+    "widget_moderators-2qh3l": {
+      "id": "widget_moderators-2qh3l",
+      "kind": "moderators",
+      "mods": [],
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      },
+      "totalMods": 0
+    },
+    "widget_rules-2qh3l": {
+      "data": [
+        {
+          "createdUtc": 1652980697,
+          "description": "A story that does not properly report a story, or is not noteworthy, or is not in English. Self-posts and meta-posts without moderator approval (live update threads, major breaking news, and megathreads are usually exempt) are not allowed. Articles must be about a specific news event.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>A story that does not properly report a story, or is not noteworthy, or is not in English. Self-posts and meta-posts without moderator approval (live update threads, major breaking news, and megathreads are usually exempt) are not allowed. Articles must be about a specific news event.</p>\n</div><!-- SC_ON -->",
+          "priority": 0,
+          "shortName": "Submissions must be articles about a specific news event",
+          "violationReason": "Submissions must be articles about a specific news event"
+        },
+        {
+          "createdUtc": 1745344153,
+          "description": " News articles must be covering recent events, which for our purposes refers to a story published within the last 7 days of submission to /r/news.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>News articles must be covering recent events, which for our purposes refers to a story published within the last 7 days of submission to <a href=\"/r/news\" rel=\"nofollow\">/r/news</a>.</p>\n</div><!-- SC_ON -->",
+          "priority": 1,
+          "shortName": "Old News",
+          "violationReason": "Old News"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Opinion and analysis should go in /r/Foodforthought or another relevant subreddit. This includes articles with editorial opinion, personal conjecture, or otherwise. Press releases with an editorial slant, and analysis of news events (rather than reporting on the event itself) are not allowed. Both articles and domains regarding advocacy for a certain point of view or ideology rather than objective reporting should be reviewed under this rule.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Opinion and analysis should go in <a href=\"/r/Foodforthought\" rel=\"nofollow\">/r/Foodforthought</a> or another relevant subreddit. This includes articles with editorial opinion, personal conjecture, or otherwise. Press releases with an editorial slant, and analysis of news events (rather than reporting on the event itself) are not allowed. Both articles and domains regarding advocacy for a certain point of view or ideology rather than objective reporting should be reviewed under this rule.</p>\n</div><!-- SC_ON -->",
+          "priority": 2,
+          "shortName": "No opinion/analysis or advocacy pieces",
+          "violationReason": "No opinion/analysis or advocacy pieces"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Articles must not be primarily concerning politics. To meet our requirements, a definitive outcome needs to have been reached. Political posturing, such as a politician making remarks, are not allowed. Political procedure, such as a bill being introduced for legislative review, are not allowed. A piece of legislation being signed into law or the results of an election being finalized are both examples of definitive outcomes which would be permitted.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Articles must not be primarily concerning politics. To meet our requirements, a definitive outcome needs to have been reached. Political posturing, such as a politician making remarks, are not allowed. Political procedure, such as a bill being introduced for legislative review, are not allowed. A piece of legislation being signed into law or the results of an election being finalized are both examples of definitive outcomes which would be permitted.</p>\n</div><!-- SC_ON -->",
+          "priority": 3,
+          "shortName": "Articles must not be primarily concerning politics",
+          "violationReason": "Articles must not be primarily concerning politics"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Editorialized titles, written by the posting user or the domain, are not allowed. Titles should be unbiased and strictly factual. When the article itself is titled appropriately, the submission title should be directly sourced from either the title OR lede of the linked article, but not both.\n\nDon't plug other subreddits in the title; adding cross-post references is not suitable for /r/news.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Editorialized titles, written by the posting user or the domain, are not allowed. Titles should be unbiased and strictly factual. When the article itself is titled appropriately, the submission title should be directly sourced from either the title OR lede of the linked article, but not both.</p>\n\n<p>Don&#39;t plug other subreddits in the title; adding cross-post references is not suitable for <a href=\"/r/news\" rel=\"nofollow\">/r/news</a>.</p>\n</div><!-- SC_ON -->",
+          "priority": 4,
+          "shortName": "No editorialized titles; Title must match article title",
+          "violationReason": "No editorialized titles; Title must match article title"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Domains which require the user to purchase a subscription or register an account in order to read the full article are not allowed in /r/news. All users should be able to access the article. Domains which are stealing or reposting content from other news sites, or simply rehash another article without adding substance, are not allowed, and users are encouraged to post the original source instead.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Domains which require the user to purchase a subscription or register an account in order to read the full article are not allowed in <a href=\"/r/news\" rel=\"nofollow\">/r/news</a>. All users should be able to access the article. Domains which are stealing or reposting content from other news sites, or simply rehash another article without adding substance, are not allowed, and users are encouraged to post the original source instead.</p>\n</div><!-- SC_ON -->",
+          "priority": 5,
+          "shortName": "No paywalls/blogspam that steals content",
+          "violationReason": "No paywalls/blogspam that steals content"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "This rule is in relation to already submitted stories which are being rehashed on multiple domains. If a popular story is being submitted while the same event is covered in another post on the front page, or one with sufficient upvotes at an earlier date, it may be subject to removal. If a story was already submitted but did not become popular, then the rule is not applicable. Spamming a story until it reaches the front page is in violation of reddit's sitewide rules and is not allowed.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>This rule is in relation to already submitted stories which are being rehashed on multiple domains. If a popular story is being submitted while the same event is covered in another post on the front page, or one with sufficient upvotes at an earlier date, it may be subject to removal. If a story was already submitted but did not become popular, then the rule is not applicable. Spamming a story until it reaches the front page is in violation of reddit&#39;s sitewide rules and is not allowed.</p>\n</div><!-- SC_ON -->",
+          "priority": 6,
+          "shortName": "No posts covering an already submitted story",
+          "violationReason": "No posts covering an already submitted story"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Comments containing racist, sexist or bigoted slurs are subject to removal. Comments which promote racism, sexism or bigotry (including a viewpoint in relation to those) are subject to removal, and users whom engage in posting such comments may be banned at the mods' discretion. Overly crude comments which add nothing to discussion are also subject to removal/ban. These include inappropriate or inflammatory comments, personal attacks, etc.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Comments containing racist, sexist or bigoted slurs are subject to removal. Comments which promote racism, sexism or bigotry (including a viewpoint in relation to those) are subject to removal, and users whom engage in posting such comments may be banned at the mods&#39; discretion. Overly crude comments which add nothing to discussion are also subject to removal/ban. These include inappropriate or inflammatory comments, personal attacks, etc.</p>\n</div><!-- SC_ON -->",
+          "priority": 7,
+          "shortName": "Do not be racist, sexist, vitriolic, or overly crude",
+          "violationReason": "Do not be racist, sexist, vitriolic, or overly crude"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "In conjunction with vitriolic and crude comments, a comment that is unnecessarily rude (inflammatory comments, personal attacks) or purposefully provocative (baiting) are subject to removal/ban.\n\nAdvocating for or celebrating the death of another human being is grounds for a permanent ban from r/news. Regardless of what you think about a person, this type of discourse is unwelcome on r/news and we will not hesitate to remove you for it.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>In conjunction with vitriolic and crude comments, a comment that is unnecessarily rude (inflammatory comments, personal attacks) or purposefully provocative (baiting) are subject to removal/ban.</p>\n\n<p>Advocating for or celebrating the death of another human being is grounds for a permanent ban from <a href=\"/r/news\" rel=\"nofollow\">r/news</a>. Regardless of what you think about a person, this type of discourse is unwelcome on <a href=\"/r/news\" rel=\"nofollow\">r/news</a> and we will not hesitate to remove you for it.</p>\n</div><!-- SC_ON -->",
+          "priority": 8,
+          "shortName": "Do not be unnecessarily rude or provocative",
+          "violationReason": "Unnecessarily rude or provocative"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Jokes, memes, puns, and overall low quality comments are subject to removal, especially in the top-level comments.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Jokes, memes, puns, and overall low quality comments are subject to removal, especially in the top-level comments.</p>\n</div><!-- SC_ON -->",
+          "priority": 9,
+          "shortName": "No cheap or distracting jokes or memes",
+          "violationReason": "No cheap or distracting jokes or memes"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Any thread which violates reddit's site-wide rules or invokes a witch-hunt is not allowed in /r/news.\n\nContact information publicly advertised by the person or organization in question is allowed so long as it is not being used to incite personal harassment, and doesn't contain personal contact information (home phone number, information of non-public family members, etc.) **To ensure that such comments aren't removed, provide a link to the official page where this information is contained.**",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Any thread which violates reddit&#39;s site-wide rules or invokes a witch-hunt is not allowed in <a href=\"/r/news\" rel=\"nofollow\">/r/news</a>.</p>\n\n<p>Contact information publicly advertised by the person or organization in question is allowed so long as it is not being used to incite personal harassment, and doesn&#39;t contain personal contact information (home phone number, information of non-public family members, etc.) <strong>To ensure that such comments aren&#39;t removed, provide a link to the official page where this information is contained.</strong></p>\n</div><!-- SC_ON -->",
+          "priority": 10,
+          "shortName": "No witchhunting. Follow the Reddit Content Policy.",
+          "violationReason": "No witchhunting. Follow the Reddit Content Policy."
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "While civil criticism of others is allowed (whether living or deceased), advocating or celebrating the death of others, including public figures, is not.",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>While civil criticism of others is allowed (whether living or deceased), advocating or celebrating the death of others, including public figures, is not.</p>\n</div><!-- SC_ON -->",
+          "priority": 11,
+          "shortName": "Do not advocate or celebrate death",
+          "violationReason": "Advocating or celebrating death"
+        },
+        {
+          "createdUtc": 1652980697,
+          "description": "Bots and novelty accounts are not allowed",
+          "descriptionHtml": "<!-- SC_OFF --><div class=\"md\"><p>Bots and novelty accounts are not allowed</p>\n</div><!-- SC_ON -->",
+          "priority": 12,
+          "shortName": "No bots/Novelty accounts",
+          "violationReason": "No bots/Novelty accounts"
+        }
+      ],
+      "display": "compact",
+      "id": "widget_rules-2qh3l",
+      "kind": "subreddit-rules",
+      "shortName": "Subreddit Rules",
+      "styles": {
+        "backgroundColor": null,
+        "headerColor": null
+      }
+    }
+  },
+  "layout": {
+    "idCardWidget": "widget_id-card-2qh3l",
+    "moderatorWidget": "widget_moderators-2qh3l",
+    "sidebar": {
+      "order": [
+        "widget_rules-2qh3l",
+        "widget_18z23h341ogd9",
+        "widget_18z23lknu2vt6",
+        "widget_18z23qikuzzcr"
+      ]
+    },
+    "topbar": {
+      "order": [
+        "widget_17tq0hf0vvy1t"
+      ]
+    }
+  }
+}

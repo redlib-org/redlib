@@ -1,0 +1,127 @@
+{
+  "data": {
+    "search": {
+      "dynamic": {
+        "components": {
+          "__typename": "SearchResultsMainLayout",
+          "appliedState": {
+            "__typename": "SearchAppliedState",
+            "filters": [
+              {
+                "key": "component",
+                "value": "SearchAppliedState"
+              },
+              {
+                "key": "experience_selection",
+                "value": "people"
+              },
+              {
+                "key": "safe_search",
+                "value": "unset"
+              },
+              {
+                "key": "structure_type",
+                "value": "search"
+              }
+            ],
+            "options": [],
+            "pane": "people",
+            "query": "aurora borealis"
+          },
+          "main": {
+            "edges": [
+              {
+                "cursor": "",
+                "node": {
+                  "__typename": "SearchListComponent",
+                  "id": "section_2_pipeline_2_author_search",
+                  "children": [
+                    {
+                      "__typename": "SearchAuthor",
+                      "author": {
+                        "__typename": "Redditor",
+                        "attributes": {},
+                        "icon": {
+                          "dimensions": {
+                            "height": 256,
+                            "width": 256
+                          },
+                          "url": "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_5.png"
+                        },
+                        "id": "t2_415ol",
+                        "isAcceptingFollowers": true,
+                        "isFollowed": false,
+                        "karma": {
+                          "total": 1
+                        },
+                        "name": "auroraborealis",
+                        "prefixedName": "u/auroraborealis",
+                        "profileInfo": {
+                          "__typename": "Profile",
+                          "createdAt": "2010-04-30T16:38:35.042000+0000",
+                          "isNsfw": false,
+                          "styles": {
+                            "legacyIcon": {
+                              "url": "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_5.png"
+                            }
+                          }
+                        }
+                      },
+                      "id": "t2_415ol",
+                      "presentation": {
+                        "__typename": "SearchAuthorDefaultPresentation",
+                        "name": "auroraborealis"
+                      }
+                    },
+                    {
+                      "__typename": "SearchAuthor",
+                      "author": {
+                        "__typename": "Redditor",
+                        "attributes": {},
+                        "icon": {
+                          "dimensions": {
+                            "height": 256,
+                            "width": 256
+                          },
+                          "url": "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_0.png"
+                        },
+                        "id": "t2_pk1eslo0",
+                        "isAcceptingFollowers": true,
+                        "isFollowed": false,
+                        "karma": {
+                          "total": 1
+                        },
+                        "name": "Auroraborealissa",
+                        "prefixedName": "u/Auroraborealissa",
+                        "profileInfo": {
+                          "__typename": "Profile",
+                          "createdAt": "2022-07-20T01:58:51.572000+0000",
+                          "isNsfw": false,
+                          "styles": {
+                            "legacyIcon": {
+                              "url": "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_0.png"
+                            }
+                          }
+                        }
+                      },
+                      "id": "t2_pk1eslo0",
+                      "presentation": {
+                        "__typename": "SearchAuthorDefaultPresentation",
+                        "name": "Auroraborealissa"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjYW5kaWRhdGVzX3JldHVybmVkIjoie1wic2VjdGlvbl8xX3BpcGVsaW5lXzBfZ2xvYmFsX21vZGlmaWVyc1wiOlwiMVwiLFwic2VjdGlvbl8xX3BpcGVsaW5lXzFfbG9jYWxfbW9kaWZpZXJzXCI6XCIwXCIsXCJzZWN0aW9uXzJfcGlwZWxpbmVfMl9hdXRob3Jfc2VhcmNoXCI6XCI2XCJ9IiwiZXhwZXJpZW5jZV9zZWxlY3Rpb24iOiJwZW9wbGUiLCJleHBlcmllbmNlX3ZlcnNpb24iOiJkZWZhdWx0Iiwic2VjdGlvbl8yX3BpcGVsaW5lXzJfYXV0aG9yX3NlYXJjaCI6IjcifQ==",
+              "hasNextPage": true,
+              "hasPreviousPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

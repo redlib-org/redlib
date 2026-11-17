@@ -9,7 +9,7 @@ EnvironmentFile=.env
 HealthCmd=["wget","--spider","-q","--tries=1","http://localhost:8080/settings"]
 HealthInterval=5m
 HealthTimeout=3s
-Image=quay.io/redlib/redlib:latest
+Image=ghcr.io/nachtalb/redlib:latest
 NoNewPrivileges=true
 PublishPort=8080:8080
 ReadOnly=true

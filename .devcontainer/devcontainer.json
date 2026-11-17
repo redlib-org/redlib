@@ -2,9 +2,7 @@
     "name": "Rust",
     "image": "mcr.microsoft.com/devcontainers/rust:dev-trixie",
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:4": {
-            "moby": false
-        }
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "portsAttributes": {
         "8080": {

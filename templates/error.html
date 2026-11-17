@@ -2,18 +2,28 @@
 {% block title %}Error: {{ msg }}{% endblock %}
 {% block sortstyle %}{% endblock %}
 {% block content %}
-<div id="error">
-	<h1>{{ msg }}</h1>
-	<h3><a href="https://www.redditstatus.com/">Reddit Status</a></h3>
-	<br />
-	<h3 id="update-status"></h3>
-	<br />
-	<h3 id="update-status"><a id="random-instance"></a></h3>
-	<br>
-	<div id="git_commit" data-value="{{ crate::instance_info::INSTANCE_INFO.git_commit }}"></div>
-	<script src="/check_update.js"></script>
-
-	<br />
-	<h3>Head back <a href="/">home</a>?</h3>
-</div>
+    <div id="error">
+        <h1>{{ msg }}</h1>
+        {% if !detail.is_empty() || blocked %}<p class="error_detail">{{ detail }}
+            {% if !subreddits.is_empty() %}</p><p class="error_detail">If you host this instance, setting <a href="https://github.com/Nachtalb/redlib/blob/main/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a> usually fixes it.
+            {% else if blocked %}If you host this instance, set or renew <a href="https://github.com/Nachtalb/redlib/blob/main/CONFIGURATION.md#reddit-session"><code>REDLIB_REDDIT_COOKIE</code></a>.{% endif %}</p>{% endif %}
+        {% if !subreddits.is_empty() %}
+            <ul class="error_subreddits">
+                {% for sub in subreddits %}
+                    <li>{% if let Some(user) = sub.strip_prefix("u_") %}<a href="/user/{{ user }}">u/{{ user }}</a>{% else %}<a href="/r/{{ sub }}">r/{{ sub }}</a>{% endif %}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% if !reddit_url.is_empty() %}<pre class="error_url">{{ reddit_url }}</pre>{% endif %}
+        <p class="error_links">
+            <a href="https://www.redditstatus.com/">Reddit status</a> &middot;
+            <a href="https://github.com/Nachtalb/redlib/issues/new?labels=bug&title={{ msg }}">Report an issue</a><a id="random-instance"></a>
+        </p>
+    </div>
+{% endblock %}
+{% block footer %}
+    <div id="update-status" class="update_footer" hidden></div>
+    <div id="git_commit" data-value="{{ crate::instance_info::INSTANCE_INFO.git_commit }}"></div>
+    <script src="/check_update.js?v={{ crate::utils::short_git_hash() }}"></script>
+    {{ super() }}
 {% endblock %}

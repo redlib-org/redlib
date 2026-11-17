@@ -1,47 +1,49 @@
 {% import "utils.html" as utils %}
 
-{% if kind == "more" && parent_kind == "t1" %}
-<a class="deeper_replies" href="{{ post_link }}{{ parent_id }}">&rarr; More replies ({{ more_count }})</a>
+{% if kind == "more" && more_href != "" %}
+    <a class="deeper_replies" href="{{ more_href }}"{% if more_load != "" %} data-load="{{ more_load }}"{% endif %}{% if parent_kind == "t1" && prefs.more_replies_new_page == "on" %} data-new-page{% endif %}>&rarr; More {% if parent_kind == "t1" %}replies{% else %}comments{% endif %}{% if more_count > 0 %} ({{ more_count }}){% endif %}</a>
 {% else if kind == "t1" %}
-<div id="{{ id }}" class="comment">
-	<div class="comment_left">
-    <p class="comment_score" title="{{ score.1 }}">
-         {% if prefs.hide_score != "on" %}
-         {{ score.0 }}
-         {% else %}
-         &#x2022;
-         {% endif %}
-    </p>
-        <div class="line"></div>
-	</div>
-	<details class="comment_right" {% if !collapsed || highlighted %}open{% endif %}>
-		<summary class="comment_data">
-			{% if author.name != "[deleted]" %}
-				<a class="comment_author {{ author.distinguished }} {% if author.name == post_author %}op{% endif %}" href="/user/{{ author.name }}">u/{{ author.name }}</a>
-			{% else %}
-				<span class="comment_author {{ author.distinguished }}">u/[deleted]</span>
-			{% endif %}
-			{% if author.flair.flair_parts.len() > 0 %}
-				<small class="author_flair">{% call utils::render_flair(author.flair.flair_parts) %}</small>
-			{% endif %}
-			<a href="{{ post_link }}{{ id }}/?context=3#{{ id }}" class="created" title="{{ created }}">{{ rel_time }}</a>
-			{% if edited.0 != "".to_string() %}<span class="edited" title="{{ edited.1 }}">edited {{ edited.0 }}</span>{% endif %}
-			{% if !awards.is_empty() && prefs.hide_awards != "on" %}
-			<span class="dot">&bull;</span>
-			{% for award in awards.clone() %}
-			<span class="award" title="{{ award.name }}">
-				<img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
-			</span>
-			{% endfor %}
-			{% endif %}
-		</summary>
-		{% if is_filtered %}
-		<div class="comment_body_filtered {% if highlighted %}highlighted{% endif %}">(Filtered content)</div>
-		{% else %}
-		<div class="comment_body {% if highlighted %}highlighted{% endif %}">{{ body|safe }}</div>
-		{% endif %}
-		<blockquote class="replies">{% for c in replies -%}{{ c.render().unwrap()|safe }}{%- endfor %}
-		</blockquote>
-	</details>
-</div>
+    <div id="{{ id }}" class="comment" data-comment-id="{{ id }}">
+        <div class="comment_left">
+            <p class="comment_score" title="{{ score.1 }}">
+                {% if prefs.hide_score != "on" %}
+                    {{ score.0 }}
+                {% else %}
+                    &#x2022;
+                {% endif %}
+            </p>
+            <div class="line"></div>
+        </div>
+        <details class="comment_right" {% if !collapsed || highlighted %}open{% endif %}>
+            <summary class="comment_data">
+                {% if author.name != "[deleted]" %}
+                    <a class="comment_author {{ author.distinguished }} {% if author.name == post_author %}op{% endif %}" href="/user/{{ author.name }}">u/{{ author.name }}</a>
+                    {% if author.advertiser %}<small class="author_badge" title="OP of an ad post">Advertiser</small>{% endif %}
+                {% else %}
+                    <span class="comment_author {{ author.distinguished }}">u/[deleted]</span>
+                {% endif %}
+                {% if author.flair.flair_parts.len() > 0 %}
+                    <small class="author_flair">{{ utils::render_flair(author.flair.flair_parts) }}</small>
+                {% endif %}
+                <a href="{{ post_link }}{{ id }}/?context=3#{{ id }}" class="created" title="{{ created }}">{{ rel_time }}</a>
+                {% if edited.0 != "".to_string() %}<span class="edited" title="{{ edited.1 }}">edited {{ edited.0 }}</span>{% endif %}
+                {% if !awards.is_empty() && prefs.hide_awards != "on" %}
+                    <span class="dot">&bull;</span>
+                    {% for award in awards.clone() %}
+                        <span class="award" title="{{ award.name }}">
+                            <img alt="{{ award.name }}" src="{{ award.icon_url }}" width="16" height="16"/>
+                        </span>
+                    {% endfor %}
+                {% endif %}
+                <div class="comment_collapse"></div>
+            </summary>
+            {% if is_filtered %}
+                <div class="comment_body_filtered {% if highlighted %}highlighted{% endif %}">(Filtered content)</div>
+            {% else %}
+                <div class="comment_body {% if highlighted %}highlighted{% endif %}">{{ body|safe }}</div>
+            {% endif %}
+            <blockquote class="replies">{% for c in replies -%}{{ c.render().unwrap()|safe }}{%- endfor %}
+            </blockquote>
+        </details>
+    </div>
 {% endif %}

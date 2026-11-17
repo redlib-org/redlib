@@ -1,0 +1,45 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "src/**"
+      - "templates/**"
+      - "static/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "tests/**"
+      - "scripts/**"
+      - "Dockerfile.distroless"
+      - "rustfmt.toml"
+      - ".editorconfig"
+      - ".prettierrc.json"
+      - ".pre-commit-config.yaml"
+      - ".github/**"
+      - "**.yml"
+      - "**.yaml"
+      - "**.json"
+      - "**.toml"
+      - "**.md"
+  pull_request:
+    paths: *paths
+  workflow_dispatch:
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+      - uses: pre-commit/action@v3.0.1

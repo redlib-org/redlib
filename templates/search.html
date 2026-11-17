@@ -4,127 +4,168 @@
 {% block title %}Redlib: search results - {{ params.q }}{% endblock %}
 
 {% block subscriptions %}
-	{% call utils::sub_list("") %}
+    {{ utils::sub_list("") }}
 {% endblock %}
 
 {% block content %}
-	<div id="column_one">
-		<form id="search_sort">
-			<div class="search_widget_divider_box">
-				<input id="search" type="text" name="q" placeholder="Search" value="{{ params.q|safe }}" title="Search redlib">
-				<div class="search_widget_divider_box">
-					{% if sub != "" %}
-					<div id="inside">
-						<input type="checkbox" name="restrict_sr" id="restrict_sr" {% if params.restrict_sr != "" %}checked{% endif %}>
-						<label for="restrict_sr" class="search_label">in r/{{ sub }}</label>
-					</div>
-					{% endif %}
-					{% if params.typed == "sr_user" %}<input type="hidden" name="type" value="sr_user">{% endif %}
-					<select id="sort_options" name="sort" title="Sort results by">
-						{% call utils::options(params.sort, ["relevance", "hot", "top", "new", "comments"], "") %}
-					</select>
-					{% if params.sort != "new" %}
-					<select id="timeframe" name="t" title="Timeframe"> 
-						{% call utils::options(params.t, ["hour", "day", "week", "month", "year", "all"], "all") %}
-					</select>
-					{% endif %}
-				</div>
-			</div>
+    <div id="column_one">
+        <form id="search_sort">
+            <input type="hidden" name="type" value="{{ params.tab.name }}">
+            <div class="search_widget_divider_box">
+                <input id="search" type="text" name="q" placeholder="Search" value="{{ params.q|safe }}" title="Search redlib">
+                <div class="search_widget_divider_box">
+                    {% if sub != "" %}
+                        <div id="inside">
+                            <input type="checkbox" name="restrict_sr" id="restrict_sr" {% if params.restrict_sr != "" %}checked{% endif %}>
+                            <label for="restrict_sr" class="search_label">in r/{{ sub }}</label>
+                        </div>
+                    {% endif %}
+                    {% if !params.tab.post_types.is_empty() %}
+                        <select name="post_types" title="Post type">
+                            {% for value in params.tab.post_types %}
+                                <option value="{{ value }}" {% if params.post_types == value.to_string() || (params.post_types == "" && value.to_string() == "all") %}selected{% endif %}>
+                                    {% if value.to_string() == "gif" %}GIF{% else if value.to_string() == "all" %}All types{% else %}{{ format!("{}{}", value.get(0..1).unwrap_or_default().to_uppercase(), value.get(1..).unwrap_or_default()) }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                    {% if !params.tab.sorts.is_empty() %}
+                        <select id="sort_options" name="sort" title="Sort results by">
+                            {{ utils::options(params.sort, params.tab.sorts, "") }}
+                        </select>
+                        {% if params.sort != "new" %}
+                            <select id="timeframe" name="t" title="Timeframe">
+                                {{ utils::options(params.t, ["hour", "day", "week", "month", "year", "all"], "all") }}
+                            </select>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
 
-			<button id="sort_submit" class="submit">
-				<svg width="15" viewBox="0 0 110 100" fill="none" stroke-width="10" stroke-linecap="round">
-					<path d="M20 50 H100" />
-					<path d="M75 15 L100 50 L75 85" />
-					&rarr;
-				</svg>
-			</button>
- 		</form>
+            <button id="sort_submit" class="submit">
+                <svg width="15" viewBox="10 0 100 100" fill="none" stroke-width="10" stroke-linecap="round">
+                    <path d="M20 50 H100" />
+                    <path d="M75 15 L100 50 L75 85" />
+                    &rarr;
+                </svg>
+            </button>
+        </form>
 
-		{% if !is_filtered %}
-		{% if subreddits.len() > 0 || params.typed == "sr_user" %}
-		<div id="search_subreddits">
-			{% if params.typed == "sr_user" %}
-			<a href="?q={{ params.q }}&sort={{ params.sort }}&t={{ params.t }}" class="search_subreddit" id="more_subreddits">← Back to post/comment results</a>
-			{% endif %}
-			{% for subreddit in subreddits %}
-			<a href="{{ subreddit.url }}" class="search_subreddit">
-				<div class="search_subreddit_left">{% if subreddit.icon != "" %}<img loading="lazy" src="{{ subreddit.icon|safe }}" alt="r/{{ subreddit.name }} icon">{% endif %}</div>
-				<div class="search_subreddit_right">
-					<p class="search_subreddit_header"> 
-						<span class="search_subreddit_name">r/{{ subreddit.name }}</span>
-						<span class="dot">&bull;</span>
-						<span class="search_subreddit_members" title="{{ subreddit.subscribers.1 }} Members">{{ subreddit.subscribers.0 }} Members</span>
-					</p>
-					<p class="search_subreddit_description">{{ subreddit.description }}</p>
-				</div>
-			</a>
-			{% endfor %}
-			{% if params.typed != "sr_user" %}
-			<a href="?q={{ params.q }}&sort={{ params.sort }}&t={{ params.t }}&type=sr_user" class="search_subreddit" id="more_subreddits">More subreddit results →</a>
-			{% endif %}
-		</div>
-		{% endif %}
-		{% endif %}
+        <div id="listing_options" class="search_tabs">
+            {% for tab in tabs %}
+                <a href="?q={{ params.q_url }}&type={{ tab.name }}{% if params.restrict_sr != "" %}&restrict_sr={{ params.restrict_sr }}{% endif %}" {% if tab.name == params.tab.name %}class="selected"{% endif %}>{{ tab.label }}</a>
+            {% endfor %}
+        </div>
 
-		{% if all_posts_hidden_nsfw %}
-		<span class="listing_warn">All posts are hidden because they are NSFW. Enable "Show NSFW posts" in settings to view.</span>
-		{% endif %}
-
-		{% if no_posts %}
-			<center>No posts were found.</center>
-		{% endif %}
-
-		{% if all_posts_filtered %}
-			<span class="listing_warn">(All content on this page has been filtered)</span>
-		{% else if is_filtered %}
-			<span class="listing_warn">(Content from r/{{ sub }} has been filtered)</span>
-		{% else if params.typed != "sr_user" %}
-			{% for post in posts %}
-				{% if post.flags.nsfw && prefs.show_nsfw != "on" %}
-				{% else if !post.title.is_empty() %}
-					{% call utils::post_in_list(post) %}
-				{% else %}
-					<div class="comment">
-						<div class="comment_left">
-							<p class="comment_score" title="{{ post.score.1 }}">
-                            {% if prefs.hide_score != "on" %}
-                            {{ post.score.0 }}
-                            {% else %}
-                            &#x2022;
-                            {% endif %}
+        {% if !is_filtered && (subreddits.len() > 0 || users.len() > 0) %}
+            <div id="search_subreddits"{% if params.tab.name == "communities" || params.tab.name == "people" %} class="search_results"{% endif %}>
+                {% for subreddit in subreddits %}
+                    <a href="{{ subreddit.url }}" class="search_subreddit">
+                        <div class="search_subreddit_left">{% if subreddit.icon != "" %}<img loading="lazy" src="{{ subreddit.icon|safe }}" alt="r/{{ subreddit.name }} icon">{% else %}<span class="default_sub_icon" aria-hidden="true">r/</span>{% endif %}</div>
+                        <div class="search_subreddit_right">
+                            <p class="search_subreddit_header">
+                                <span class="search_subreddit_name">r/{{ subreddit.name }}</span>
+                                <span class="dot">&bull;</span>
+                                <span class="search_subreddit_members" title="{{ subreddit.subscribers.1 }} Members">{{ subreddit.subscribers.0 }} Members</span>
                             </p>
-							<div class="line"></div>
-						</div>
-						<details class="comment_right" open>
-							<summary class="comment_data">
-								<a class="comment_link" href="{{ post.permalink }}">COMMENT</a>
-								<span class="created" title="{{ post.created }}">{{ post.rel_time }}</span>
-							</summary>
-							<p class="comment_body">{{ post.body }}</p>
-						</details>
-					</div>
-				{% endif %}
-			{% endfor %}
-		{% endif %}
-		{% if prefs.use_hls == "on" %}
-		<script src="/hls.min.js"></script>
-		<script src="/playHLSVideo.js"></script>
-		{% endif %}
+                            <p class="search_subreddit_description">{{ subreddit.description }}</p>
+                        </div>
+                    </a>
+                {% endfor %}
+                {% for user in users %}
+                    <a href="/user/{{ user.name }}" class="search_subreddit">
+                        <div class="search_subreddit_left">{% if user.icon != "" %}<img loading="lazy" src="{{ user.icon|safe }}" alt="u/{{ user.name }} icon">{% endif %}</div>
+                        <div class="search_subreddit_right">
+                            <p class="search_subreddit_header">
+                                <span class="search_subreddit_name">u/{{ user.name }}</span>
+                                <span class="dot">&bull;</span>
+                                <span class="search_subreddit_members" title="{{ user.karma.1 }} karma">{{ user.karma.0 }} karma</span>
+                                <span class="dot">&bull;</span>
+                                <span class="search_subreddit_members" title="{{ user.created }}">{{ user.age }}</span>
+                            </p>
+                        </div>
+                    </a>
+                {% endfor %}
+                {% if params.tab.name == "posts" %}
+                    <a href="?q={{ params.q_url }}&type=communities" class="search_subreddit" id="more_subreddits">More communities →</a>
+                {% endif %}
+            </div>
+        {% endif %}
 
-		{% if params.typed != "sr_user" %}
-		<footer>
-			{% if params.before != "" %}
-			<a href="?q={{ params.q|safe }}&restrict_sr={{ params.restrict_sr }}
-				&sort={{ params.sort }}&t={{ params.t }}
-				&before={{ params.before }}" accesskey="P">PREV</a>
-			{% endif %}
+        {% if all_posts_hidden_nsfw %}
+            <span class="listing_warn">All posts are hidden because they are NSFW. Enable "Show NSFW posts" in settings to view.</span>
+        {% endif %}
 
-			{% if params.after != "" %}
-			<a href="?q={{ params.q|safe }}&restrict_sr={{ params.restrict_sr }}
-				&sort={{ params.sort }}&t={{ params.t }}
-				&after={{ params.after }}" accesskey="N">NEXT</a>
-			{% endif %}
-		</footer>
-		{% endif %}
-	</div>
+        {% if no_posts %}
+            <center>No results were found.</center>
+        {% endif %}
+
+        {% if all_posts_filtered %}
+            <span class="listing_warn">(All content on this page has been filtered)</span>
+        {% else if is_filtered %}
+            <span class="listing_warn">(Content from r/{{ sub }} has been filtered)</span>
+        {% else if params.tab.name == "media" %}
+            <div class="media_grid search_results">
+                {% for post in posts %}
+                    {% if !(post.flags.nsfw && prefs.show_nsfw != "on") %}
+                        <a class="media_tile{% if post.flags.nsfw && prefs.blur_nsfw == "on" %} post_blurred{% endif %}" href="{{ post.permalink }}" title="{{ post.title }}">
+                            <img loading="lazy" src="{% if post.post_type == "image" %}{{ post.media.url }}{% else if let Some(image) = post.gallery.first() %}{{ image.url }}{% else if post.media.poster != "" %}{{ post.media.poster }}{% else %}{{ post.thumbnail.url }}{% endif %}" alt="">
+                            {% if post.post_type == "gif" %}
+                                <span class="media_badge">GIF</span>
+                            {% else if post.post_type == "video" %}
+                                <span class="media_badge">▶</span>
+                            {% endif %}
+                            <span class="media_sub">r/{{ post.community }}</span>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="search_results{% if params.tab.name == "comments" %} search_results_comments{% endif %}">
+                {% for post in posts %}
+                    {% if post.flags.nsfw && prefs.show_nsfw != "on" %}
+                    {% else if !post.title.is_empty() %}
+                        {{ utils::post_in_list(post) }}
+                    {% else %}
+                        <div class="comment user-comment">
+                            <div class="comment_left">
+                                <p class="comment_score" title="{{ post.score.1 }}">
+                                    {% if prefs.hide_score != "on" %}
+                                        {{ post.score.0 }}
+                                    {% else %}
+                                        &#x2022;
+                                    {% endif %}
+                                </p>
+                                <div class="line"></div>
+                            </div>
+                            <details class="comment_right" open>
+                                <summary class="comment_data">
+                                    <a class="comment_link" href="{{ post.permalink }}" title="{{ post.link_title }}">{{ post.link_title }}</a>
+                                    <div class="user_comment_data_divider">
+                                        <a class="comment_author" href="/user/{{ post.author.name }}">u/{{ post.author.name }}</a>
+                                        <span class="created-in">&nbsp;in&nbsp;</span>
+                                        <a class="comment_subreddit" href="/r/{{ post.community }}">r/{{ post.community }}</a>
+                                        <span class="dot">&bull;</span>
+                                        <span class="created" title="{{ post.created }}">&nbsp;{{ post.rel_time }}</span>
+                                    </div>
+                                </summary>
+                                <p class="comment_body">{{ post.body|safe }}</p>
+                            </details>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if prefs.use_hls == "on" %}
+            <script src="/hls.min.js?v={{ crate::utils::short_git_hash() }}"></script>
+            <script src="/playHLSVideo.js?v={{ crate::utils::short_git_hash() }}"></script>
+        {% endif %}
+
+        {% if params.after != "" %}
+            <footer class="search_more">
+                <a id="show_more" href="?q={{ params.q_url }}&type={{ params.tab.name }}&restrict_sr={{ params.restrict_sr }}&sort={{ params.sort }}&t={{ params.t }}&post_types={{ params.post_types }}&after={{ params.after }}" accesskey="N">Show more</a>
+            </footer>
+        {% endif %}
+        <script src="/searchTabs.js?v={{ crate::utils::short_git_hash() }}"></script>
+    </div>
 {% endblock %}

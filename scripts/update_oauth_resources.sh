@@ -38,43 +38,50 @@ done
 # Close the array in the source file
 echo "];" >> "$filename"
 
-# Fetch Android app versions
-page_1=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions/" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
-# Append with pages
-page_2=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=2" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
-page_3=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=3" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
-page_4=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=4" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
-page_5=$(curl -s "https://apkcombo.com/reddit/com.reddit.frontpage/old-versions?page=5" | rg "<a class=\"ver-item\" href=\"(/reddit/com\.reddit\.frontpage/download/phone-20\d{2}\.\d+\.\d+-apk)\" rel=\"nofollow\">" -r "https://apkcombo.com\$1" | sort | uniq | sed 's/      //g')
+# Fetch Android app versions from APKMirror. Each APK download page also lists
+# the versions (with build numbers) released around it, so only releases whose
+# version hasn't been seen yet are fetched.
+ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+apkmirror="https://www.apkmirror.com"
+releases=""
+for page in "" "page/2/" "page/3/"; do
+  releases+=$(curl -s -A "$ua" "$apkmirror/apk/redditinc/reddit/$page" | rg -o '/apk/redditinc/reddit/reddit-20\d{2}-\d+-\d+-release/' | uniq)
+  releases+=$'\n'
+  sleep 1
+done
 
-# Concatenate all pages
-versions="${page_1}"
-versions+=$'\n'
-versions+="${page_2}"
-versions+=$'\n'
-versions+="${page_3}"
-versions+=$'\n'
-versions+="${page_4}"
-versions+=$'\n'
-versions+="${page_5}"
+versions=""
+while IFS= read -r release; do
+  [ -z "$release" ] && continue
+  # reddit-2026-42-0-release -> 2026.42.0
+  version=$(echo "$release" | rg -o 'reddit-(20\d{2})-(\d+)-(\d+)-release' -r '$1.$2.$3')
+  echo "$versions" | rg -qF "Version $version/" && continue
+
+  download=$(curl -s -A "$ua" "$apkmirror$release" | rg -o "$release[^\"]*-android-apk-download/" | head -n1)
+  sleep 1
+  [ -z "$download" ] && continue
+  found=$(curl -s -A "$ua" "$apkmirror$download" | sed 's/<[^>]*>/ /g' | rg -o 'Version: *(20\d{2}\.\d+\.\d+) *\((\d+)\)' -r 'Version $1/Build $2')
+  sleep 1
+  versions+="$found"$'\n'
+  echo -e "Fetched \e[32m$(echo "$found" | wc -l) versions\e[0m around $version."
+done <<< "$releases"
+
+versions=$(echo "$versions" | rg . | sort -u -V -r)
+if [ -z "$versions" ]; then
+  echo "Failed to fetch Android app versions, restore $filename with git" >&2
+  exit 1
+fi
 
 # Count the number of lines in the version list
 android_count=$(echo "$versions" | wc -l)
 
-echo -e "Fetching \e[32m$android_count Android app versions...\e[0m"
+echo -e "Fetched \e[32m$android_count Android app versions.\e[0m"
 
 # Append to the source file
 echo "pub const ANDROID_APP_VERSION_LIST: &[&str; $android_count] = &[" >> "$filename"
 
-num=0
-
-# For each in versions, curl the page and extract the build number
 echo "$versions" | while IFS= read -r line; do
-  num=$((num+1))
-  fetch_page=$(curl -s "$line")
-  build=$(echo "$fetch_page" | rg "<span class=\"vercode\">\((\d+)\)</span>" --only-matching -r "\$1" | head -n1)
-  version=$(echo "$fetch_page" | rg "<span class=\"vername\">Reddit (20\d{2}\.\d+\.\d+)</span>" --only-matching -r "\$1" | head -n1)
-  echo "	\"Version $version/Build $build\"," >> "$filename"
-  echo -e "[$num/$android_count] Fetched \e[32mVersion $version/Build $build\e[0m."
+  echo "	\"$line\"," >> "$filename"
 done
 
 # Close the array in the source file

@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "src/**"
+      - "templates/**"
+      - "static/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "tests/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    paths: *paths
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      # Pushes to main save the cache that pull requests restore.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --locked
+        env:
+          # A throwaway account's session for the session backends' live
+          # tests; pull requests from forks don't get it and skip them.
+          REDLIB_REDDIT_COOKIE: ${{ secrets.REDLIB_REDDIT_COOKIE }}

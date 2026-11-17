@@ -1,12 +1,13 @@
 #![allow(clippy::cmp_owned)]
-use crate::client::json;
-use crate::server::RequestExt;
-use crate::utils::{error, filter_posts, format_url, get_filters, nsfw_landing, param, setting, template, Post, Preferences, User};
-use crate::{config, utils};
+use crate::body::Body;
+use crate::utils::{
+	build_rss_items, enable_rss, error, filter_posts, format_url, get_filters, nsfw_landing, param, rss_page_link, rss_response, setting, should_be_nsfw_gated, template, Post,
+	Preferences, User, RSS_USER_LISTINGS,
+};
+use crate::{backends::json, server::RequestExt};
 use askama::Template;
-use chrono::DateTime;
-use htmlescape::decode_html;
-use hyper::{Body, Request, Response};
+use hyper::{Request, Response};
+use rss::ChannelBuilder;
 use time::{macros::format_description, OffsetDateTime};
 
 // STRUCTS
@@ -56,7 +57,7 @@ pub async fn profile(req: Request<Body>) -> Result<Response<Body>, String> {
 	// Return landing page if this post if this Reddit deems this user NSFW,
 	// but we have also disabled the display of NSFW content or if the instance
 	// is SFW-only.
-	if user.nsfw && utils::should_be_nsfw_gated(&req, &req_url) {
+	if user.nsfw && should_be_nsfw_gated(&req, &req_url) {
 		return Ok(nsfw_landing(req, req_url).await.unwrap_or_default());
 	}
 
@@ -132,65 +133,48 @@ async fn user(name: &str) -> Result<User, String> {
 	})
 }
 
+/// Feed for a user's posts and comments, built from the JSON API.
+/// Mirrors Reddit's feed URLs: `/user/spez.rss`, `/user/spez/submitted.rss?sort=top&t=year`, `/user/spez/comments.rss`.
 pub async fn rss(req: Request<Body>) -> Result<Response<Body>, String> {
-	if config::get_setting("REDLIB_ENABLE_RSS").is_none() {
+	if !enable_rss() {
 		return Ok(error(req, "RSS is disabled on this instance.").await.unwrap_or_default());
 	}
-	use crate::utils::rewrite_urls;
-	use hyper::header::CONTENT_TYPE;
-	use rss::{ChannelBuilder, Item};
 
-	// Get user
 	let user_str = req.param("name").unwrap_or_default();
-
 	let listing = req.param("listing").unwrap_or_else(|| "overview".to_string());
+	if !RSS_USER_LISTINGS.contains(&listing.as_str()) {
+		return error(req, "Unknown feed listing").await;
+	}
 
-	// Get path
-	let path = format!("/user/{user_str}/{listing}.json?{}&raw_json=1", req.uri().query().unwrap_or_default(),);
-
-	// Get user
+	let path = format!("/user/{user_str}/{listing}.json?{}&raw_json=1", req.uri().query().unwrap_or_default());
 	let user_obj = user(&user_str).await.unwrap_or_default();
-
-	// Get posts
 	let (posts, _) = Post::fetch(&path, false).await?;
 
-	// Build the RSS feed
+	let title = match listing.as_str() {
+		"submitted" => format!("Posts by u/{user_str}"),
+		"comments" => format!("Comments by u/{user_str}"),
+		_ => format!("u/{user_str}"),
+	};
 	let channel = ChannelBuilder::default()
-		.title(user_str)
+		.title(title)
 		.description(user_obj.description)
-		.items(
-			posts
-				.into_iter()
-				.map(|post| Item {
-					title: Some(post.title.to_string()),
-					link: Some(format_url(&utils::get_post_url(&post))),
-					author: Some(post.author.name),
-					pub_date: Some(DateTime::from_timestamp(post.created_ts as i64, 0).unwrap_or_default().to_rfc2822()),
-					content: Some(rewrite_urls(&decode_html(&post.body).unwrap_or_else(|_| post.body.clone()))),
-					..Default::default()
-				})
-				.collect::<Vec<_>>(),
-		)
+		.link(rss_page_link(&req))
+		.items(build_rss_items(&posts))
 		.build();
 
-	// Serialize the feed to RSS
-	let body = channel.to_string().into_bytes();
-
-	// Create the HTTP response
-	let mut res = Response::new(Body::from(body));
-	res.headers_mut().insert(CONTENT_TYPE, hyper::header::HeaderValue::from_static("application/rss+xml"));
-
-	Ok(res)
+	Ok(rss_response(&channel))
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
 
-	#[tokio::test(flavor = "multi_thread")]
-	async fn test_fetching_user() {
-		let user = user("spez").await;
-		assert!(user.is_ok());
-		assert!(user.unwrap().karma > 100);
+	#[test]
+	fn test_fetching_user() {
+		crate::client::block_on_shared(async {
+			let user = user("spez").await;
+			assert!(user.is_ok());
+			assert!(user.unwrap().karma > 100);
+		});
 	}
 }
