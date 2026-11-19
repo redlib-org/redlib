@@ -31,7 +31,7 @@ repos:
         args: [--tabwidth=4, -b, "match,when,endmatch"]
 
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.10
+    rev: v3.10.1
     hooks:
       - id: prettier
         types_or: [css, javascript]
