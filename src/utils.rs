@@ -1328,10 +1328,11 @@ pub fn render_bullet_lists(input_text: &str) -> String {
 
 // These are links we want to replace in-body
 static REDDIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"href="(https|http|)://(www\.|old\.|np\.|amp\.|new\.|)(reddit\.com|redd\.it)/"#).unwrap());
-static REDDIT_PREVIEW_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it(.*)").unwrap());
+static REDDIT_PREVIEW_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://(external-preview|preview|i)\.redd\.it").unwrap());
 static REDDIT_EMOJI_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"https?://(?:www\.)?redditstatic\.com/[^\s"'<>]*"#).unwrap());
-static REDLIB_PREVIEW_LINK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"/(img|preview/)(pre|external-pre)?/(.*?)>"#).unwrap());
-static REDLIB_PREVIEW_TEXT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r">(.*?)</a>").unwrap());
+// A preview link up to its first `</a>`, and the `</p>` if that closes the paragraph
+static REDDIT_PREVIEW_PARAGRAPH_REGEX: LazyLock<Regex> =
+	LazyLock::new(|| Regex::new(r#"<p><a href="https?://(external-preview|preview|i)\.redd\.it(/[^>\n]*>)(.*?)</a>(</p>)?"#).unwrap());
 
 /// Rewrite Reddit links to Redlib in body of text
 /// The HTML of a post or comment body. Reddit's `*_html` comes from its old
@@ -1418,28 +1419,21 @@ pub fn rewrite_urls(input_text: &str) -> String {
 	text1 = text1.replace("<p>&#8203;</p>", "").replace("<p>&#x200B;</p>", "");
 
 	// Rewrite external media previews to Redlib
-	loop {
-		if REDDIT_PREVIEW_REGEX.find(&text1).is_none() {
-			return text1;
-		} else {
-			let formatted_url = format_url(REDDIT_PREVIEW_REGEX.find(&text1).map(|x| x.as_str()).unwrap_or_default());
+	let preview_type = |host: &str| match host {
+		"preview" => "/preview/pre",
+		"external-preview" => "/preview/external-pre",
+		_ => "/img",
+	};
 
-			let image_url = REDLIB_PREVIEW_LINK_REGEX.find(&formatted_url).map_or("", |m| m.as_str());
-			let mut image_caption = REDLIB_PREVIEW_TEXT_REGEX.find(&formatted_url).map_or("", |m| m.as_str());
-
-			/* As long as image_caption isn't empty remove first and last four characters of image_text to leave us with just the text in the caption without any HTML.
-			This makes it possible to enclose it in a <figcaption> later on without having stray HTML breaking it */
-			if !image_caption.is_empty() {
-				image_caption = &image_caption[1..image_caption.len() - 4];
+	// A paragraph that is only a preview link becomes an embedded image, with the link text as caption unless that is a link itself
+	text1 = REDDIT_PREVIEW_PARAGRAPH_REGEX
+		.replace_all(&text1, |caps: &regex::Captures<'_>| {
+			if caps.get(4).is_none() {
+				return caps[0].to_string();
 			}
-
-			// image_url contains > at the end of it, and right above this we remove image_text's front >, leaving us with just a single > between them
-			let image_to_replace = format!("<p><a href=\"{image_url}{image_caption}</a></p>");
-
-			/* We don't want to show a caption that's just the image's link, so we check if we find a Reddit preview link within the image's caption.
-			If we don't find one we must have actual text, so we include a <figcaption> block that contains it.
-			Otherwise we don't include the <figcaption> block as we don't need it. */
-			let _image_replacement = if REDDIT_PREVIEW_REGEX.find(image_caption).is_none() {
+			let image_url = format!("{}{}", preview_type(&caps[1]), &caps[2]);
+			let image_caption = &caps[3];
+			if REDDIT_PREVIEW_REGEX.find(image_caption).is_none() {
 				// Without this " would show as \" instead. "\&quot;" is how the quotes are formatted within image_text beforehand
 				format!(
 					"<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a><figcaption>{}</figcaption></figure>",
@@ -1447,23 +1441,11 @@ pub fn rewrite_urls(input_text: &str) -> String {
 				)
 			} else {
 				format!("<figure><a href=\"{image_url}<img loading=\"lazy\" src=\"{image_url}</a></figure>")
-			};
+			}
+		})
+		.to_string();
 
-			/* In order to know if we're dealing with a normal or external preview we need to take a look at the first capture group of REDDIT_PREVIEW_REGEX
-			if it's preview we're dealing with something that needs /preview/pre, external-preview is /preview/external-pre, and i is /img */
-			let reddit_preview_regex_capture = REDDIT_PREVIEW_REGEX.captures(&text1).unwrap().get(1).map_or("", |m| m.as_str());
-
-			let _preview_type = match reddit_preview_regex_capture {
-				"preview" => "/preview/pre",
-				"external-preview" => "/preview/external-pre",
-				_ => "/img",
-			};
-
-			text1 = REDDIT_PREVIEW_REGEX
-				.replace(&text1, format!("{_preview_type}$2"))
-				.replace(&image_to_replace, &_image_replacement)
-		}
-	}
+	REDDIT_PREVIEW_REGEX.replace_all(&text1, |caps: &regex::Captures<'_>| preview_type(&caps[1])).to_string()
 }
 
 // Match Giphy URLs in comment anchor tags, capturing the GIF ID
