@@ -1115,6 +1115,7 @@ grOg7/TIT6QE0pDX4NMn6NqkAiARp8TS/g6Pmz3BaKRf5UH/7ifLPrQ9z+rk+LT3\n\
 		});
 		let mut builder = client
 			.post(crate::backends::gql::GQL_URL)
+			.version(wreq::Version::HTTP_11)
 			.header("X-APOLLO-OPERATION-NAME", "SubredditInfoByName")
 			.header("X-APOLLO-OPERATION-ID", crate::backends::gql::SUBREDDIT_INFO_HASH);
 		for (key, value) in headers.iter().filter(|(key, _)| !key.eq_ignore_ascii_case("content-type")) {

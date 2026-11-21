@@ -220,6 +220,8 @@ async fn query(operation: &str, hash: &str, variables: &Value) -> Result<Value, 
 		let mut builder = CLIENT
 			.load_full()
 			.post(GQL_URL)
+			// Reddit answers this host with 403 over HTTP/2
+			.version(wreq::Version::HTTP_11)
 			.header("X-APOLLO-OPERATION-NAME", operation)
 			.header("X-APOLLO-OPERATION-ID", hash)
 			.header("Accept", "multipart/mixed;deferSpec=20220824, application/graphql-response+json, application/json");
