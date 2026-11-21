@@ -7,7 +7,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::load);
 
 /// This serves as the frontend for an archival API - on removed comments, this URL
 /// will be the base of a link, to display removed content (on another site).
-pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "undelete.pullpush.io";
+pub const DEFAULT_PUSHSHIFT_FRONTEND: &str = "ihsoyct.github.io";
 
 /// Stores the configuration parsed from the environment variables and the
 /// config file. `Config::Default()` contains None for each setting.

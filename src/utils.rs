@@ -2359,7 +2359,7 @@ mod tests {
 		}});
 		let body = super::parse_post(&post).await.body;
 		assert!(
-			body.contains("[deleted] — <a href=\"https://undelete.pullpush.io/r/rust/comments/abc/t/\">view deleted post</a>"),
+			body.contains("[deleted] — <a href=\"https://ihsoyct.github.io/r/rust/comments/abc/t/\">view deleted post</a>"),
 			"{body}"
 		);
 	}
