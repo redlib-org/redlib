@@ -2344,6 +2344,16 @@ mod tests {
 	}
 
 	#[test]
+	fn rewrite_urls_many_preview_links_on_one_line() {
+		let link = r#"<a href="https://i.redd.it/a.jpg">https://i.redd.it/a.jpg</a>"#;
+		let input = format!("<div class=\"md\"><p>{}</p>\n</div>", vec![link; 400].join(" "));
+		let output = format!("<div class=\"md\"><p>{}</p>\n</div>", vec![r#"<a href="/img/a.jpg">/img/a.jpg</a>"#; 400].join(" "));
+		let (tx, rx) = std::sync::mpsc::channel();
+		std::thread::spawn(move || tx.send(rewrite_urls(&input)));
+		assert_eq!(rx.recv_timeout(std::time::Duration::from_secs(5)).expect("rewrite_urls took over 5s"), output);
+	}
+
+	#[test]
 	fn test_rewriting_image_links() {
 		let input =
 			r#"<p><a href="https://preview.redd.it/6awags382xo31.png?width=2560&amp;format=png&amp;auto=webp&amp;s=9c563aed4f07a91bdd249b5a3cea43a79710dcfc">caption 1</a></p>"#;
