@@ -8,7 +8,7 @@
 use super::{json as reddit_json, Backend, Failure, Fetch, Kind};
 use crate::client::{CLIENT, OAUTH_CLIENT};
 use crate::oauth::force_refresh_token;
-use crate::utils::{enable_gql, format_url, gql_feed_requests, param};
+use crate::utils::{enable_gql, format_url, param};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use chrono::DateTime;
 use log::{debug, warn};
@@ -76,7 +76,7 @@ pub async fn json(path: &str, quarantine: bool) -> Option<Result<Value, String>>
 		["user", name, "submitted"] => user_posts(path, name, param(path, "after").as_deref()).await,
 		["user", name, "comments"] => user_comments(path, name, param(path, "after").as_deref()).await,
 		["user", name] | ["user", name, "overview"] => user_overview(path, name).await,
-		["r", "all", rest @ ..] => all(path, sort(rest)?).await,
+		["r", "all", ..] => return None,
 		["r", "popular", rest @ ..] => feed("PopularFeedElements", POPULAR_FEED_HASH, feed_variables(path, sort(rest)?), "/popular/elements").await,
 		["r", sub, rest @ ..] if !sub.contains('+') && !sub.contains("%2B") => {
 			let mut variables = feed_variables(path, sort(rest)?);
@@ -220,6 +220,8 @@ async fn query(operation: &str, hash: &str, variables: &Value) -> Result<Value, 
 		let mut builder = CLIENT
 			.load_full()
 			.post(GQL_URL)
+			// Reddit answers this host with 403 over HTTP/2
+			.version(wreq::Version::HTTP_11)
 			.header("X-APOLLO-OPERATION-NAME", operation)
 			.header("X-APOLLO-OPERATION-ID", hash)
 			.header("Accept", "multipart/mixed;deferSpec=20220824, application/graphql-response+json, application/json");
@@ -347,7 +349,6 @@ fn awards(node: &Value) -> Vec<Value> {
 const POSTS_BY_IDS_HASH: &str = "0e471495bcba33554b6c540b3cf1cae23dd5432a8b741dddc7fd6717dc2520a7";
 const SUBREDDIT_FEED_HASH: &str = "97046e2a48050f10a507db354a8da60955ffccb586dcf63163bdfc6610d5cf7a";
 const POPULAR_FEED_HASH: &str = "728c0f9a4d12c17b8cffe07669bb1a8770b0f2ec0c84e040485f8fad2d9c417f";
-const ALL_FEED_HASH: &str = "0e9c0045dd244e934efd0ea4fefc00cb0b4d91523e2f09c8af075856cb59b937";
 const SORTS: [&str; 6] = ["hot", "new", "top", "rising", "controversial", "best"];
 
 /// The listing sort of the path segments after `/r/<sub>`, if they are one.
@@ -402,54 +403,6 @@ async fn posts_by_ids(ids: Vec<&str>) -> Result<Value, String> {
 	let response = query("PostsByIds", POSTS_BY_IDS_HASH, &variables).await?;
 	let posts = response["data"]["postsInfoByIds"].as_array().ok_or("PostsByIds returned no posts")?;
 	Ok(listing(posts.iter().filter_map(post).collect()))
-}
-
-/// r/all only returns the IDs of its posts.
-async fn all(path: &str, sort: &str) -> Result<Value, String> {
-	let mut variables = feed_variables(path, sort);
-	variables["time"] = variables["range"].take();
-	let limit = variables["pageSize"].take().as_u64().unwrap_or(25) as usize;
-	if let Some(variables) = variables.as_object_mut() {
-		variables.remove("range");
-		variables.remove("pageSize");
-	}
-	let mut ids = Vec::new();
-	let mut next = None;
-	// The first page has ~8 posts whatever the size; later ones fill it
-	for _ in 0..gql_feed_requests() {
-		let response = query("AllFeedSdui", ALL_FEED_HASH, &variables).await?;
-		next = take_all_page(&mut ids, &response["data"]["allV3"]["elements"], limit);
-		match &next {
-			Some(after) if ids.len() < limit => variables["after"] = STANDARD.encode(after).into(),
-			_ => break,
-		}
-	}
-	let mut posts = Box::pin(posts_by_ids(ids.iter().map(String::as_str).collect())).await?;
-	posts["data"]["after"] = next.into();
-	Ok(posts)
-}
-
-/// Adds the post IDs of an r/all page to `ids`, up to `limit`. Returns the
-/// JSON API `after` of the last post taken, `None` at the end of the feed.
-fn take_all_page(ids: &mut Vec<String>, elements: &Value, limit: usize) -> Option<String> {
-	let page = elements["edges"]
-		.as_array()
-		.into_iter()
-		.flatten()
-		// Ads are posts too, marked by their `adPayload`
-		.filter(|edge| edge["node"]["adPayload"].is_null())
-		.filter_map(|edge| edge["node"]["groupId"].as_str())
-		.filter(|id| id.starts_with("t3_"));
-	for id in page {
-		if ids.len() == limit {
-			// Feed cursors are post fullnames, so the next page starts here
-			return ids.last().cloned();
-		}
-		if !ids.iter().any(|i| i == id) {
-			ids.push(id.to_string());
-		}
-	}
-	after(elements)
 }
 
 /// Some feeds, like popular, only send `displayName`.
@@ -1374,20 +1327,10 @@ mod tests {
 	}
 
 	#[test]
-	fn test_all_pages_fill_the_limit() {
-		let page = |ids: &[&str], end: &str| {
-			let mut edges: Vec<Value> = ids.iter().map(|id| json_value!({ "node": { "groupId": id, "adPayload": null } })).collect();
-			edges.insert(1, json_value!({ "node": { "groupId": "t3_ad", "adPayload": {} } }));
-			json_value!({ "edges": edges, "pageInfo": { "endCursor": STANDARD.encode(end) } })
-		};
-		let mut ids = Vec::new();
-		assert_eq!(take_all_page(&mut ids, &page(&["t3_a", "t3_b", "t3_c"], "t3_c"), 4).as_deref(), Some("t3_c"));
-		// The second page repeats `t3_c` and has more than needed
-		assert_eq!(take_all_page(&mut ids, &page(&["t3_c", "t3_d", "t3_e"], "t3_e"), 4).as_deref(), Some("t3_d"));
-		assert_eq!(ids, ["t3_a", "t3_b", "t3_c", "t3_d"]);
-
-		let end = json_value!({ "edges": [], "pageInfo": { "hasNextPage": false } });
-		assert_eq!(take_all_page(&mut ids, &end, 10), None);
+	fn test_no_route_for_all() {
+		for path in ["/r/all.json?raw_json=1", "/r/all/new.json?raw_json=1"] {
+			assert!(futures_lite::future::block_on(json(path, false)).is_none(), "{path}");
+		}
 	}
 
 	#[test]

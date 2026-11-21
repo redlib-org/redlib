@@ -137,7 +137,6 @@ impl InstanceInfo {
 				["Scrape fallback enabled", &effective(&self.config.enable_scrape_fallback, "on")],
 				["GraphQL fallback enabled", &effective(&self.config.enable_gql, "on")],
 				["Scrape comment prefetch", &effective(&self.config.scrape_comment_prefetch, "0")],
-				["GraphQL feed requests", &effective(&self.config.gql_feed_requests, "2")],
 				["Full URL", &effective(&self.config.full_url, "none")],
 				["Remove default feeds", &effective(&self.config.default_remove_default_feeds, "off")],
 			])
