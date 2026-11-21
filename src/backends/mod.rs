@@ -141,6 +141,16 @@ impl Kind {
 		}
 	}
 
+	/// [`Self::json_path`] for logged-out clients: Reddit serves them the
+	/// site-wide new and rising feeds at `/new` and `/rising` and refuses
+	/// `/r/all%2B/new`. With a session those paths are the account's home feed.
+	pub fn anonymous_json_path(path: &str) -> std::borrow::Cow<'_, str> {
+		match path.strip_prefix("/r/all") {
+			Some(rest) if matches!(rest.split(['.', '?']).next(), Some("/new" | "/rising")) => rest.into(),
+			_ => Self::json_path(path),
+		}
+	}
+
 	pub fn of(path: &str) -> Self {
 		let route = path.split('?').next().unwrap_or_default().trim_end_matches(".json");
 		let segments: Vec<&str> = route.split('/').filter(|s| !s.is_empty()).collect();
@@ -480,6 +490,10 @@ mod tests {
 		for path in ["/r/allthingsdnd/hot.json", "/r/all/search.json?q=rust", "/r/all/about.json", "/r/rust/hot.json"] {
 			assert_eq!(Kind::json_path(path), path);
 		}
+		assert_eq!(Kind::anonymous_json_path("/r/all/new.json?&raw_json=1&after=t3_x"), "/new.json?&raw_json=1&after=t3_x");
+		assert_eq!(Kind::anonymous_json_path("/r/all/rising.json?raw_json=1"), "/rising.json?raw_json=1");
+		assert_eq!(Kind::anonymous_json_path("/r/all/top.json?t=day"), "/r/all%2B/top.json?t=day");
+		assert_eq!(Kind::anonymous_json_path("/r/allnew/new.json"), "/r/allnew/new.json");
 	}
 
 	#[test]

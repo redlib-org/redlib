@@ -162,6 +162,11 @@ fn test_json_all() {
 	);
 }
 
+#[test]
+fn test_json_all_new() {
+	assert_posts(&get(&Json, "/r/all/new.json?raw_json=1"), "json all new");
+}
+
 /// Reddit refuses `/new` to every browser with the same page as a blocked one,
 /// which mustn't switch away from a browser it serves.
 #[test]
