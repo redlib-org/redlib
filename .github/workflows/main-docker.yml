@@ -34,6 +34,8 @@ jobs:
           - linux/arm64
           - linux/arm/v7
           - linux/arm/v6
+          - linux/riscv64
+          - linux/mips64le
     steps:
       - name: Prepare
         run: |
@@ -161,11 +163,77 @@ jobs:
       - name: Inspect image
         run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
 
-  # Publishes the static binaries from the pushed image as the `latest` release.
+  # Targets Docker can't build. Their Cargo caches live in the Actions cache.
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-apple-darwin, os: macos-26-intel }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: i686-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-linux-android, os: ubuntu-latest, ndk: aarch64-linux-android24 }
+          - { target: armv7-linux-androideabi, os: ubuntu-latest, ndk: armv7a-linux-androideabi24 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ matrix.target }}
+      GIT_HASH: ${{ github.sha }}
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Toolchain
+        run: rustup toolchain install 1.99 --profile minimal --no-self-update --target "$TARGET" && rustup default 1.99
+
+      - name: Android NDK
+        if: matrix.ndk
+        run: |
+          bin=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
+          t=${TARGET//-/_}
+          { echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME"
+            echo "CARGO_TARGET_${t^^}_LINKER=$bin/${{ matrix.ndk }}-clang"
+            echo "CC_$t=$bin/${{ matrix.ndk }}-clang"
+            echo "CXX_$t=$bin/${{ matrix.ndk }}-clang++"
+            echo "AR_$t=$bin/llvm-ar"
+            # The runner's NDK headers reject bindgen's unversioned target triple.
+            echo "BINDGEN_EXTRA_CLANG_ARGS_$t=--target=${{ matrix.ndk }}"
+            # Link the C++ runtime statically; stock Android has no libc++_shared.so.
+            echo "BORING_BSSL_RUST_CPPLIB_$t=c++_static"
+            echo "CARGO_TARGET_${t^^}_RUSTFLAGS=-C link-arg=-lc++abi"; } >> "$GITHUB_ENV"
+
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+
+      - name: Build
+        run: |
+          cargo build --release --locked --bin redlib --target "$TARGET"
+          ext=
+          if [[ $TARGET == *windows* ]]; then ext=.exe; fi
+          mkdir dist
+          cp "target/$TARGET/release/redlib$ext" "dist/redlib-$TARGET$ext"
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: redlib-${{ matrix.target }}
+          path: dist/*
+          retention-days: 1
+
+  # Publishes the static binaries from the pushed image, plus the native ones,
+  # as the `latest` release.
   release:
     runs-on: ubuntu-latest
-    needs: merge
-    if: github.ref == 'refs/heads/master'
+    needs: [merge, native]
+    # A failed native target doesn't hold back the rest.
+    if: ${{ !cancelled() && needs.merge.result == 'success' && github.ref == 'refs/heads/master' }}
     permissions:
       contents: write
     env:
@@ -177,12 +245,22 @@ jobs:
           image=ghcr.io/${GITHUB_REPOSITORY,,}:sha-${GITHUB_SHA::7}
           mkdir dist
           for pair in amd64=x86_64-unknown-linux-musl 386=i686-unknown-linux-musl arm64=aarch64-unknown-linux-musl \
-            arm/v7=armv7-unknown-linux-musleabihf arm/v6=arm-unknown-linux-musleabihf; do
+            arm/v7=armv7-unknown-linux-musleabihf arm/v6=arm-unknown-linux-musleabihf \
+            riscv64=riscv64gc-unknown-linux-musl mips64le=mips64el-unknown-linux-muslabi64; do
             id=$(docker create --platform "linux/${pair%%=*}" "$image")
             docker cp "$id:/usr/local/bin/redlib" "dist/redlib-${pair#*=}"
             docker rm "$id"
           done
-          cd dist && sha256sum redlib-* > SHA256SUMS
+
+      - name: Download the native binaries
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          pattern: redlib-*
+          merge-multiple: true
+
+      - name: Checksums
+        run: cd dist && sha256sum redlib-* > SHA256SUMS
 
       - name: Update the latest release
         run: |
@@ -191,7 +269,7 @@ jobs:
           title="Latest build ($short)"
           notes="Built from [\`$short\`]($GITHUB_SERVER_URL/$GH_REPO/commit/$GITHUB_SHA) ($subject) on $(date -u '+%Y-%m-%d %H:%M') UTC.
 
-          Static Linux binaries, the same ones as in the \`ghcr.io/${GITHUB_REPOSITORY,,}:sha-$short\` image. This release is replaced by each container build from \`master\`."
+          The static Linux binaries are the same ones as in the \`ghcr.io/${GITHUB_REPOSITORY,,}:sha-$short\` image. The macOS, Windows and Android builds are not tested by this fork. This release is replaced on every push to \`master\`."
           if gh release view latest > /dev/null 2>&1; then
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
             gh release upload latest dist/* --clobber

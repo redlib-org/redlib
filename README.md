@@ -10,7 +10,7 @@ An alternative private front-end to Reddit, with its origins in [Libreddit](http
 
 > [!IMPORTANT]
 > **This is a fork of [redlib-org/redlib](https://github.com/redlib-org/redlib), built on [Nachtalb/redlib](https://github.com/Nachtalb/redlib).**
-> It ships multi-arch images for amd64, 386, arm64, arm/v7 and arm/v6, and includes many features and fixes from unmerged upstream pull requests plus its own. See [FORK.md](FORK.md) for the full list of changes.
+> It ships multi-arch images for amd64, 386, arm64, arm/v7, arm/v6, riscv64 and mips64le, and includes many features and fixes from unmerged upstream pull requests plus its own. See [FORK.md](FORK.md) for the full list of changes.
 
 > [!TIP]
 > Run this fork's image, **`ghcr.io/project516/redlib:latest`**, rather than upstream's `quay.io/redlib/redlib`.
@@ -104,7 +104,7 @@ This section covers multiple ways of deploying Redlib. Using Docker is recommend
 
 For configuration options, see [CONFIGURATION.md](CONFIGURATION.md).
 
-Images are on [ghcr.io](https://github.com/Project516/redlib/pkgs/container/redlib) for `amd64`, `386`, `arm64`, `arm/v7` and `arm/v6`.
+Images are on [ghcr.io](https://github.com/Project516/redlib/pkgs/container/redlib) for `amd64`, `386`, `arm64`, `arm/v7`, `arm/v6`, `riscv64` and `mips64le`.
 
 <details>
 <summary><b>Docker Compose</b></summary>
@@ -146,9 +146,9 @@ systemctl --user status redlib.service  # check on it
 </details>
 
 <details>
-<summary><b>Binary (Linux)</b></summary>
+<summary><b>Binary</b></summary>
 
-On Linux, grab a static binary from [the latest release](https://github.com/Project516/redlib/releases/latest), rebuilt on every push to `master`. It has builds for `x86_64`, `i686`, `aarch64`, `armv7` and `arm` (v6), plus `SHA256SUMS`.
+Grab a binary from [the latest release](https://github.com/Project516/redlib/releases/latest), rebuilt on every push to `master`. It has static Linux builds for `x86_64`, `i686`, `aarch64`, `armv7`, `arm` (v6), `riscv64` and `mips64el`, plus macOS, Windows and Android builds that this fork doesn't test, and `SHA256SUMS`.
 
 ```bash
 curl -fL -o redlib https://github.com/Project516/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl  # pick your architecture

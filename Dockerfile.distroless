@@ -9,6 +9,8 @@ FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:i686-musl AS c
 FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:aarch64-musl AS cross-arm64
 FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:armv7-musleabihf AS cross-armv7
 FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:arm-musleabihf AS cross-armv6
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:riscv64gc-musl AS cross-riscv64
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/rust-musl-cross:mips64el-muslabi64 AS cross-mips64le
 
 FROM cross-${TARGETARCH}${TARGETVARIANT} AS builder
 
@@ -27,7 +29,13 @@ ENV CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS="--cfg libc_unstable_musl_v1_
 ENV CFLAGS_i686_unknown_linux_musl="-msse2" \
     CXXFLAGS_i686_unknown_linux_musl="-msse2"
 
-RUN rustup toolchain install 1.99 --profile minimal --no-self-update --target $CARGO_BUILD_TARGET && rustup default 1.99
+# mips64el is tier 3: Rust ships no std for it, so nightly builds one; LTO breaks its link.
+ENV CARGO_TARGET_MIPS64EL_UNKNOWN_LINUX_MUSLABI64_RUSTFLAGS="-C link-arg=-mxgot"
+RUN if [ "$CARGO_BUILD_TARGET" = mips64el-unknown-linux-muslabi64 ]; then \
+        rustup toolchain install nightly-2026-11-14 --profile minimal --component rust-src --no-self-update && rustup default nightly-2026-11-14; \
+    else \
+        rustup toolchain install 1.99 --profile minimal --no-self-update --target $CARGO_BUILD_TARGET && rustup default 1.99; \
+    fi
 
 WORKDIR /redlib
 COPY . ./
@@ -38,7 +46,10 @@ ARG GIT_HASH=dev
 RUN --mount=type=cache,id=cargo-registry,target=/root/.cargo/registry \
     --mount=type=cache,id=cargo-git,target=/root/.cargo/git \
     --mount=type=cache,id=redlib-target-${TARGETARCH}${TARGETVARIANT},target=/redlib/target \
-    cargo build --release --locked --bin redlib && cp target/$CARGO_BUILD_TARGET/release/redlib /usr/local/bin/redlib
+    if [ "$CARGO_BUILD_TARGET" = mips64el-unknown-linux-muslabi64 ]; then \
+        export CARGO_PROFILE_RELEASE_LTO=false && set -- -Z build-std=std,panic_abort; \
+    fi && \
+    cargo build --release --locked --bin redlib "$@" && cp target/$CARGO_BUILD_TARGET/release/redlib /usr/local/bin/redlib
 
 ########################
 ## release image
