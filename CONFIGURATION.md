@@ -67,7 +67,6 @@ Assign a default value for each instance-specific setting by passing environment
 | `ENABLE_GQL`              | `["on", "off"]` | `on`                                   | Allows the `gql` backend: Reddit's GraphQL API. `off` never contacts it. |
 | `ENDPOINTS`, `ENDPOINTS_<KIND>` | List      | per kind                               | Which backends load Reddit data, in which order. See [Backend order](#backend-order). |
 | `SCRAPE_COMMENT_PREFETCH` | Integer         | `0`                                    | Extra requests a scraped post page makes to load more comments up front. See [Scrape fallback](#scrape-fallback). |
-| `GQL_FEED_REQUESTS`       | Integer         | `2`                                    | Requests the `gql` backend makes to fill one r/all page. Reddit sends only about 8 posts for the first. |
 | `REDDIT_COOKIE`           | String          | (empty)                                | Logged-in `reddit_session` cookies, `|`-separated, for the `cookied-json` backend. Use throwaway accounts. See [Reddit session](#reddit-session). |
 | `REDDIT_COOKIE_FILE`      | String          | (empty)                                | File with more sessions, one per line, reread while running. See [Reddit session](#reddit-session). |
 | `STALE_CACHE_MB`          | Integer         | `32`                                   | RAM for the last good copy of each page, served while Reddit refuses or fails. `0` turns it off. See [Stale cache](#stale-cache). |
@@ -138,8 +137,8 @@ While running, Redlib reorders the listed backends by how often each worked in t
 | ------------ | ---------- | -------------- | ----- | --------- | ------------- |
 | `POST`       | ✅         | ✅             | ✅    | ❌        | gql, json, cookied-json |
 | `COMMENTS`   | ⚠️ blocked | ✅             | ✅    | ✅        | gql, cookied-json, scraped, json |
-| `LISTING`    | ✅         | ✅             | ⚠️¹   | ⚠️⁴       | json, gql, scraped, cookied-json |
-| `ALL`        | ✅²        | ✅²            | ⚠️³   | ❌        | json, gql, cookied-json |
+| `LISTING`    | ✅         | ✅             | ⚠️¹   | ⚠️³       | json, gql, scraped, cookied-json |
+| `ALL`        | ✅²        | ⚠️²            | ❌    | ❌        | json, cookied-json |
 | `SUBREDDIT`  | ✅         | ✅             | ✅    | ❌        | gql, json, cookied-json |
 | `USER`       | ⚠️ blocked | ✅             | ✅    | ❌        | gql, cookied-json |
 | `SEARCH`     | ✅         | ✅             | ✅    | ❌        | gql, json, cookied-json |
@@ -148,11 +147,9 @@ While running, Redlib reorders the listed backends by how often each worked in t
 
 ¹ Skipped without a request for feeds of several subreddits (`r/a+b`, the front page of your subscriptions).
 
-² Reddit [retired r/all](https://www.reddit.com/r/reddithelp/comments/1rfmh8h/a_helpful_link_to_rall/) and answers `/r/all.json` with 403, but still serves the same feed as `/r/all%2B.json`, which is requested instead. A bare `/r/all+.json` gets a fixed copy of r/popular's first page.
+² Reddit [retired r/all](https://www.reddit.com/r/reddithelp/comments/1rfmh8h/a_helpful_link_to_rall/) and answers `/r/all.json` with 403, but still serves the same feed as `/r/all%2B.json`, which is requested instead. A bare `/r/all+.json` gets a fixed copy of r/popular's first page. Reddit refuses New and Rising there; `json` loads them from the site-wide `/new.json` and `/rising.json` feeds instead, which with a session are the account's home feed, so `cookied-json` can't serve them.
 
-³ The old GraphQL feed sends about 8 posts per request, so a page takes up to `REDLIB_GQL_FEED_REQUESTS` requests.
-
-⁴ Only feeds of several subreddits; skipped without a request for everything else.
+³ Only feeds of several subreddits; skipped without a request for everything else.
 
 </details>
 
