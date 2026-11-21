@@ -112,7 +112,7 @@ impl Kind {
 			Self::Comments => "gql, cookied-json, scraped, json",
 			// Only `scraped` serves the sorts Reddit refuses to the JSON API for combined feeds
 			Self::Listing => "json, gql, scraped, cookied-json",
-			Self::All => "json, gql, cookied-json",
+			Self::All => "json, cookied-json",
 			Self::Duplicates => "json, cookied-json",
 		}
 	}
@@ -525,7 +525,7 @@ mod tests {
 		assert_eq!(names(&order(Kind::Comments)), ["gql", "cookied-json", "scraped", "json"]);
 		assert_eq!(names(&order(Kind::Listing)), ["json", "gql", "scraped", "cookied-json"]);
 		assert_eq!(names(&order(Kind::Wiki)), ["gql", "cookied-json"]);
-		assert_eq!(names(&order(Kind::All)), ["json", "gql", "cookied-json"]);
+		assert_eq!(names(&order(Kind::All)), ["json", "cookied-json"]);
 	}
 
 	#[test]

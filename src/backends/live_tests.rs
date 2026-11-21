@@ -140,12 +140,6 @@ fn test_cookied_json_combined_feed() {
 	assert!(page["data"]["after"].as_str().is_some_and(|after| after.starts_with("t3_")), "{page}");
 }
 
-/// `AllFeedSdui` is gone from the app; this fails once Reddit drops its hash.
-#[test]
-fn test_gql_all() {
-	assert_posts(&get(&Gql, "/r/all/hot.json?raw_json=1"), "gql all");
-}
-
 /// Fails once Reddit closes the `r/all%2B` gap as well. A bare `r/all+`
 /// gets a fixed copy of r/popular's first page that ignores `after`.
 #[test]

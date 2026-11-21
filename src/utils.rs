@@ -1744,11 +1744,6 @@ pub fn scrape_comment_prefetch() -> usize {
 	get_setting("REDLIB_SCRAPE_COMMENT_PREFETCH").and_then(|val| val.parse().ok()).unwrap_or(0)
 }
 
-/// Feed requests the gql backend makes to fill one r/all page, at least 1.
-pub fn gql_feed_requests() -> usize {
-	get_setting("REDLIB_GQL_FEED_REQUESTS").and_then(|val| val.parse().ok()).filter(|&n| n > 0).unwrap_or(2)
-}
-
 /// Returns true if the config/env variable `REDLIB_ROBOTS_DISABLE_INDEXING` carries the
 /// value `on`.
 ///

@@ -118,9 +118,6 @@ pub struct Config {
 	#[serde(rename = "REDLIB_SCRAPE_COMMENT_PREFETCH")]
 	pub(crate) scrape_comment_prefetch: Option<String>,
 
-	#[serde(rename = "REDLIB_GQL_FEED_REQUESTS")]
-	pub(crate) gql_feed_requests: Option<String>,
-
 	#[serde(rename = "REDLIB_FULL_URL")]
 	pub(crate) full_url: Option<String>,
 
@@ -297,7 +294,6 @@ impl Config {
 			enable_scrape_fallback: parse("REDLIB_ENABLE_SCRAPE_FALLBACK"),
 			enable_gql: parse("REDLIB_ENABLE_GQL"),
 			scrape_comment_prefetch: parse("REDLIB_SCRAPE_COMMENT_PREFETCH"),
-			gql_feed_requests: parse("REDLIB_GQL_FEED_REQUESTS"),
 			full_url: parse("REDLIB_FULL_URL"),
 			default_remove_default_feeds: parse("REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS"),
 			source_url: parse("REDLIB_SOURCE_URL"),
@@ -379,7 +375,6 @@ fn get_setting_from_config(name: &str, config: &Config) -> Option<String> {
 		"REDLIB_ENABLE_SCRAPE_FALLBACK" => config.enable_scrape_fallback.clone(),
 		"REDLIB_ENABLE_GQL" => config.enable_gql.clone(),
 		"REDLIB_SCRAPE_COMMENT_PREFETCH" => config.scrape_comment_prefetch.clone(),
-		"REDLIB_GQL_FEED_REQUESTS" => config.gql_feed_requests.clone(),
 		"REDLIB_FULL_URL" => config.full_url.clone(),
 		"REDLIB_DEFAULT_REMOVE_DEFAULT_FEEDS" => config.default_remove_default_feeds.clone(),
 		"REDLIB_SOURCE_URL" => config.source_url.clone(),
@@ -653,18 +648,6 @@ mod tests {
 	#[sealed_test(env = [("REDLIB_SOURCE_URL", "https://example.com")])]
 	fn test_source_url() {
 		assert_eq!(get_setting("REDLIB_SOURCE_URL"), Some("https://example.com".into()));
-	}
-
-	#[test]
-	#[sealed_test(env = [("REDLIB_GQL_FEED_REQUESTS", "3")])]
-	fn test_gql_feed_requests() {
-		assert_eq!(crate::utils::gql_feed_requests(), 3);
-	}
-
-	#[test]
-	#[sealed_test(env = [("REDLIB_GQL_FEED_REQUESTS", "0")])]
-	fn test_gql_feed_requests_falls_back_to_the_default() {
-		assert_eq!(crate::utils::gql_feed_requests(), 2);
 	}
 
 	#[test]
